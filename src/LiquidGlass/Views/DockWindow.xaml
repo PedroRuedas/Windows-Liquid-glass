@@ -1,0 +1,64 @@
+<Window x:Class="LiquidGlass.Views.DockWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:LiquidGlass.Controls"
+        xmlns:viewModels="clr-namespace:LiquidGlass.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=viewModels:DockViewModel}"
+        Title="Liquid Glass Dock"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        AllowDrop="True">
+
+    <Grid x:Name="Root"
+          controls:MagnifyingPanel.ContentBoundsChanged="OnContentBoundsChanged"
+          MouseMove="OnRootMouseMove"
+          MouseLeave="OnRootMouseLeave">
+
+        <Canvas x:Name="GlassLayer">
+            <!-- Área quase transparente que mantém o mouse "dentro" da dock entre ícones ampliados. -->
+            <Border x:Name="HitArea" Background="#01000000" />
+            <controls:LiquidGlassSurface x:Name="Glass" ContextMenuOpening="OnGlassContextMenuOpening">
+                <controls:LiquidGlassSurface.ContextMenu>
+                    <ContextMenu />
+                </controls:LiquidGlassSurface.ContextMenu>
+            </controls:LiquidGlassSurface>
+        </Canvas>
+
+        <controls:DockItemsControl x:Name="DockItems"
+                                   ItemsSource="{Binding Items}"
+                                   Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <controls:MagnifyingPanel Edge="{Binding Settings.Edge}"
+                                              ItemSize="{Binding Settings.IconSize}"
+                                              Spacing="{Binding Settings.IconSpacing}"
+                                              Magnification="{Binding EffectiveMagnification}"
+                                              MagnificationRange="{Binding Settings.MagnificationRange}"
+                                              AnimationSpeed="{Binding Settings.AnimationSpeed}" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="controls:DockItemView" BasedOn="{StaticResource {x:Type controls:DockItemView}}">
+                    <Setter Property="Edge" Value="{Binding DataContext.Settings.Edge, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    <Setter Property="ShowLabel" Value="{Binding DataContext.Settings.ShowLabels, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    <Setter Property="ShowIndicator" Value="{Binding DataContext.Settings.ShowRunningIndicators, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    <Setter Property="AnimationSpeed" Value="{Binding DataContext.Settings.AnimationSpeed, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    <EventSetter Event="ContextMenuOpening" Handler="OnItemContextMenuOpening" />
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu />
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+        </controls:DockItemsControl>
+    </Grid>
+</Window>

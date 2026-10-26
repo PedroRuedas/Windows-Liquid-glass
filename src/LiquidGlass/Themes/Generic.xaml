@@ -1,0 +1,186 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:LiquidGlass.Controls"
+                    xmlns:models="clr-namespace:LiquidGlass.Models">
+
+    <SolidColorBrush x:Key="DockLabelBackground" Color="#E61C1C1E" />
+    <SolidColorBrush x:Key="DockLabelBorder" Color="#38FFFFFF" />
+    <SolidColorBrush x:Key="DockIndicatorFill" Color="#EEFFFFFF" />
+    <SolidColorBrush x:Key="DockIndicatorStroke" Color="#55000000" />
+    <SolidColorBrush x:Key="DockSeparatorFill" Color="#59FFFFFF" />
+
+    <!-- Ícone de app -->
+    <ControlTemplate x:Key="DockApplicationTemplate" TargetType="controls:DockItemView">
+        <Grid Background="Transparent">
+            <Grid x:Name="PART_Icon">
+                <Image x:Name="Icon"
+                       Source="{Binding Icon}"
+                       Stretch="Uniform"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+                <Rectangle x:Name="PressOverlay" Fill="Black" Opacity="0">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="{Binding Icon}" Stretch="Uniform" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </Grid>
+
+            <Ellipse x:Name="Indicator"
+                     Width="5"
+                     Height="5"
+                     Margin="0,0,0,-7"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Bottom"
+                     Fill="{StaticResource DockIndicatorFill}"
+                     Stroke="{StaticResource DockIndicatorStroke}"
+                     StrokeThickness="0.5"
+                     Opacity="0"
+                     IsHitTestVisible="False" />
+
+            <!-- A margem negativa dá ao rótulo espaço para ser mais largo que o ícone sem ser cortado. -->
+            <Grid x:Name="LabelHost"
+                  Height="34"
+                  Margin="-160,-44,-160,0"
+                  VerticalAlignment="Top"
+                  IsHitTestVisible="False">
+                <Border x:Name="Label"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="11,4,11,5"
+                        Background="{StaticResource DockLabelBackground}"
+                        BorderBrush="{StaticResource DockLabelBorder}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Opacity="0">
+                    <TextBlock Text="{Binding Name}"
+                               Foreground="White"
+                               FontFamily="Segoe UI Variable Text, Segoe UI"
+                               FontSize="13"
+                               TextOptions.TextFormattingMode="Display" />
+                </Border>
+            </Grid>
+        </Grid>
+
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="PressOverlay" Property="Opacity" Value="0.35" />
+            </Trigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsRunning}" Value="True" />
+                    <Condition Binding="{Binding ShowIndicator, RelativeSource={RelativeSource Self}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <MultiDataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Indicator"
+                                             Storyboard.TargetProperty="Opacity"
+                                             To="1"
+                                             Duration="0:0:0.25" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiDataTrigger.EnterActions>
+                <MultiDataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Indicator"
+                                             Storyboard.TargetProperty="Opacity"
+                                             To="0"
+                                             Duration="0:0:0.25" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiDataTrigger.ExitActions>
+            </MultiDataTrigger>
+
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True" />
+                    <Condition Property="ShowLabel" Value="True" />
+                </MultiTrigger.Conditions>
+                <MultiTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Label"
+                                             Storyboard.TargetProperty="Opacity"
+                                             To="1"
+                                             BeginTime="0:0:0.08"
+                                             Duration="0:0:0.15" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiTrigger.EnterActions>
+                <MultiTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Label"
+                                             Storyboard.TargetProperty="Opacity"
+                                             To="0"
+                                             Duration="0:0:0.1" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiTrigger.ExitActions>
+            </MultiTrigger>
+
+            <Trigger Property="Edge" Value="Left">
+                <Setter TargetName="Indicator" Property="Margin" Value="-7,0,0,0" />
+                <Setter TargetName="Indicator" Property="HorizontalAlignment" Value="Left" />
+                <Setter TargetName="Indicator" Property="VerticalAlignment" Value="Center" />
+                <Setter TargetName="LabelHost" Property="Height" Value="Auto" />
+                <Setter TargetName="LabelHost" Property="Width" Value="300" />
+                <Setter TargetName="LabelHost" Property="Margin" Value="0,-40,-312,-40" />
+                <Setter TargetName="LabelHost" Property="HorizontalAlignment" Value="Right" />
+                <Setter TargetName="LabelHost" Property="VerticalAlignment" Value="Stretch" />
+                <Setter TargetName="Label" Property="HorizontalAlignment" Value="Left" />
+            </Trigger>
+
+            <Trigger Property="Edge" Value="Right">
+                <Setter TargetName="Indicator" Property="Margin" Value="0,0,-7,0" />
+                <Setter TargetName="Indicator" Property="HorizontalAlignment" Value="Right" />
+                <Setter TargetName="Indicator" Property="VerticalAlignment" Value="Center" />
+                <Setter TargetName="LabelHost" Property="Height" Value="Auto" />
+                <Setter TargetName="LabelHost" Property="Width" Value="300" />
+                <Setter TargetName="LabelHost" Property="Margin" Value="-312,-40,0,-40" />
+                <Setter TargetName="LabelHost" Property="HorizontalAlignment" Value="Left" />
+                <Setter TargetName="LabelHost" Property="VerticalAlignment" Value="Stretch" />
+                <Setter TargetName="Label" Property="HorizontalAlignment" Value="Right" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- Separador entre os apps e a Lixeira -->
+    <ControlTemplate x:Key="DockSeparatorTemplate" TargetType="controls:DockItemView">
+        <Rectangle x:Name="Line"
+                   Width="1"
+                   Margin="5,6"
+                   Fill="{StaticResource DockSeparatorFill}" />
+        <ControlTemplate.Triggers>
+            <Trigger Property="Edge" Value="Left">
+                <Setter TargetName="Line" Property="Width" Value="NaN" />
+                <Setter TargetName="Line" Property="Height" Value="1" />
+                <Setter TargetName="Line" Property="Margin" Value="6,5" />
+            </Trigger>
+            <Trigger Property="Edge" Value="Right">
+                <Setter TargetName="Line" Property="Width" Value="NaN" />
+                <Setter TargetName="Line" Property="Height" Value="1" />
+                <Setter TargetName="Line" Property="Margin" Value="6,5" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style TargetType="controls:DockItemView">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Cursor" Value="Arrow" />
+        <Setter Property="Command" Value="{Binding ActivateCommand}" />
+        <Setter Property="Template" Value="{StaticResource DockApplicationTemplate}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Kind}" Value="{x:Static models:DockItemKind.Separator}">
+                <Setter Property="Template" Value="{StaticResource DockSeparatorTemplate}" />
+                <Setter Property="controls:MagnifyingPanel.IsMagnifiable" Value="False" />
+                <Setter Property="IsHitTestVisible" Value="False" />
+            </DataTrigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Panel.ZIndex" Value="1" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>
