@@ -1,39 +1,35 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Botão Iniciar: bloco arredondado no formato de ícone do macOS com o logotipo do Windows. -->
+    <!--
+        Os ícones não têm fundo próprio. O retângulo transparente fixa a área do desenho em
+        6,6,88,88 (a mesma dos ícones de app): sem ele, o Image esticaria o logotipo ou a seta até
+        as bordas do ícone.
+    -->
+
+    <!-- Botão Iniciar: logotipo do Windows 11 colorido. -->
     <DrawingImage x:Key="StartIcon">
         <DrawingImage.Drawing>
             <DrawingGroup>
-                <GeometryDrawing>
-                    <GeometryDrawing.Brush>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Offset="0" Color="#FF5CC8FF" />
-                            <GradientStop Offset="1" Color="#FF0A64D8" />
-                        </LinearGradientBrush>
-                    </GeometryDrawing.Brush>
+                <GeometryDrawing Brush="Transparent">
                     <GeometryDrawing.Geometry>
-                        <RectangleGeometry Rect="6,6,88,88" RadiusX="20" RadiusY="20" />
+                        <RectangleGeometry Rect="6,6,88,88" />
                     </GeometryDrawing.Geometry>
                 </GeometryDrawing>
                 <GeometryDrawing>
                     <GeometryDrawing.Brush>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Offset="0" Color="#66FFFFFF" />
-                            <GradientStop Offset="0.5" Color="#00FFFFFF" />
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Offset="0" Color="#FF6BD3FF" />
+                            <GradientStop Offset="0.5" Color="#FF1A9BF0" />
+                            <GradientStop Offset="1" Color="#FF0A5FD0" />
                         </LinearGradientBrush>
                     </GeometryDrawing.Brush>
-                    <GeometryDrawing.Geometry>
-                        <RectangleGeometry Rect="6,6,88,88" RadiusX="20" RadiusY="20" />
-                    </GeometryDrawing.Geometry>
-                </GeometryDrawing>
-                <GeometryDrawing Brush="White">
                     <GeometryDrawing.Geometry>
                         <GeometryGroup>
-                            <RectangleGeometry Rect="29,29,20,20" RadiusX="1.5" RadiusY="1.5" />
-                            <RectangleGeometry Rect="51,29,20,20" RadiusX="1.5" RadiusY="1.5" />
-                            <RectangleGeometry Rect="29,51,20,20" RadiusX="1.5" RadiusY="1.5" />
-                            <RectangleGeometry Rect="51,51,20,20" RadiusX="1.5" RadiusY="1.5" />
+                            <RectangleGeometry Rect="12,12,36,36" RadiusX="3" RadiusY="3" />
+                            <RectangleGeometry Rect="52,12,36,36" RadiusX="3" RadiusY="3" />
+                            <RectangleGeometry Rect="12,52,36,36" RadiusX="3" RadiusY="3" />
+                            <RectangleGeometry Rect="52,52,36,36" RadiusX="3" RadiusY="3" />
                         </GeometryGroup>
                     </GeometryDrawing.Geometry>
                 </GeometryDrawing>
@@ -41,30 +37,13 @@
         </DrawingImage.Drawing>
     </DrawingImage>
 
-    <!-- Bandeja do sistema: bloco grafite com uma seta para cima, como o "mostrar ícones ocultos". -->
+    <!-- Bandeja do sistema: seta para cima, como o "mostrar ícones ocultos". -->
     <DrawingImage x:Key="TrayIcon">
         <DrawingImage.Drawing>
             <DrawingGroup>
-                <GeometryDrawing>
-                    <GeometryDrawing.Brush>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Offset="0" Color="#FF9A9AA2" />
-                            <GradientStop Offset="1" Color="#FF45454B" />
-                        </LinearGradientBrush>
-                    </GeometryDrawing.Brush>
+                <GeometryDrawing Brush="Transparent">
                     <GeometryDrawing.Geometry>
-                        <RectangleGeometry Rect="6,6,88,88" RadiusX="20" RadiusY="20" />
-                    </GeometryDrawing.Geometry>
-                </GeometryDrawing>
-                <GeometryDrawing>
-                    <GeometryDrawing.Brush>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Offset="0" Color="#55FFFFFF" />
-                            <GradientStop Offset="0.5" Color="#00FFFFFF" />
-                        </LinearGradientBrush>
-                    </GeometryDrawing.Brush>
-                    <GeometryDrawing.Geometry>
-                        <RectangleGeometry Rect="6,6,88,88" RadiusX="20" RadiusY="20" />
+                        <RectangleGeometry Rect="6,6,88,88" />
                     </GeometryDrawing.Geometry>
                 </GeometryDrawing>
                 <GeometryDrawing Geometry="M 31,58 L 50,39 L 69,58">
