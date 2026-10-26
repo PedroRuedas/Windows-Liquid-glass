@@ -192,7 +192,7 @@ public partial class DockWindow : Window
             return;
         }
 
-        var glass = Rect.Inflate(_contentBounds, GlassPadding, GlassPadding);
+        var glass = Rect.Inflate(ExtendToDockLength(_contentBounds), GlassPadding, GlassPadding);
         var thickness = Math.Min(glass.Width, glass.Height);
         Glass.CornerRadius = Math.Clamp(Settings.Roundness, 0, 1) * thickness / 2;
         Glass.BezelWidth = thickness * 0.5;
@@ -211,6 +211,27 @@ public partial class DockWindow : Window
         }
 
         Place(HitArea, hitArea);
+    }
+
+    /// <summary>
+    /// Estende a área do vidro, centralizada na tela, até o comprimento escolhido. Os ícones
+    /// continuam no centro; com a ampliação, o vidro ainda cresce se eles passarem do limite.
+    /// </summary>
+    private Rect ExtendToDockLength(Rect content)
+    {
+        var isVertical = Settings.Edge != DockEdge.Bottom;
+        var available = isVertical ? GlassLayer.ActualHeight : GlassLayer.ActualWidth;
+        var length = (Math.Clamp(Settings.DockLength, 0, 1) * available) - (GlassPadding * 2);
+        if (length <= (isVertical ? content.Height : content.Width))
+        {
+            return content;
+        }
+
+        var start = (available - length) / 2;
+        var extended = isVertical
+            ? new Rect(content.X, start, content.Width, length)
+            : new Rect(start, content.Y, length, content.Height);
+        return Rect.Union(content, extended);
     }
 
     private static void Place(FrameworkElement element, Rect bounds)
@@ -312,6 +333,7 @@ public partial class DockWindow : Window
                 UpdatePlacement();
                 break;
             case nameof(DockSettings.Roundness):
+            case nameof(DockSettings.DockLength):
                 LayoutGlass();
                 break;
             case nameof(DockSettings.Blur):

@@ -40,7 +40,7 @@ Todas as mudanças aparecem na dock na hora:
 
 | Seção | Opções |
 | --- | --- |
-| Aparência | posição (embaixo, esquerda, direita), tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, Lixeira |
+| Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, Lixeira |
 | Vidro | estilos prontos, refração, desfoque, dispersão de cores, brilho da borda, saturação, sombra, cor e intensidade do tom |
 | Animações | ampliação, tamanho máximo, alcance, quicar ao abrir, quicar por atenção, velocidade |
 | Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows |

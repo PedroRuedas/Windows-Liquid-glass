@@ -123,6 +123,13 @@
                         </StackPanel>
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE799;" Header="Comprimento da dock" Description="Estende o vidro ao longo da tela. Em 0% ele só envolve os ícones.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.DockLength}" />
+                            <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.DockLength, StringFormat={}{0:P0}}" />
+                        </StackPanel>
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xE73F;" Header="Distância da borda" Description="Espaço entre a dock e a borda da tela.">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="40" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.EdgeMargin}" />

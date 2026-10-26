@@ -14,10 +14,14 @@ public sealed partial class DockSettings : ObservableObject
     private DockEdge _edge = DockEdge.Bottom;
 
     [ObservableProperty]
-    private double _iconSize = 52;
+    private double _iconSize = 44;
 
     [ObservableProperty]
-    private double _iconSpacing = 6;
+    private double _iconSpacing = 16;
+
+    /// <summary>Comprimento mínimo do vidro, em fração da borda da tela (0 = só envolve os ícones).</summary>
+    [ObservableProperty]
+    private double _dockLength = 0.5;
 
     [ObservableProperty]
     private double _edgeMargin = 8;
@@ -99,6 +103,7 @@ public sealed partial class DockSettings : ObservableObject
         Edge = other.Edge;
         IconSize = other.IconSize;
         IconSpacing = other.IconSpacing;
+        DockLength = other.DockLength;
         EdgeMargin = other.EdgeMargin;
         Roundness = other.Roundness;
         ShowLabels = other.ShowLabels;
