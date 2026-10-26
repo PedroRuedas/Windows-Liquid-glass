@@ -1,29 +1,55 @@
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using LiquidGlass.Interop;
 
 namespace LiquidGlass.Graphics;
 
-/// <summary>Capturas GDI em pixels BGRA opacos (4 bytes por pixel, linhas contíguas).</summary>
+/// <summary>
+/// Capturas GDI em pixels BGRA opacos (4 bytes por pixel, linhas contíguas), reduzidas
+/// <c>factor</c> vezes em cada eixo. O próprio GDI tira a média dos pixels ao reduzir, então a
+/// resolução total nunca chega à memória gerenciada.
+/// </summary>
 internal static class ScreenCapture
 {
     private const uint SourceCopy = 0x00CC0020;
 
-    /// <summary>Papel de parede como o Windows o desenha, no tamanho informado (em pixels físicos).</summary>
-    public static byte[] Wallpaper(int width, int height)
+    /// <summary>Papel de parede como o Windows o desenha, para um monitor do tamanho informado (em pixels físicos).</summary>
+    public static byte[] Wallpaper(int monitorWidth, int monitorHeight, int factor, out int width, out int height)
     {
-        return Capture(width, height, memoryDc => User32.PaintDesktop(memoryDc));
+        var screenDc = User32.GetDC(0);
+        var paintDc = Gdi32.CreateCompatibleDC(screenDc);
+        var paintBitmap = Gdi32.CreateCompatibleBitmap(screenDc, monitorWidth, monitorHeight);
+        var previous = Gdi32.SelectObject(paintDc, paintBitmap);
+
+        try
+        {
+            User32.PaintDesktop(paintDc);
+            return Downsample(paintDc, new Int32Rect(0, 0, monitorWidth, monitorHeight), factor, out width, out height);
+        }
+        finally
+        {
+            Gdi32.SelectObject(paintDc, previous);
+            Gdi32.DeleteObject(paintBitmap);
+            Gdi32.DeleteDC(paintDc);
+            User32.ReleaseDC(0, screenDc);
+        }
     }
 
-    /// <summary>
-    /// O que está na tela agora dentro de <paramref name="region"/> (em pixels físicos), reduzido
-    /// <paramref name="factor"/> vezes em cada eixo. O próprio GDI tira a média dos pixels ao ler a
-    /// tela, então a resolução total nunca chega à memória gerenciada.
-    /// </summary>
+    /// <summary>O que está na tela agora dentro de <paramref name="region"/> (em pixels físicos).</summary>
     public static byte[] Screen(Int32Rect region, int factor, out int width, out int height)
+    {
+        var screenDc = User32.GetDC(0);
+        try
+        {
+            return Downsample(screenDc, region, factor, out width, out height);
+        }
+        finally
+        {
+            User32.ReleaseDC(0, screenDc);
+        }
+    }
+
+    private static byte[] Downsample(nint sourceDc, Int32Rect region, int factor, out int width, out int height)
     {
         width = Math.Max(region.Width / factor, 1);
         height = Math.Max(region.Height / factor, 1);
@@ -38,9 +64,8 @@ internal static class ScreenCapture
             BitCount = 32,
         };
 
-        var screenDc = User32.GetDC(0);
-        var memoryDc = Gdi32.CreateCompatibleDC(screenDc);
-        var bitmap = Gdi32.CreateDIBSection(screenDc, ref header, 0, out var bits, 0, 0);
+        var memoryDc = Gdi32.CreateCompatibleDC(sourceDc);
+        var bitmap = Gdi32.CreateDIBSection(sourceDc, ref header, 0, out var bits, 0, 0);
         var previous = Gdi32.SelectObject(memoryDc, bitmap);
 
         try
@@ -48,7 +73,7 @@ internal static class ScreenCapture
             Gdi32.SetStretchBltMode(memoryDc, Gdi32.Halftone);
             Gdi32.SetBrushOrgEx(memoryDc, 0, 0, 0);
             Gdi32.StretchBlt(
-                memoryDc, 0, 0, width, height, screenDc, region.X, region.Y, width * factor, height * factor, SourceCopy);
+                memoryDc, 0, 0, width, height, sourceDc, region.X, region.Y, width * factor, height * factor, SourceCopy);
             Gdi32.GdiFlush();
 
             var pixels = new byte[width * height * 4];
@@ -61,34 +86,6 @@ internal static class ScreenCapture
             Gdi32.SelectObject(memoryDc, previous);
             Gdi32.DeleteObject(bitmap);
             Gdi32.DeleteDC(memoryDc);
-            User32.ReleaseDC(0, screenDc);
-        }
-    }
-
-    private static byte[] Capture(int width, int height, Action<nint> draw)
-    {
-        var screenDc = User32.GetDC(0);
-        var memoryDc = Gdi32.CreateCompatibleDC(screenDc);
-        var bitmap = Gdi32.CreateCompatibleBitmap(screenDc, width, height);
-        var previous = Gdi32.SelectObject(memoryDc, bitmap);
-
-        try
-        {
-            draw(memoryDc);
-            Gdi32.SelectObject(memoryDc, previous);
-
-            var source = Imaging.CreateBitmapSourceFromHBitmap(bitmap, 0, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            var converted = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
-            var pixels = new byte[width * height * 4];
-            converted.CopyPixels(pixels, width * 4, 0);
-            MakeOpaque(pixels);
-            return pixels;
-        }
-        finally
-        {
-            Gdi32.DeleteObject(bitmap);
-            Gdi32.DeleteDC(memoryDc);
-            User32.ReleaseDC(0, screenDc);
         }
     }
 

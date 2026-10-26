@@ -8,6 +8,13 @@ public static class StartupService
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "LiquidGlassDock";
 
+    /// <summary>O registro é a fonte da verdade: o instalador também liga e desliga esta opção.</summary>
+    public static bool IsEnabled()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
+        return key?.GetValue(ValueName) is not null;
+    }
+
     public static void SetEnabled(bool enabled)
     {
         using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath, writable: true);

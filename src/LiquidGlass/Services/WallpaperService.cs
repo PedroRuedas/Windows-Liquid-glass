@@ -12,6 +12,12 @@ namespace LiquidGlass.Services;
 /// </summary>
 public sealed class WallpaperService
 {
+    /// <summary>
+    /// O fundo da dock é sempre desfocado, então meia resolução fica visualmente igual e ocupa ¼
+    /// da memória (na RAM e na placa de vídeo).
+    /// </summary>
+    private const int Downscale = 2;
+
     private byte[]? _pixels;
     private int _width;
     private int _height;
@@ -21,7 +27,7 @@ public sealed class WallpaperService
     /// <summary>Disparado sempre que <see cref="Backdrop"/> muda.</summary>
     public event EventHandler? Changed;
 
-    /// <summary>Papel de parede desfocado, com 1 unidade = 1 pixel físico do monitor.</summary>
+    /// <summary>Papel de parede desfocado; em DIPs, 1 unidade = 1 pixel físico do monitor.</summary>
     public BitmapSource? Backdrop { get; private set; }
 
     /// <summary>Origem do monitor principal em pixels físicos.</summary>
@@ -38,7 +44,8 @@ public sealed class WallpaperService
     /// <summary>Aplica um novo raio de desfoque sobre a última captura.</summary>
     public async Task SetBlurAsync(double blurRadius)
     {
-        var radius = (int)Math.Round(Math.Max(blurRadius, 0));
+        // O raio vem em pixels de tela; a imagem guardada é menor.
+        var radius = (int)Math.Round(Math.Max(blurRadius, 0) / Downscale);
         if (_pixels is null || radius == _blurRadius)
         {
             return;
@@ -53,7 +60,10 @@ public sealed class WallpaperService
         {
             var copy = (byte[])source.Clone();
             BoxBlur.Apply(copy, width, height, radius);
-            var bitmap = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, copy, width * 4);
+
+            // DPI reduzido na mesma proporção mantém o tamanho em DIPs igual ao do monitor.
+            const double Dpi = 96.0 / Downscale;
+            var bitmap = BitmapSource.Create(width, height, Dpi, Dpi, PixelFormats.Bgra32, null, copy, width * 4);
             bitmap.Freeze();
             return bitmap;
         });
@@ -72,8 +82,11 @@ public sealed class WallpaperService
     {
         var monitor = User32.GetPrimaryMonitorInfo().Monitor;
         MonitorOrigin = new Point(monitor.Left, monitor.Top);
-        _width = Math.Max(monitor.Width, 1);
-        _height = Math.Max(monitor.Height, 1);
-        _pixels = ScreenCapture.Wallpaper(_width, _height);
+        _pixels = ScreenCapture.Wallpaper(
+            Math.Max(monitor.Width, 1),
+            Math.Max(monitor.Height, 1),
+            Downscale,
+            out _width,
+            out _height);
     }
 }

@@ -21,6 +21,12 @@ public partial class App : Application
 
     private readonly IconService _icons = new();
     private readonly TrayIconService _tray = new();
+
+    /// <summary>Quanto o "--quit" espera a dock em execução devolver a barra de tarefas e encerrar.</summary>
+    private static readonly TimeSpan QuitTimeout = TimeSpan.FromSeconds(10);
+
+    private readonly object _settingsActivity = new();
+    private EfficiencyMode? _efficiency;
     private SingleInstance? _instance;
     private SettingsService? _settingsService;
     private TaskbarController? _taskbar;
@@ -63,12 +69,7 @@ public partial class App : Application
         _instance = new SingleInstance();
         if (e.Args.Contains(QuitArgument))
         {
-            if (!_instance.IsFirstInstance)
-            {
-                _instance.RequestQuit();
-            }
-
-            Shutdown();
+            Quit();
             return;
         }
 
@@ -91,9 +92,13 @@ public partial class App : Application
             ImportInitialPins();
         }
 
+        // Lido antes de observar as mudanças: refletir o registro não deve regravá-lo.
+        Settings.LaunchAtStartup = StartupService.IsEnabled();
+
         _taskbar = new TaskbarController();
         _taskbar.Apply(Settings.TaskbarMode);
         Settings.PropertyChanged += OnSettingsChanged;
+        _efficiency = new EfficiencyMode();
 
         _tray.IsEnabled = Settings.ShowTray;
 
@@ -107,7 +112,7 @@ public partial class App : Application
         _dockViewModel.SettingsRequested += (_, _) => OpenSettings();
         _dockViewModel.QuitRequested += (_, _) => Shutdown();
 
-        _dockWindow = new DockWindow(_dockViewModel, new WallpaperService(), _tray);
+        _dockWindow = new DockWindow(_dockViewModel, new WallpaperService(), _tray, _efficiency);
         _dockWindow.Closed += (_, _) => Shutdown();
         _dockWindow.Show();
 
@@ -129,10 +134,30 @@ public partial class App : Application
         _dockViewModel?.Dispose();
         _tracker?.Dispose();
         _tray.Dispose();
+        _efficiency?.Dispose();
         _taskbar?.Dispose();
         _settingsService?.Dispose();
         _instance?.Dispose();
         base.OnExit(e);
+    }
+
+    /// <summary>
+    /// "--quit": pede à dock em execução que encerre e espera ela devolver a barra de tarefas.
+    /// Sem dock em execução, ainda restaura uma barra que ficou escondida por um encerramento
+    /// forçado. O desinstalador depende disso para nunca deixar o usuário sem barra.
+    /// </summary>
+    private void Quit()
+    {
+        if (!_instance!.IsFirstInstance)
+        {
+            _instance.RequestQuit();
+            _instance.WaitForFirstInstanceToExit(QuitTimeout);
+        }
+
+        // Construir o controlador recupera um estado salvo; descartá-lo restaura o que sobrou.
+        new TaskbarController().Dispose();
+
+        Shutdown();
     }
 
     private void ImportInitialPins()
@@ -153,7 +178,12 @@ public partial class App : Application
         }
 
         _settingsWindow = new SettingsWindow(new SettingsViewModel(Settings, _icons));
-        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Closed += (_, _) =>
+        {
+            _settingsWindow = null;
+            _efficiency?.SetActive(_settingsActivity, active: false);
+        };
+        _efficiency?.SetActive(_settingsActivity, active: true);
         _settingsWindow.Show();
         _settingsWindow.Activate();
     }

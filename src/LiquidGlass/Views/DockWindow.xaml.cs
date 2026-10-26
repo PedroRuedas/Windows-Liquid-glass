@@ -32,6 +32,8 @@ public partial class DockWindow : Window
     private readonly WallpaperService _wallpaper;
     private readonly TrayIconService _tray;
     private readonly TrayFlyout _trayFlyout = new();
+    private readonly EfficiencyMode _efficiency;
+    private readonly object _menuActivity = new();
     private HwndSource? _source;
     private AppBarManager? _appBar;
     private AutoHideController? _autoHide;
@@ -40,12 +42,16 @@ public partial class DockWindow : Window
     private Rect _contentBounds = Rect.Empty;
     private bool _isPointerInside;
 
-    public DockWindow(DockViewModel viewModel, WallpaperService wallpaper, TrayIconService tray)
+    public DockWindow(DockViewModel viewModel, WallpaperService wallpaper, TrayIconService tray, EfficiencyMode efficiency)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _wallpaper = wallpaper;
         _tray = tray;
+        _efficiency = efficiency;
+        _trayFlyout.Opened += (_, _) => _efficiency.SetActive(_trayFlyout, active: true);
+        _trayFlyout.Closed += (_, _) => _efficiency.SetActive(_trayFlyout, active: false);
+        ContextMenuClosing += (_, _) => _efficiency.SetActive(_menuActivity, active: false);
         DataContext = viewModel;
 
         SourceInitialized += OnSourceInitialized;
@@ -273,6 +279,7 @@ public partial class DockWindow : Window
         if (!_isPointerInside)
         {
             _isPointerInside = true;
+            _efficiency.SetActive(Root, active: true);
             LayoutGlass();
         }
     }
@@ -285,6 +292,7 @@ public partial class DockWindow : Window
         }
 
         _isPointerInside = false;
+        _efficiency.SetActive(Root, active: false);
         LayoutGlass();
     }
 
@@ -292,6 +300,7 @@ public partial class DockWindow : Window
     {
         if (sender is DockItemView { ContextMenu: { } menu, DataContext: DockItemViewModel item } view)
         {
+            _efficiency.SetActive(_menuActivity, active: true);
             ScreenBackdrop.Shared.CaptureBeside(view, Settings.Edge);
             DockMenus.Populate(menu, item, _viewModel, view);
             _openMenu = menu;
@@ -302,6 +311,7 @@ public partial class DockWindow : Window
     {
         if (Glass.ContextMenu is { } menu)
         {
+            _efficiency.SetActive(_menuActivity, active: true);
             ScreenBackdrop.Shared.CaptureAroundCursor();
             DockMenus.Populate(menu, null, _viewModel);
             _openMenu = menu;
