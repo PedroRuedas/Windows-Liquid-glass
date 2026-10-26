@@ -4,6 +4,8 @@
         <OutputType>WinExe</OutputType>
         <TargetFramework>net10.0-windows</TargetFramework>
         <UseWPF>true</UseWPF>
+        <!-- A ManagedShell (bandeja do sistema) usa o Windows Forms; a publicação autocontida precisa incluí-lo. -->
+        <UseWindowsForms>true</UseWindowsForms>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
@@ -15,17 +17,32 @@
         <RootNamespace>LiquidGlass</RootNamespace>
         <Product>Liquid Glass Dock</Product>
         <Version>0.1.0</Version>
-        <!-- O tema Fluent do WPF ainda é marcado como experimental. -->
-        <NoWarn>$(NoWarn);WPF0001</NoWarn>
+        <!--
+            WPF0001: o tema Fluent do WPF ainda é marcado como experimental.
+            WFO0003: regra de DPI para apps Windows Forms; este é um app WPF (o DPI vem do app.manifest).
+        -->
+        <NoWarn>$(NoWarn);WPF0001;WFO0003</NoWarn>
+
+        <!--
+            App de segundo plano: sem a coleta de lixo concorrente não há uma thread extra de GC.
+            Com um heap de ~10 MB, as coletas na própria thread levam cerca de 1 ms.
+        -->
+        <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+        <SatelliteResourceLanguages>pt-BR;pt</SatelliteResourceLanguages>
     </PropertyGroup>
 
     <ItemGroup>
         <Using Include="System.IO" />
+        <!-- Os nomes do Windows Forms e do System.Drawing conflitariam com os do WPF. -->
+        <Using Remove="System.Windows.Forms" />
+        <Using Remove="System.Drawing" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
         <PackageReference Include="ManagedShell" Version="0.0.374" />
+        <!-- Só o compilador do instalador (ISCC.exe); nada dele vai para o app. -->
+        <PackageReference Include="Tools.InnoSetup" Version="6.4.3" PrivateAssets="all" ExcludeAssets="runtime;compile" />
     </ItemGroup>
 
     <!-- Shaders: o .ps compilado fica versionado para que o build funcione sem o Windows SDK. -->
@@ -44,6 +61,18 @@
             <FxcExe>%(FxcCandidate.FullPath)</FxcExe>
         </PropertyGroup>
         <Exec Command="&quot;$(FxcExe)&quot; /nologo /T ps_3_0 /E main /O3 /Fo &quot;%(ShaderSource.RelativeDir)%(ShaderSource.Filename).ps&quot; &quot;%(ShaderSource.FullPath)&quot;" />
+    </Target>
+
+    <!--
+        Instalador: "dotnet publish src/LiquidGlass -p:PublishProfile=Installer" publica o app e,
+        em seguida, gera artifacts/LiquidGlassDock-Setup-<versão>.exe com o Inno Setup.
+    -->
+    <Target Name="BuildInstaller" AfterTargets="Publish" Condition="'$(BuildInstaller)' == 'true'">
+        <PropertyGroup>
+            <InstallerScript>$(MSBuildThisFileDirectory)..\..\installer\LiquidGlass.iss</InstallerScript>
+            <InstallerOutput>$(MSBuildThisFileDirectory)..\..\artifacts</InstallerOutput>
+        </PropertyGroup>
+        <Exec Command="&quot;$(InnoSetupCompiler)&quot; /Q &quot;/DAppVersion=$(Version)&quot; &quot;/DPublishDir=$([System.IO.Path]::GetFullPath('$(PublishDir)'))&quot; &quot;/O$([System.IO.Path]::GetFullPath('$(InstallerOutput)'))&quot; &quot;$(InstallerScript)&quot;" />
     </Target>
 
 </Project>

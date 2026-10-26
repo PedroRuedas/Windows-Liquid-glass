@@ -48,15 +48,36 @@ Todas as mudanças aparecem na dock na hora:
 | Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows |
 | Apps fixados | adicionar, importar da barra de tarefas, reordenar e remover |
 
-## Requisitos
+## Instalação
 
-- Windows 11
-- [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+Rode `LiquidGlassDock-Setup-<versão>.exe`. O instalador:
 
-Para compilar: .NET 10 SDK. O Windows SDK (`fxc.exe`) é opcional: o shader compilado já está
-no repositório e só é recompilado quando o `.fx` muda.
+- instala só para o seu usuário, sem pedir permissão de administrador
+  (em `%LocalAppData%\Programs\Liquid Glass Dock`);
+- não exige o .NET instalado: o app já vem com tudo o que precisa;
+- marca "Iniciar com o Windows" por padrão, para a dock ficar sempre em segundo plano;
+- cria no menu Iniciar os atalhos "Liquid Glass Dock" e "Encerrar Liquid Glass Dock";
+- encerra a dock que estiver aberta antes de atualizar.
+
+Para desinstalar, use Configurações → Aplicativos. O desinstalador encerra a dock, devolve a
+barra de tarefas do Windows e remove a inicialização automática. As preferências em
+`%AppData%\LiquidGlass` são mantidas.
+
+### Gerar o instalador
+
+Requisitos: Windows 11 e .NET 10 SDK. O compilador do Inno Setup vem pelo NuGet, sem instalar
+nada no sistema.
+
+```powershell
+dotnet publish src/LiquidGlass -p:PublishProfile=Installer
+```
+
+O instalador sai em `artifacts/`. O Windows SDK (`fxc.exe`) é opcional: o shader compilado já
+está no repositório e só é recompilado quando o `.fx` muda.
 
 ## Como usar
+
+Para rodar a partir do código:
 
 ```powershell
 dotnet run --project src/LiquidGlass
@@ -66,9 +87,28 @@ dotnet run --project src/LiquidGlass
 | --- | --- |
 | `LiquidGlass.exe` | Inicia a dock (ou abre a personalização se ela já estiver rodando) |
 | `LiquidGlass.exe --settings` | Inicia e abre a personalização |
-| `LiquidGlass.exe --quit` | Encerra a dock em execução e devolve a barra de tarefas |
+| `LiquidGlass.exe --quit` | Encerra a dock e devolve a barra de tarefas (mesmo depois de um encerramento forçado) |
 
 Também dá para abrir a personalização ou sair pelo botão direito em qualquer parte da dock.
+
+### Consumo em segundo plano
+
+Medido na versão do instalador (Windows 11, monitor de 179 Hz, GeForce RTX 5060):
+
+| | Parada |
+| --- | --- |
+| CPU | 0,00 s de processador em 20 s |
+| Memória privada | ~115 MB |
+| Threads | 18 |
+
+Quando ninguém usa a dock por 3 segundos, ela entra no modo de eficiência do Windows (EcoQoS e
+prioridade abaixo do normal) e volta ao normal assim que o cursor chega nela. O fundo do vidro é
+guardado em meia resolução, já que é desfocado, e a versão publicada é pré-compilada
+(ReadyToRun) para não compilar código ao abrir.
+
+O código do app ocupa só ~10 MB de memória. O resto é o motor gráfico e o driver de vídeo, que
+qualquer app desenhado pela GPU carrega. Por isso trocar de linguagem economizaria pouco diante
+do custo de reescrever tudo.
 
 ### A barra de tarefas do Windows sempre volta
 
@@ -111,6 +151,7 @@ src/LiquidGlass/
 ├── Interop/       Chamadas Win32 (user32, shell32, dwmapi, gdi32, kernel32)
 ├── Models/        Configurações, apps fixados, presets
 ├── Services/      Janelas abertas, ícones, papel de parede, bandeja, barra nativa, app bar,
+│                  modo de eficiência,
 │                  persistência
 ├── Themes/        Estilos da dock, menus, ícones e da janela de personalização
 ├── ViewModels/    Dock e personalização (MVVM com CommunityToolkit.Mvvm)
@@ -125,3 +166,4 @@ O código segue o `.editorconfig` do repositório. O build trata avisos como err
 
 - [ManagedShell](https://github.com/cairoshell/ManagedShell): Apache License 2.0
 - [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet): MIT
+- [Inno Setup](https://jrsoftware.org/isinfo.php): gera o instalador (não faz parte do app)
