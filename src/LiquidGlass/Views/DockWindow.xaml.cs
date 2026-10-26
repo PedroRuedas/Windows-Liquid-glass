@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,6 +17,7 @@ namespace LiquidGlass.Views;
 /// Janela transparente que ocupa a borda da tela e desenha a dock. Só a superfície de vidro e os
 /// ícones recebem cliques; o restante da janela deixa o mouse passar.
 /// </summary>
+[SuppressMessage("Design", "CA1001", Justification = "A app bar é liberada em Closed, o fim do ciclo de vida da janela.")]
 public partial class DockWindow : Window
 {
     private const double ShadowPadding = 18;
@@ -28,6 +30,9 @@ public partial class DockWindow : Window
     private readonly DockViewModel _viewModel;
     private readonly WallpaperService _wallpaper;
     private HwndSource? _source;
+    private AppBarManager? _appBar;
+    private AutoHideController? _autoHide;
+    private ContextMenu? _openMenu;
     private MagnifyingPanel? _panel;
     private Rect _contentBounds = Rect.Empty;
     private bool _isPointerInside;
@@ -55,6 +60,9 @@ public partial class DockWindow : Window
 
     private double GlassPadding => Math.Max(7, Settings.IconSize * 0.16);
 
+    /// <summary>Espessura do vidro somada à margem da borda: o espaço que a dock reserva na tela.</summary>
+    private double DockThickness => Settings.EdgeMargin + Settings.IconSize + (GlassPadding * 2);
+
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
         _source = (HwndSource)PresentationSource.FromVisual(this);
@@ -62,6 +70,11 @@ public partial class DockWindow : Window
 
         // Fora do Alt+Tab e sem roubar o foco do app que o usuário está usando.
         User32.AddExtendedStyle(_source.Handle, User32.WsExToolWindow | User32.WsExNoActivate);
+
+        _appBar = new AppBarManager(_source);
+        _appBar.PositionChanged += (_, _) => UpdatePlacement();
+        _appBar.FullScreenChanged += OnFullScreenChanged;
+        _autoHide = new AutoHideController(Root, IsCursorAtDockEdge, ShouldStayVisible);
 
         UpdatePlacement();
         ApplyGlassSettings();
@@ -74,18 +87,25 @@ public partial class DockWindow : Window
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _wallpaper.Changed -= OnWallpaperChanged;
         _source?.RemoveHook(WndProc);
+        _autoHide?.Stop();
+        _appBar?.Dispose();
     }
 
-    /// <summary>Posiciona a janela na borda escolhida, acima da barra de tarefas nativa se ela estiver visível.</summary>
+    /// <summary>
+    /// Reserva o espaço da dock na borda escolhida e posiciona a janela, acima da barra de tarefas
+    /// nativa quando ela continua visível.
+    /// </summary>
     private void UpdatePlacement()
     {
-        if (_source is null)
+        if (_source is null || _appBar is null || _autoHide is null)
         {
             return;
         }
 
         var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-        var area = GetAvailableArea();
+        var reserved = Settings.AutoHide ? 0 : (int)Math.Ceiling(DockThickness * scale);
+        _appBar.Reserve(Settings.Edge, reserved);
+        var area = _appBar.Bounds;
         var thickness = Settings.EdgeMargin + GlassPadding + (Settings.IconSize * Math.Max(_viewModel.EffectiveMagnification, 1.5)) + LabelSpace;
         var size = (int)Math.Ceiling(thickness * scale);
 
@@ -105,37 +125,40 @@ public partial class DockWindow : Window
             DockEdge.Right => new Thickness(0, 0, inset, 0),
             _ => new Thickness(0, 0, 0, inset),
         };
+
+        _autoHide.Edge = Settings.Edge;
+        _autoHide.HiddenDistance = DockThickness + ShadowPadding;
+        _autoHide.AnimationSpeed = Settings.AnimationSpeed;
+        _autoHide.IsEnabled = Settings.AutoHide;
     }
 
-    private User32.Rect GetAvailableArea()
+    /// <summary>Com a dock escondida, o cursor encostado na borda (na altura da dock) a traz de volta.</summary>
+    private bool IsCursorAtDockEdge()
     {
-        var area = User32.GetPrimaryMonitorInfo().Monitor;
-        if (Settings.TaskbarMode != TaskbarMode.Visible)
+        if (_source is null || !User32.GetCursorPos(out var cursor) || !User32.GetWindowRect(_source.Handle, out var window))
         {
-            return area;
+            return false;
         }
 
-        var data = Shell32.CreateAppBarData();
-        if (Shell32.SHAppBarMessage(Shell32.AbmGetTaskbarPos, ref data) == 0)
-        {
-            return area;
-        }
+        const int Tolerance = 2;
+        var glass = Glass.IsLoaded && Glass.ActualWidth > 0
+            ? new Rect(Glass.PointToScreen(new Point(0, 0)), Glass.PointToScreen(new Point(Glass.ActualWidth, Glass.ActualHeight)))
+            : new Rect(window.Left, window.Top, window.Width, window.Height);
 
-        var taskbar = data.Rect;
-        switch (Settings.Edge)
+        return Settings.Edge switch
         {
-            case DockEdge.Bottom when data.Edge == Shell32.AbeBottom:
-                area.Bottom = taskbar.Top;
-                break;
-            case DockEdge.Left when data.Edge == Shell32.AbeLeft:
-                area.Left = taskbar.Right;
-                break;
-            case DockEdge.Right when data.Edge == Shell32.AbeRight:
-                area.Right = taskbar.Left;
-                break;
-        }
+            DockEdge.Left => cursor.X <= window.Left + Tolerance && cursor.Y >= glass.Top && cursor.Y <= glass.Bottom,
+            DockEdge.Right => cursor.X >= window.Right - 1 - Tolerance && cursor.Y >= glass.Top && cursor.Y <= glass.Bottom,
+            _ => cursor.Y >= window.Bottom - 1 - Tolerance && cursor.X >= glass.Left && cursor.X <= glass.Right,
+        };
+    }
 
-        return area;
+    private bool ShouldStayVisible() => Root.IsMouseOver || _openMenu is { IsOpen: true };
+
+    private void OnFullScreenChanged(object? sender, bool isFullScreen)
+    {
+        // Jogos e vídeos em tela cheia não devem ficar com a dock por cima.
+        Visibility = isFullScreen ? Visibility.Hidden : Visibility.Visible;
     }
 
     private void ApplyGlassSettings()
@@ -241,6 +264,7 @@ public partial class DockWindow : Window
         if (sender is DockItemView { ContextMenu: { } menu, DataContext: DockItemViewModel item })
         {
             DockMenus.Populate(menu, item, _viewModel);
+            _openMenu = menu;
         }
     }
 
@@ -249,6 +273,7 @@ public partial class DockWindow : Window
         if (Glass.ContextMenu is { } menu)
         {
             DockMenus.Populate(menu, null, _viewModel);
+            _openMenu = menu;
         }
     }
 
@@ -280,6 +305,8 @@ public partial class DockWindow : Window
             case nameof(DockSettings.IconSize):
             case nameof(DockSettings.EdgeMargin):
             case nameof(DockSettings.TaskbarMode):
+            case nameof(DockSettings.AutoHide):
+            case nameof(DockSettings.AnimationSpeed):
                 UpdatePlacement();
                 break;
             case nameof(DockSettings.Roundness):
