@@ -25,8 +25,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     private readonly DockItemViewModel _startItem;
     private readonly DockItemViewModel _separatorItem;
     private readonly DockItemViewModel _recycleBinItem;
+    private readonly DockItemViewModel _trayItem;
 
-    public DockViewModel(DockSettings settings, WindowTracker tracker, IconService icons, ImageSource startIcon)
+    public DockViewModel(DockSettings settings, WindowTracker tracker, IconService icons, ImageSource startIcon, ImageSource trayIcon)
     {
         Settings = settings;
         _tracker = tracker;
@@ -40,6 +41,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             Icon = icons.GetIcon(AppLauncher.RecycleBin),
         };
 
+        _trayItem = new DockItemViewModel(this, DockItemKind.TrayButton) { Name = "Apps em segundo plano", Icon = trayIcon };
+
         Settings.PropertyChanged += OnSettingsChanged;
         Settings.PinnedApps.CollectionChanged += OnPinnedAppsChanged;
         _tracker.WindowsChanged += OnWindowsChanged;
@@ -51,6 +54,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
     /// <summary>Pedido para abrir a janela de personalização.</summary>
     public event EventHandler? SettingsRequested;
+
+    /// <summary>Pedido para abrir ou fechar o painel da bandeja ao lado do item informado.</summary>
+    public event EventHandler<DockItemViewModel>? TrayToggleRequested;
 
     /// <summary>Pedido para encerrar o app.</summary>
     public event EventHandler? QuitRequested;
@@ -71,6 +77,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
                 break;
             case DockItemKind.RecycleBin:
                 AppLauncher.Launch(AppLauncher.RecycleBin);
+                break;
+            case DockItemKind.TrayButton:
+                TrayToggleRequested?.Invoke(this, item);
                 break;
             case DockItemKind.Application when item.IsRunning:
                 FocusOrCycle(item);
@@ -187,6 +196,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         {
             case nameof(DockSettings.ShowStartButton):
             case nameof(DockSettings.ShowRecycleBin):
+            case nameof(DockSettings.ShowTray):
                 Rebuild();
                 break;
             case nameof(DockSettings.MagnificationEnabled):
@@ -267,9 +277,18 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         // Apps em execução mantêm a ordem em que apareceram; os novos entram no final.
         desired.AddRange(running.OrderBy(item => Items.IndexOf(item) is var index and >= 0 ? index : int.MaxValue));
 
-        if (Settings.ShowRecycleBin)
+        if (Settings.ShowTray || Settings.ShowRecycleBin)
         {
             desired.Add(_separatorItem);
+        }
+
+        if (Settings.ShowTray)
+        {
+            desired.Add(_trayItem);
+        }
+
+        if (Settings.ShowRecycleBin)
+        {
             desired.Add(_recycleBinItem);
         }
 

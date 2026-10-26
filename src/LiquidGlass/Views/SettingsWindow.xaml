@@ -158,6 +158,10 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowStartButton}" />
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE70E;" Header="Apps em segundo plano" Description="Botão que mostra os ícones da bandeja do sistema.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowTray}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xE74D;" Header="Lixeira no final da dock">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowRecycleBin}" />
                     </controls:SettingCard>

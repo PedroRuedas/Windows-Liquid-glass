@@ -108,14 +108,14 @@ public sealed class TaskbarController : IDisposable
 
     private static bool IsAutoHideEnabled()
     {
-        var data = Shell32.CreateAppBarData(User32.FindWindow(PrimaryTaskbarClass, null));
+        var data = Shell32.CreateAppBarData(FindPrimaryTaskbar());
         var state = (int)Shell32.SHAppBarMessage(Shell32.AbmGetState, ref data);
         return (state & Shell32.AbsAutoHide) != 0;
     }
 
     private static void SetAutoHide(bool enabled)
     {
-        var data = Shell32.CreateAppBarData(User32.FindWindow(PrimaryTaskbarClass, null));
+        var data = Shell32.CreateAppBarData(FindPrimaryTaskbar());
         data.Param = enabled ? Shell32.AbsAutoHide : Shell32.AbsAlwaysOnTop;
         Shell32.SHAppBarMessage(Shell32.AbmSetState, ref data);
     }
@@ -131,7 +131,7 @@ public sealed class TaskbarController : IDisposable
 
     private static IEnumerable<nint> FindTaskbars()
     {
-        var primary = User32.FindWindow(PrimaryTaskbarClass, null);
+        var primary = FindPrimaryTaskbar();
         if (primary != 0)
         {
             yield return primary;
@@ -142,6 +142,25 @@ public sealed class TaskbarController : IDisposable
         {
             yield return secondary;
         }
+    }
+
+    /// <summary>
+    /// A barra do Explorer. O serviço de bandeja da dock também cria uma janela "Shell_TrayWnd"
+    /// (para receber os ícones), então ignoramos as janelas deste processo.
+    /// </summary>
+    private static nint FindPrimaryTaskbar()
+    {
+        nint window = 0;
+        while ((window = User32.FindWindowEx(0, window, PrimaryTaskbarClass, null)) != 0)
+        {
+            User32.GetWindowThreadProcessId(window, out var processId);
+            if (processId != Environment.ProcessId)
+            {
+                return window;
+            }
+        }
+
+        return 0;
     }
 
     private void EnforceHidden()

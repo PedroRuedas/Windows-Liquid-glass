@@ -41,4 +41,39 @@
         </DrawingImage.Drawing>
     </DrawingImage>
 
+    <!-- Bandeja do sistema: bloco grafite com uma seta para cima, como o "mostrar ícones ocultos". -->
+    <DrawingImage x:Key="TrayIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Offset="0" Color="#FF9A9AA2" />
+                            <GradientStop Offset="1" Color="#FF45454B" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="6,6,88,88" RadiusX="20" RadiusY="20" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Offset="0" Color="#55FFFFFF" />
+                            <GradientStop Offset="0.5" Color="#00FFFFFF" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="6,6,88,88" RadiusX="20" RadiusY="20" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M 31,58 L 50,39 L 69,58">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" Thickness="8" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
 </ResourceDictionary>

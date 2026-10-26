@@ -41,6 +41,9 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _showRecycleBin = true;
 
+    [ObservableProperty]
+    private bool _showTray = true;
+
     // Vidro
     [ObservableProperty]
     private double _refraction = 0.7;
@@ -110,6 +113,7 @@ public sealed partial class DockSettings : ObservableObject
         ShowRunningIndicators = other.ShowRunningIndicators;
         ShowStartButton = other.ShowStartButton;
         ShowRecycleBin = other.ShowRecycleBin;
+        ShowTray = other.ShowTray;
         Refraction = other.Refraction;
         Blur = other.Blur;
         ChromaticAberration = other.ChromaticAberration;

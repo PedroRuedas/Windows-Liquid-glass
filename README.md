@@ -29,6 +29,8 @@ animações de abertura e uma tela de personalização completa.
 - Clique do meio abre uma nova janela; o botão direito mostra as janelas abertas e as ações.
 - Arraste atalhos ou programas para a dock para fixá-los.
 - Botão Iniciar e Lixeira.
+- **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
+  esquerdo e direito são repassados ao app, como na bandeja do Windows.
 - Janelas maximizadas param antes da dock, e a dock some em jogos e vídeos em tela cheia.
 - Opção de ocultar a dock automaticamente.
 
@@ -40,7 +42,7 @@ Todas as mudanças aparecem na dock na hora:
 
 | Seção | Opções |
 | --- | --- |
-| Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, Lixeira |
+| Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, apps em segundo plano, Lixeira |
 | Vidro | estilos prontos, refração, desfoque, dispersão de cores, brilho da borda, saturação, sombra, cor e intensidade do tom |
 | Animações | ampliação, tamanho máximo, alcance, quicar ao abrir, quicar por atenção, velocidade |
 | Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows |
@@ -91,6 +93,13 @@ Como a dock reserva espaço na tela, normalmente só o papel de parede fica atr�
 efeito pode ser calculado sem capturar a tela continuamente. Com isso, a dock também aparece
 normalmente em prints.
 
+### Bandeja do sistema
+
+Os ícones da bandeja vêm da [ManagedShell](https://github.com/cairoshell/ManagedShell)
+(Apache-2.0), a biblioteca usada pelo RetroBar e pelo Cairo Desktop. Ela registra uma janela de
+bandeja própria para receber os ícones dos apps e repassa tudo ao Explorer, então a bandeja nativa
+continua completa quando a dock fecha.
+
 ## Estrutura
 
 ```
@@ -101,11 +110,18 @@ src/LiquidGlass/
 ├── Graphics/      Desfoque por caixas
 ├── Interop/       Chamadas Win32 (user32, shell32, dwmapi, gdi32, kernel32)
 ├── Models/        Configurações, apps fixados, presets
-├── Services/      Janelas abertas, ícones, papel de parede, barra nativa, app bar, persistência
+├── Services/      Janelas abertas, ícones, papel de parede, bandeja, barra nativa, app bar,
+│                  persistência
 ├── Themes/        Estilos da dock, menus, ícones e da janela de personalização
 ├── ViewModels/    Dock e personalização (MVVM com CommunityToolkit.Mvvm)
-└── Views/         Janela da dock, personalização, menus, ocultar automaticamente
+└── Views/         Janela da dock, painel da bandeja, personalização, menus, ocultar
+                   automaticamente
 ```
 
 O código segue o `.editorconfig` do repositório. O build trata avisos como erros, e o
 `dotnet format --verify-no-changes` precisa passar limpo.
+
+## Licenças de terceiros
+
+- [ManagedShell](https://github.com/cairoshell/ManagedShell): Apache License 2.0
+- [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet): MIT

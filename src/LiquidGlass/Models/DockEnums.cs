@@ -22,5 +22,6 @@ public enum DockItemKind
     Application,
     StartButton,
     RecycleBin,
+    TrayButton,
     Separator,
 }

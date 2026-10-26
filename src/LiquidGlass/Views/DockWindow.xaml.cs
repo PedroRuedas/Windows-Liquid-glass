@@ -30,6 +30,8 @@ public partial class DockWindow : Window
 
     private readonly DockViewModel _viewModel;
     private readonly WallpaperService _wallpaper;
+    private readonly TrayIconService _tray;
+    private readonly TrayFlyout _trayFlyout = new();
     private HwndSource? _source;
     private AppBarManager? _appBar;
     private AutoHideController? _autoHide;
@@ -38,11 +40,12 @@ public partial class DockWindow : Window
     private Rect _contentBounds = Rect.Empty;
     private bool _isPointerInside;
 
-    public DockWindow(DockViewModel viewModel, WallpaperService wallpaper)
+    public DockWindow(DockViewModel viewModel, WallpaperService wallpaper, TrayIconService tray)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _wallpaper = wallpaper;
+        _tray = tray;
         DataContext = viewModel;
 
         SourceInitialized += OnSourceInitialized;
@@ -51,6 +54,7 @@ public partial class DockWindow : Window
         Drop += OnDrop;
         Settings.PropertyChanged += OnSettingsChanged;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.TrayToggleRequested += OnTrayToggleRequested;
         _wallpaper.Changed += OnWallpaperChanged;
     }
 
@@ -86,7 +90,9 @@ public partial class DockWindow : Window
     {
         Settings.PropertyChanged -= OnSettingsChanged;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.TrayToggleRequested -= OnTrayToggleRequested;
         _wallpaper.Changed -= OnWallpaperChanged;
+        _trayFlyout.IsOpen = false;
         _source?.RemoveHook(WndProc);
         _autoHide?.Stop();
         _appBar?.Dispose();
@@ -155,7 +161,7 @@ public partial class DockWindow : Window
         };
     }
 
-    private bool ShouldStayVisible() => Root.IsMouseOver || _openMenu is { IsOpen: true };
+    private bool ShouldStayVisible() => Root.IsMouseOver || _openMenu is { IsOpen: true } || _trayFlyout.IsOpen;
 
     private void OnFullScreenChanged(object? sender, bool isFullScreen)
     {
@@ -297,6 +303,14 @@ public partial class DockWindow : Window
         {
             DockMenus.Populate(menu, null, _viewModel);
             _openMenu = menu;
+        }
+    }
+
+    private void OnTrayToggleRequested(object? sender, DockItemViewModel item)
+    {
+        if (DockItems.ItemContainerGenerator.ContainerFromItem(item) is UIElement anchor)
+        {
+            _trayFlyout.Toggle(anchor, Settings.Edge, _tray.Icons);
         }
     }
 

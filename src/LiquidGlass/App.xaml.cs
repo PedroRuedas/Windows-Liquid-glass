@@ -19,6 +19,7 @@ public partial class App : Application
     private const string QuitArgument = "--quit";
 
     private readonly IconService _icons = new();
+    private readonly TrayIconService _tray = new();
     private SingleInstance? _instance;
     private SettingsService? _settingsService;
     private TaskbarController? _taskbar;
@@ -69,12 +70,19 @@ public partial class App : Application
         _taskbar.Apply(Settings.TaskbarMode);
         Settings.PropertyChanged += OnSettingsChanged;
 
+        _tray.IsEnabled = Settings.ShowTray;
+
         _tracker = new WindowTracker();
-        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, (ImageSource)FindResource("StartIcon"));
+        _dockViewModel = new DockViewModel(
+            Settings,
+            _tracker,
+            _icons,
+            (ImageSource)FindResource("StartIcon"),
+            (ImageSource)FindResource("TrayIcon"));
         _dockViewModel.SettingsRequested += (_, _) => OpenSettings();
         _dockViewModel.QuitRequested += (_, _) => Shutdown();
 
-        _dockWindow = new DockWindow(_dockViewModel, new WallpaperService());
+        _dockWindow = new DockWindow(_dockViewModel, new WallpaperService(), _tray);
         _dockWindow.Closed += (_, _) => Shutdown();
         _dockWindow.Show();
 
@@ -95,6 +103,7 @@ public partial class App : Application
         _dockWindow?.Close();
         _dockViewModel?.Dispose();
         _tracker?.Dispose();
+        _tray.Dispose();
         _taskbar?.Dispose();
         _settingsService?.Dispose();
         _instance?.Dispose();
@@ -130,6 +139,9 @@ public partial class App : Application
         {
             case nameof(DockSettings.TaskbarMode):
                 _taskbar?.Apply(Settings.TaskbarMode);
+                break;
+            case nameof(DockSettings.ShowTray):
+                _tray.IsEnabled = Settings.ShowTray;
                 break;
             case nameof(DockSettings.LaunchAtStartup):
                 StartupService.SetEnabled(Settings.LaunchAtStartup);

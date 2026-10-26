@@ -179,6 +179,9 @@ internal static class User32
     public static extern bool PaintDesktop(nint hdc);
 
     [DllImport("user32.dll")]
+    public static extern int GetDoubleClickTime();
+
+    [DllImport("user32.dll")]
     public static extern nint GetDC(nint hwnd);
 
     [DllImport("user32.dll")]

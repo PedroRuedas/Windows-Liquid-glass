@@ -25,6 +25,7 @@
 
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+        <PackageReference Include="ManagedShell" Version="0.0.374" />
     </ItemGroup>
 
     <!-- Shaders: o .ps compilado fica versionado para que o build funcione sem o Windows SDK. -->
