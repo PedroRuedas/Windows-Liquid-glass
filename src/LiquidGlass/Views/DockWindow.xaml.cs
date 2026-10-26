@@ -142,7 +142,7 @@ public partial class DockWindow : Window
     {
         var tint = Settings.TintColor;
         Glass.ShadowPadding = ShadowPadding;
-        Glass.Refraction = Settings.Refraction * 16;
+        Glass.Refraction = Settings.Refraction * 36;
         Glass.ChromaticAberration = Settings.ChromaticAberration;
         Glass.Highlight = Settings.Highlight;
         Glass.Saturation = Settings.Saturation;
@@ -170,7 +170,7 @@ public partial class DockWindow : Window
         var glass = Rect.Inflate(_contentBounds, GlassPadding, GlassPadding);
         var thickness = Math.Min(glass.Width, glass.Height);
         Glass.CornerRadius = Math.Clamp(Settings.Roundness, 0, 1) * thickness / 2;
-        Glass.BezelWidth = thickness * 0.35;
+        Glass.BezelWidth = thickness * 0.5;
         Place(Glass, Rect.Inflate(glass, ShadowPadding, ShadowPadding));
 
         var hitArea = glass;

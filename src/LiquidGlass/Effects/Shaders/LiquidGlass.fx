@@ -54,7 +54,7 @@ float4 main(float2 uv : TEXCOORD) : COLOR
 
     // Perfil da borda: 1 na borda, 0 a partir de BezelWidth para dentro.
     float bezel = saturate(1.0 - depth / max(BezelWidth, 0.001));
-    float lens = bezel * bezel;
+    float lens = pow(bezel, 1.6);
 
     // Refração: a borda curva "puxa" o conteúdo de dentro da forma.
     float2 offset = normal * Refraction * lens;
