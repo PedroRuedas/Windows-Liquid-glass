@@ -59,3 +59,6 @@ dotnet_naming_symbols.static_readonly.required_modifiers = static, readonly
 
 # P/Invoke via DllImport é intencional (delegates e structs de interop)
 dotnet_diagnostic.SYSLIB1054.severity = none
+
+# Chamadas Win32 de "melhor esforço" (ShowWindow, ReleaseDC...) ignoram o retorno de propósito
+dotnet_diagnostic.CA1806.severity = none

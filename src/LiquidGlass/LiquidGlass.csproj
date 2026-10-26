@@ -20,7 +20,29 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Using Include="System.IO" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     </ItemGroup>
+
+    <!-- Shaders: o .ps compilado fica versionado para que o build funcione sem o Windows SDK. -->
+    <ItemGroup>
+        <ShaderSource Include="Effects\Shaders\*.fx" />
+        <Resource Include="Effects\Shaders\*.ps" />
+        <FxcCandidate Include="$(MSBuildProgramFiles32)\Windows Kits\10\bin\*\x64\fxc.exe" />
+    </ItemGroup>
+
+    <Target Name="CompileShaders"
+            BeforeTargets="BeforeBuild"
+            Condition="'@(FxcCandidate)' != ''"
+            Inputs="@(ShaderSource)"
+            Outputs="@(ShaderSource->'%(RelativeDir)%(Filename).ps')">
+        <PropertyGroup>
+            <FxcExe>%(FxcCandidate.FullPath)</FxcExe>
+        </PropertyGroup>
+        <Exec Command="&quot;$(FxcExe)&quot; /nologo /T ps_3_0 /E main /O3 /Fo &quot;%(ShaderSource.RelativeDir)%(ShaderSource.Filename).ps&quot; &quot;%(ShaderSource.FullPath)&quot;" />
+    </Target>
 
 </Project>
