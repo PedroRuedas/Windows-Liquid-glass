@@ -22,6 +22,7 @@ public partial class DockWindow : Window
 {
     private const double ShadowPadding = 18;
     private const double LabelSpace = 52;
+    private const double SideLabelSpace = 240;
     private const int SpiSetDesktopWallpaper = 0x0014;
     private const int SpiSetWorkArea = 0x002F;
 
@@ -106,7 +107,8 @@ public partial class DockWindow : Window
         var reserved = Settings.AutoHide ? 0 : (int)Math.Ceiling(DockThickness * scale);
         _appBar.Reserve(Settings.Edge, reserved);
         var area = _appBar.Bounds;
-        var thickness = Settings.EdgeMargin + GlassPadding + (Settings.IconSize * Math.Max(_viewModel.EffectiveMagnification, 1.5)) + LabelSpace;
+        var labelSpace = Settings.Edge == DockEdge.Bottom ? LabelSpace : SideLabelSpace;
+        var thickness = Settings.EdgeMargin + GlassPadding + (Settings.IconSize * Math.Max(_viewModel.EffectiveMagnification, 1.5)) + labelSpace;
         var size = (int)Math.Ceiling(thickness * scale);
 
         var (x, y, width, height) = Settings.Edge switch
