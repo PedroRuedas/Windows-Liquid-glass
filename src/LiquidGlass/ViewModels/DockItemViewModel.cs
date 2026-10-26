@@ -44,6 +44,9 @@ public sealed partial class DockItemViewModel : ObservableObject
 
     public DockItemKind Kind { get; }
 
+    /// <summary>Quando o último pedido de abertura começou (para garantir ao menos um quique).</summary>
+    public DateTime LaunchStartedAt { get; set; }
+
     /// <summary>Chave de agrupamento das janelas quando o item não está fixado.</summary>
     public string? GroupKey { get; set; }
 

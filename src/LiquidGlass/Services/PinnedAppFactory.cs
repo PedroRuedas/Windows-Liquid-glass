@@ -9,6 +9,12 @@ public static class PinnedAppFactory
 {
     private const string AppsFolderPrefix = @"shell:AppsFolder\";
 
+    private const string ExplorerAppId = "Microsoft.Windows.Explorer";
+
+    private static readonly string ExplorerPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+        "explorer.exe");
+
     private static readonly string TaskbarPinsFolder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
@@ -88,10 +94,23 @@ public static class PinnedAppFactory
         }
     }
 
+    /// <summary>
+    /// Executável que identifica as janelas de um app fixado. Atalhos do sistema (como o do
+    /// Explorador) só trazem o AUMID, mas as janelas deles não declaram AUMID nenhum.
+    /// </summary>
+    public static string? ResolveExecutable(PinnedApp pin)
+    {
+        if (pin.ExecutablePath is not null)
+        {
+            return pin.ExecutablePath;
+        }
+
+        return string.Equals(pin.AppUserModelId, ExplorerAppId, StringComparison.OrdinalIgnoreCase) ? ExplorerPath : null;
+    }
+
     public static IEnumerable<PinnedApp> Defaults()
     {
-        var explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
-        yield return new PinnedApp(explorer, "Explorador de Arquivos", explorer, null);
+        yield return new PinnedApp(ExplorerPath, "Explorador de Arquivos", ExplorerPath, null);
 
         const string settingsAppId = "windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel";
         yield return new PinnedApp(AppsFolderPrefix + settingsAppId, "Configurações", null, settingsAppId);

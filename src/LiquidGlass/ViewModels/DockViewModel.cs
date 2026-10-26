@@ -17,6 +17,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     private static readonly TimeSpan RemoveDelay = TimeSpan.FromMilliseconds(320);
     private static readonly TimeSpan LaunchTimeout = TimeSpan.FromSeconds(8);
 
+    /// <summary>Duração de um quique completo (DockItemView) na velocidade 1×.</summary>
+    private static readonly TimeSpan BounceCycle = TimeSpan.FromSeconds(0.62);
+
     private readonly WindowTracker _tracker;
     private readonly IconService _icons;
     private readonly DockItemViewModel _startItem;
@@ -172,6 +175,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             return;
         }
 
+        item.LaunchStartedAt = DateTime.Now;
         item.IsLaunching = true;
         await Task.Delay(LaunchTimeout);
         item.IsLaunching = false;
@@ -287,8 +291,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             return string.Equals(pin.AppUserModelId, window.AppUserModelId, StringComparison.OrdinalIgnoreCase);
         }
 
-        return pin.ExecutablePath is not null
-            && string.Equals(pin.ExecutablePath, window.ExecutablePath, StringComparison.OrdinalIgnoreCase);
+        var executable = PinnedAppFactory.ResolveExecutable(pin);
+        return executable is not null
+            && string.Equals(executable, window.ExecutablePath, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Reaproveita um item que já mostra alguma dessas janelas (ex.: app recém-fixado).</summary>
@@ -310,13 +315,26 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         return item;
     }
 
-    private static void UpdateWindows(DockItemViewModel item, List<AppWindow> windows)
+    private void UpdateWindows(DockItemViewModel item, List<AppWindow> windows)
     {
         item.Windows = windows;
-        if (windows.Count > 0)
+        if (windows.Count > 0 && item.IsLaunching)
         {
-            item.IsLaunching = false;
+            FinishLaunch(item);
         }
+    }
+
+    /// <summary>Apps que abrem muito rápido ainda completam um quique, como no macOS.</summary>
+    private async void FinishLaunch(DockItemViewModel item)
+    {
+        var cycle = BounceCycle / Math.Max(Settings.AnimationSpeed, 0.1);
+        var remaining = item.LaunchStartedAt + cycle - DateTime.Now;
+        if (remaining > TimeSpan.Zero)
+        {
+            await Task.Delay(remaining);
+        }
+
+        item.IsLaunching = false;
     }
 
     private DockItemViewModel CreateApplicationItem(string name, string? iconSource, List<AppWindow> windows)
