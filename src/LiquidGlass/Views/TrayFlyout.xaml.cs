@@ -25,29 +25,35 @@ public partial class TrayFlyout : Popup
 
     private static readonly TimeSpan CloseDuration = TimeSpan.FromSeconds(0.16);
 
+    /// <summary>Tempo para levar o mouse da setinha até o painel (ou voltar) sem que ele feche.</summary>
+    private static readonly TimeSpan HoverGrace = TimeSpan.FromMilliseconds(400);
+
     /// <summary>
-    /// A dock nunca recebe foco, então o "fechar ao clicar fora" do WPF não é confiável aqui.
-    /// Enquanto o painel está aberto, um timer leve observa os botões do mouse.
+    /// Enquanto o painel está aberto, um timer leve acompanha o cursor: ele fecha quando o mouse
+    /// sai do painel e da setinha. Cliques fora não fecham o painel.
     /// </summary>
-    private readonly DispatcherTimer _outsideClickWatcher = new() { Interval = TimeSpan.FromMilliseconds(40) };
+    private readonly DispatcherTimer _hoverWatcher = new() { Interval = TimeSpan.FromMilliseconds(40) };
 
     private DockEdge _edge;
     private bool _isClosing;
+    private DateTime? _cursorLeftAt;
     private INotifyCollectionChanged? _observedIcons;
 
     public TrayFlyout()
     {
         InitializeComponent();
-        CustomPopupPlacementCallback = (popup, target, _) => DockPopupPlacement.Beside(_edge, popup, target);
-        _outsideClickWatcher.Tick += (_, _) => CloseOnOutsideClick();
+        CustomPopupPlacementCallback = (popup, target, _) =>
+            DockPopupPlacement.Beside(_edge, popup, target, DockPopupPlacement.PanelGap);
+        _hoverWatcher.Tick += (_, _) => CloseWhenCursorLeaves();
         Opened += (_, _) =>
         {
+            _cursorLeftAt = null;
             PlayOpenAnimation();
-            _outsideClickWatcher.Start();
+            _hoverWatcher.Start();
         };
         Closed += (_, _) =>
         {
-            _outsideClickWatcher.Stop();
+            _hoverWatcher.Stop();
             _isClosing = false;
         };
     }
@@ -95,7 +101,7 @@ public partial class TrayFlyout : Popup
         }
 
         _isClosing = true;
-        _outsideClickWatcher.Stop();
+        _hoverWatcher.Stop();
 
         var easing = new CubicEase { EasingMode = EasingMode.EaseIn };
         var fade = new DoubleAnimation(0, CloseDuration) { EasingFunction = easing };
@@ -121,14 +127,16 @@ public partial class TrayFlyout : Popup
         return new Rect(topLeft, bottomRight).Contains(cursor.X, cursor.Y);
     }
 
-    private void CloseOnOutsideClick()
+    private void CloseWhenCursorLeaves()
     {
-        var anyButtonDown = User32.IsKeyDown(User32.VkLeftButton)
-            || User32.IsKeyDown(User32.VkRightButton)
-            || User32.IsKeyDown(User32.VkMiddleButton);
+        if (IsCursorOver(Panel) || IsCursorOver(PlacementTarget as FrameworkElement))
+        {
+            _cursorLeftAt = null;
+            return;
+        }
 
-        // Cliques na setinha da dock ficam com o Toggle, que fecha o painel do mesmo jeito.
-        if (anyButtonDown && !IsCursorOver(Panel) && !IsCursorOver(PlacementTarget as FrameworkElement))
+        _cursorLeftAt ??= DateTime.Now;
+        if (DateTime.Now - _cursorLeftAt >= HoverGrace)
         {
             CloseAnimated();
         }
