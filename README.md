@@ -147,12 +147,11 @@ src/LiquidGlass/
 ├── Controls/      MagnifyingPanel (ampliação), DockItemView (animações do ícone),
 │                  LiquidGlassSurface, SettingCard
 ├── Effects/       LiquidGlassEffect + shader HLSL
-├── Graphics/      Desfoque por caixas
+├── Graphics/      Captura de tela e desfoque por caixas
 ├── Interop/       Chamadas Win32 (user32, shell32, dwmapi, gdi32, kernel32)
 ├── Models/        Configurações, apps fixados, presets
-├── Services/      Janelas abertas, ícones, papel de parede, bandeja, barra nativa, app bar,
-│                  modo de eficiência,
-│                  persistência
+├── Services/      Janelas abertas, ícones, papel de parede, bandeja, barra nativa,
+│                  app bar, modo de eficiência, persistência
 ├── Themes/        Estilos da dock, menus, ícones e da janela de personalização
 ├── ViewModels/    Dock e personalização (MVVM com CommunityToolkit.Mvvm)
 └── Views/         Janela da dock, painel da bandeja, personalização, menus, ocultar
