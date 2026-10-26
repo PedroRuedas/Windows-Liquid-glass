@@ -1,0 +1,131 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:LiquidGlass.Controls"
+                    xmlns:services="clr-namespace:LiquidGlass.Services">
+
+    <!--
+        Popups da dock (menus e painel da bandeja) em vidro líquido. O fundo é um retrato desfocado
+        da tela tirado logo antes de abrir (ScreenBackdrop), então o vidro refrata o que está atrás.
+        A margem de 14 DIPs em volta do conteúdo é a área da sombra desenhada pelo shader.
+    -->
+
+    <SolidColorBrush x:Key="PopupHighlight" Color="#2EFFFFFF" />
+    <SolidColorBrush x:Key="PopupPressed" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="PopupSeparator" Color="#26FFFFFF" />
+    <SolidColorBrush x:Key="PopupSecondaryText" Color="#A6FFFFFF" />
+
+    <Style x:Key="PopupGlassSurface" TargetType="controls:LiquidGlassSurface">
+        <Setter Property="Margin" Value="-14" />
+        <Setter Property="ShadowPadding" Value="14" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="BezelWidth" Value="20" />
+        <Setter Property="Refraction" Value="14" />
+        <Setter Property="ChromaticAberration" Value="0.45" />
+        <Setter Property="Highlight" Value="0.9" />
+        <Setter Property="Saturation" Value="1.6" />
+        <Setter Property="Shadow" Value="0.5" />
+        <Setter Property="Tint" Value="#5C101014" />
+        <Setter Property="LightDirection" Value="-0.29,-0.96" />
+        <Setter Property="Backdrop" Value="{Binding Image, Source={x:Static services:ScreenBackdrop.Shared}}" />
+        <Setter Property="BackdropOrigin" Value="{Binding Origin, Source={x:Static services:ScreenBackdrop.Shared}}" />
+    </Style>
+
+    <!-- Entrada dos popups: crescem um pouco a partir da dock enquanto aparecem. -->
+    <Storyboard x:Key="PopupOpenStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0"
+                         To="1"
+                         Duration="0:0:0.16" />
+        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                         From="0.92"
+                         To="1"
+                         Duration="0:0:0.32">
+            <DoubleAnimation.EasingFunction>
+                <BackEase Amplitude="0.4" EasingMode="EaseOut" />
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                         From="0.92"
+                         To="1"
+                         Duration="0:0:0.32">
+            <DoubleAnimation.EasingFunction>
+                <BackEase Amplitude="0.4" EasingMode="EaseOut" />
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
+    </Storyboard>
+
+    <!-- Menu de contexto -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="RenderTransformOrigin" Value="0.5,1" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Grid Margin="14">
+                        <controls:LiquidGlassSurface Style="{StaticResource PopupGlassSurface}" CornerRadius="16" />
+                        <StackPanel Margin="6"
+                                    IsItemsHost="True"
+                                    KeyboardNavigation.DirectionalNavigation="Cycle" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="ContextMenu.Opened">
+                <BeginStoryboard Storyboard="{StaticResource PopupOpenStoryboard}" />
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="MenuItem">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Highlight"
+                            MinWidth="220"
+                            Padding="12,6,32,7"
+                            Background="Transparent"
+                            CornerRadius="10">
+                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="False" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Highlight" Property="Background" Value="{StaticResource PopupHighlight}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Highlight" Property="Background" Value="{StaticResource PopupPressed}" />
+                        </Trigger>
+                        <!-- Itens desabilitados servem de título (nome do app no topo do menu). -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource PopupSecondaryText}" />
+                            <Setter Property="FontSize" Value="12" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Margin="12,5" Background="{StaticResource PopupSeparator}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

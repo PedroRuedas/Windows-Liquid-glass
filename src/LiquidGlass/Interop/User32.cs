@@ -39,6 +39,9 @@ internal static class User32
     public const uint SmtoAbortIfHung = 0x0002;
     public const uint MonitorDefaultToPrimary = 1;
 
+    public const int VkLeftButton = 0x01;
+    public const int VkRightButton = 0x02;
+    public const int VkMiddleButton = 0x04;
     public const byte VkLeftWin = 0x5B;
     public const uint KeyEventKeyUp = 0x0002;
 
@@ -180,6 +183,11 @@ internal static class User32
 
     [DllImport("user32.dll")]
     public static extern int GetDoubleClickTime();
+
+    [DllImport("user32.dll")]
+    public static extern short GetAsyncKeyState(int virtualKey);
+
+    public static bool IsKeyDown(int virtualKey) => (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 
     [DllImport("user32.dll")]
     public static extern nint GetDC(nint hwnd);

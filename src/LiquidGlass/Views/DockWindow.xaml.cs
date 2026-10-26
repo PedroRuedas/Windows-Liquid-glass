@@ -290,9 +290,10 @@ public partial class DockWindow : Window
 
     private void OnItemContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
-        if (sender is DockItemView { ContextMenu: { } menu, DataContext: DockItemViewModel item })
+        if (sender is DockItemView { ContextMenu: { } menu, DataContext: DockItemViewModel item } view)
         {
-            DockMenus.Populate(menu, item, _viewModel, (UIElement)sender);
+            ScreenBackdrop.Shared.CaptureAround(view);
+            DockMenus.Populate(menu, item, _viewModel, view);
             _openMenu = menu;
         }
     }
@@ -301,6 +302,7 @@ public partial class DockWindow : Window
     {
         if (Glass.ContextMenu is { } menu)
         {
+            ScreenBackdrop.Shared.CaptureAroundCursor();
             DockMenus.Populate(menu, null, _viewModel);
             _openMenu = menu;
         }
@@ -308,7 +310,7 @@ public partial class DockWindow : Window
 
     private void OnTrayToggleRequested(object? sender, DockItemViewModel item)
     {
-        if (DockItems.ItemContainerGenerator.ContainerFromItem(item) is UIElement anchor)
+        if (DockItems.ItemContainerGenerator.ContainerFromItem(item) is FrameworkElement anchor)
         {
             _trayFlyout.Toggle(anchor, Settings.Edge, _tray.Icons);
         }

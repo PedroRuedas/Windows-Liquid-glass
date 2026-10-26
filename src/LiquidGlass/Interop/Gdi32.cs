@@ -39,6 +39,11 @@ internal static class Gdi32
     public static extern nint CreateCompatibleDC(nint hdc);
 
     [DllImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool BitBlt(
+        nint destination, int x, int y, int width, int height, nint source, int sourceX, int sourceY, uint operation);
+
+    [DllImport("gdi32.dll")]
     public static extern nint CreateCompatibleBitmap(nint hdc, int width, int height);
 
     [DllImport("gdi32.dll")]

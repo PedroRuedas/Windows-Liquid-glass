@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LiquidGlass.Graphics;
@@ -75,33 +74,6 @@ public sealed class WallpaperService
         MonitorOrigin = new Point(monitor.Left, monitor.Top);
         _width = Math.Max(monitor.Width, 1);
         _height = Math.Max(monitor.Height, 1);
-
-        var screenDc = User32.GetDC(0);
-        var memoryDc = Gdi32.CreateCompatibleDC(screenDc);
-        var bitmap = Gdi32.CreateCompatibleBitmap(screenDc, _width, _height);
-        var previous = Gdi32.SelectObject(memoryDc, bitmap);
-
-        try
-        {
-            User32.PaintDesktop(memoryDc);
-            Gdi32.SelectObject(memoryDc, previous);
-
-            var source = Imaging.CreateBitmapSourceFromHBitmap(bitmap, 0, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            var converted = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
-            _pixels = new byte[_width * _height * 4];
-            converted.CopyPixels(_pixels, _width * 4, 0);
-
-            // Bitmaps GDI não preenchem o canal alfa; o fundo é sempre opaco.
-            for (var alpha = 3; alpha < _pixels.Length; alpha += 4)
-            {
-                _pixels[alpha] = 255;
-            }
-        }
-        finally
-        {
-            Gdi32.DeleteObject(bitmap);
-            Gdi32.DeleteDC(memoryDc);
-            User32.ReleaseDC(0, screenDc);
-        }
+        _pixels = ScreenCapture.Wallpaper(_width, _height);
     }
 }
