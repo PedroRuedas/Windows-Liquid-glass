@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
@@ -29,7 +30,31 @@ public partial class App : Application
     private SettingsWindow? _settingsWindow;
     private int _taskbarCreatedMessage;
 
+    static App()
+    {
+        // O WPF limita as animações a 60 fps por padrão. Em monitores de 120+ Hz o quique, os
+        // rótulos e os painéis engasgavam ao lado da ampliação, que já roda na taxa da tela.
+        Timeline.DesiredFrameRateProperty.OverrideMetadata(
+            typeof(Timeline),
+            new FrameworkPropertyMetadata { DefaultValue = DisplayRefreshRate() });
+    }
+
     private DockSettings Settings => _settingsService!.Settings;
+
+    private static int DisplayRefreshRate()
+    {
+        var screenDc = User32.GetDC(0);
+        try
+        {
+            // 0 e 1 significam "padrão do hardware", sem valor conhecido.
+            var rate = Gdi32.GetDeviceCaps(screenDc, Gdi32.VerticalRefresh);
+            return rate > 1 ? rate : 60;
+        }
+        finally
+        {
+            User32.ReleaseDC(0, screenDc);
+        }
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {

@@ -23,7 +23,14 @@ public partial class TrayFlyout : Popup
 {
     private const string Hint = "Clique para abrir · botão direito para mais opções";
 
-    private static readonly TimeSpan CloseDuration = TimeSpan.FromSeconds(0.16);
+    /// <summary>Escala final ao recolher: largura e altura para a dock embaixo (invertidas nas laterais).</summary>
+    private const double CollapsedWidth = 0.78;
+    private const double CollapsedHeight = 0.35;
+
+    /// <summary>Fração da animação de recolher em que o painel começa a sumir.</summary>
+    private const double FadeStart = 0.25;
+
+    private static readonly TimeSpan CloseDuration = TimeSpan.FromSeconds(0.24);
 
     /// <summary>Tempo para levar o mouse da setinha até o painel (ou voltar) sem que ele feche.</summary>
     private static readonly TimeSpan HoverGrace = TimeSpan.FromMilliseconds(400);
@@ -73,7 +80,7 @@ public partial class TrayFlyout : Popup
         Caption.Text = Hint;
 
         // O vidro precisa do que está atrás do painel antes de ele aparecer na tela.
-        ScreenBackdrop.Shared.CaptureAround(anchor);
+        ScreenBackdrop.Shared.CaptureBeside(anchor, edge);
         IsOpen = true;
     }
 
@@ -103,15 +110,23 @@ public partial class TrayFlyout : Popup
         _isClosing = true;
         _hoverWatcher.Stop();
 
-        var easing = new CubicEase { EasingMode = EasingMode.EaseIn };
-        var fade = new DoubleAnimation(0, CloseDuration) { EasingFunction = easing };
-        var shrink = new DoubleAnimation(0.9, CloseDuration) { EasingFunction = easing };
+        // Recolhe para dentro da setinha: um leve respiro para fora responde ao clique na hora, e
+        // então o painel é puxado, achatando mais no eixo da dock. Só some depois que a contração
+        // já está visível.
+        var (toScaleX, toScaleY) = _edge == DockEdge.Bottom ? (CollapsedWidth, CollapsedHeight) : (CollapsedHeight, CollapsedWidth);
+        var pull = new BackEase { EasingMode = EasingMode.EaseIn, Amplitude = 0.3 };
+        var scaleX = new DoubleAnimation(toScaleX, CloseDuration) { EasingFunction = pull };
+        var scaleY = new DoubleAnimation(toScaleY, CloseDuration) { EasingFunction = pull };
+
+        var fade = new DoubleAnimationUsingKeyFrames { Duration = CloseDuration };
+        fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromPercent(FadeStart)));
+        fade.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromPercent(1), new QuadraticEase { EasingMode = EasingMode.EaseIn }));
         fade.Completed += (_, _) => IsOpen = false;
 
-        var scale = (ScaleTransform)Panel.RenderTransform;
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, shrink);
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, shrink);
-        Panel.BeginAnimation(OpacityProperty, fade);
+        var scale = (ScaleTransform)PopupContent.RenderTransform;
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleX);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleY);
+        PopupContent.BeginAnimation(OpacityProperty, fade);
     }
 
     private static bool IsCursorOver(FrameworkElement? element)
@@ -129,7 +144,7 @@ public partial class TrayFlyout : Popup
 
     private void CloseWhenCursorLeaves()
     {
-        if (IsCursorOver(Panel) || IsCursorOver(PlacementTarget as FrameworkElement))
+        if (IsCursorOver(PopupContent) || IsCursorOver(PlacementTarget as FrameworkElement))
         {
             _cursorLeftAt = null;
             return;
@@ -144,7 +159,7 @@ public partial class TrayFlyout : Popup
 
     private void PlayOpenAnimation()
     {
-        Panel.RenderTransformOrigin = _edge switch
+        PopupContent.RenderTransformOrigin = _edge switch
         {
             DockEdge.Left => new Point(0, 0.5),
             DockEdge.Right => new Point(1, 0.5),
@@ -152,13 +167,13 @@ public partial class TrayFlyout : Popup
         };
 
         // Remove o estado final de um fechamento animado anterior antes de animar a entrada.
-        var scale = (ScaleTransform)Panel.RenderTransform;
+        var scale = (ScaleTransform)PopupContent.RenderTransform;
         scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
         scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-        Panel.BeginAnimation(OpacityProperty, null);
+        PopupContent.BeginAnimation(OpacityProperty, null);
 
         var storyboard = (Storyboard)FindResource("PopupOpenStoryboard");
-        storyboard.Begin(Panel);
+        storyboard.Begin(this);
     }
 
     private void SetIcons(ICollectionView? icons)

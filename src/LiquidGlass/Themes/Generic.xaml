@@ -36,10 +36,15 @@
                      Opacity="0"
                      IsHitTestVisible="False" />
 
-            <!-- A margem negativa dá ao rótulo espaço para ser mais largo que o ícone sem ser cortado. -->
+            <!--
+                A margem negativa dá ao rótulo espaço para ser mais largo que o ícone. O tamanho é
+                fixo para o texto não ser remedido e redesenhado a cada quadro da ampliação.
+            -->
             <Grid x:Name="LabelHost"
+                  Width="320"
                   Height="34"
                   Margin="-160,-44,-160,0"
+                  HorizontalAlignment="Center"
                   VerticalAlignment="Top"
                   IsHitTestVisible="False">
                 <Border x:Name="Label"
@@ -124,11 +129,10 @@
                 <Setter TargetName="Indicator" Property="Margin" Value="-7,0,0,0" />
                 <Setter TargetName="Indicator" Property="HorizontalAlignment" Value="Left" />
                 <Setter TargetName="Indicator" Property="VerticalAlignment" Value="Center" />
-                <Setter TargetName="LabelHost" Property="Height" Value="Auto" />
                 <Setter TargetName="LabelHost" Property="Width" Value="300" />
                 <Setter TargetName="LabelHost" Property="Margin" Value="0,-40,-312,-40" />
                 <Setter TargetName="LabelHost" Property="HorizontalAlignment" Value="Right" />
-                <Setter TargetName="LabelHost" Property="VerticalAlignment" Value="Stretch" />
+                <Setter TargetName="LabelHost" Property="VerticalAlignment" Value="Center" />
                 <Setter TargetName="Label" Property="HorizontalAlignment" Value="Left" />
             </Trigger>
 
@@ -136,11 +140,10 @@
                 <Setter TargetName="Indicator" Property="Margin" Value="0,0,-7,0" />
                 <Setter TargetName="Indicator" Property="HorizontalAlignment" Value="Right" />
                 <Setter TargetName="Indicator" Property="VerticalAlignment" Value="Center" />
-                <Setter TargetName="LabelHost" Property="Height" Value="Auto" />
                 <Setter TargetName="LabelHost" Property="Width" Value="300" />
                 <Setter TargetName="LabelHost" Property="Margin" Value="-312,-40,0,-40" />
                 <Setter TargetName="LabelHost" Property="HorizontalAlignment" Value="Left" />
-                <Setter TargetName="LabelHost" Property="VerticalAlignment" Value="Stretch" />
+                <Setter TargetName="LabelHost" Property="VerticalAlignment" Value="Center" />
                 <Setter TargetName="Label" Property="HorizontalAlignment" Value="Right" />
             </Trigger>
         </ControlTemplate.Triggers>

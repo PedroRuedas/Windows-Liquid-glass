@@ -7,6 +7,10 @@
         Popups da dock (menus e painel da bandeja) em vidro líquido. O fundo é um retrato desfocado
         da tela tirado logo antes de abrir (ScreenBackdrop), então o vidro refrata o que está atrás.
         A margem de 14 DIPs em volta do conteúdo é a área da sombra desenhada pelo shader.
+
+        Só o elemento interno "PopupContent" é animado. O WPF posiciona o popup pelo tamanho já
+        transformado do elemento externo e reposiciona a cada quadro, então animar o externo fazia
+        o popup inteiro andar pela tela enquanto crescia ou encolhia.
     -->
 
     <SolidColorBrush x:Key="PopupHighlight" Color="#2EFFFFFF" />
@@ -32,11 +36,13 @@
 
     <!-- Entrada dos popups: crescem um pouco a partir da dock enquanto aparecem. -->
     <Storyboard x:Key="PopupOpenStoryboard">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+        <DoubleAnimation Storyboard.TargetName="PopupContent"
+                         Storyboard.TargetProperty="Opacity"
                          From="0"
                          To="1"
                          Duration="0:0:0.16" />
-        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+        <DoubleAnimation Storyboard.TargetName="PopupContent"
+                         Storyboard.TargetProperty="RenderTransform.ScaleX"
                          From="0.92"
                          To="1"
                          Duration="0:0:0.32">
@@ -44,7 +50,8 @@
                 <BackEase Amplitude="0.4" EasingMode="EaseOut" />
             </DoubleAnimation.EasingFunction>
         </DoubleAnimation>
-        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+        <DoubleAnimation Storyboard.TargetName="PopupContent"
+                         Storyboard.TargetProperty="RenderTransform.ScaleY"
                          From="0.92"
                          To="1"
                          Duration="0:0:0.32">
@@ -61,29 +68,26 @@
         <Setter Property="Foreground" Value="White" />
         <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="RenderTransformOrigin" Value="0.5,1" />
-        <Setter Property="RenderTransform">
-            <Setter.Value>
-                <ScaleTransform />
-            </Setter.Value>
-        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
-                    <Grid Margin="14">
+                    <Grid x:Name="PopupContent" Margin="14" RenderTransformOrigin="0.5,1">
+                        <Grid.RenderTransform>
+                            <ScaleTransform />
+                        </Grid.RenderTransform>
                         <controls:LiquidGlassSurface Style="{StaticResource PopupGlassSurface}" CornerRadius="16" />
                         <StackPanel Margin="6"
                                     IsItemsHost="True"
                                     KeyboardNavigation.DirectionalNavigation="Cycle" />
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <EventTrigger RoutedEvent="ContextMenu.Opened">
+                            <BeginStoryboard Storyboard="{StaticResource PopupOpenStoryboard}" />
+                        </EventTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Style.Triggers>
-            <EventTrigger RoutedEvent="ContextMenu.Opened">
-                <BeginStoryboard Storyboard="{StaticResource PopupOpenStoryboard}" />
-            </EventTrigger>
-        </Style.Triggers>
     </Style>
 
     <Style TargetType="MenuItem">

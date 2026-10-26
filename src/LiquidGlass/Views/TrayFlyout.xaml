@@ -20,115 +20,118 @@
         <CubicEase x:Key="TileEase" EasingMode="EaseOut" />
     </Popup.Resources>
 
-    <Grid x:Name="Panel" Margin="14">
-        <Grid.RenderTransform>
-            <ScaleTransform />
-        </Grid.RenderTransform>
+    <!-- O espaçamento é a área da sombra; dentro dele fica o único elemento animado. -->
+    <Border Padding="14">
+        <Grid x:Name="PopupContent">
+            <Grid.RenderTransform>
+                <ScaleTransform />
+            </Grid.RenderTransform>
 
-        <controls:LiquidGlassSurface Style="{StaticResource PopupGlassSurface}" CornerRadius="24" />
+            <controls:LiquidGlassSurface Style="{StaticResource PopupGlassSurface}" CornerRadius="24" />
 
-        <StackPanel Margin="16,14,16,12"
-                    TextElement.Foreground="White"
-                    TextElement.FontFamily="Segoe UI Variable Text, Segoe UI">
+            <StackPanel Margin="16,14,16,12"
+                        TextElement.Foreground="White"
+                        TextElement.FontFamily="Segoe UI Variable Text, Segoe UI">
 
-            <DockPanel Margin="4,0,4,12">
-                <TextBlock x:Name="CountText"
-                           DockPanel.Dock="Right"
-                           VerticalAlignment="Center"
+                <DockPanel Margin="4,0,4,12">
+                    <TextBlock x:Name="CountText"
+                               DockPanel.Dock="Right"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               Foreground="{StaticResource PopupSecondaryText}" />
+                    <TextBlock FontFamily="Segoe UI Variable Display, Segoe UI"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Text="Segundo plano" />
+                </DockPanel>
+
+                <TextBlock x:Name="EmptyText"
+                           Margin="4,2,4,6"
+                           FontSize="13"
+                           Foreground="{StaticResource PopupSecondaryText}"
+                           Text="Nenhum app na bandeja agora."
+                           Visibility="Collapsed" />
+
+                <ItemsControl x:Name="Icons" MaxWidth="290">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Tile"
+                                    Width="52"
+                                    Height="52"
+                                    Margin="3"
+                                    Background="{StaticResource TileFill}"
+                                    BorderBrush="{StaticResource TileBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="15"
+                                    RenderTransformOrigin="0.5,0.5"
+                                    MouseEnter="OnIconMouseEnter"
+                                    MouseLeave="OnIconMouseLeave"
+                                    MouseMove="OnIconMouseMove"
+                                    MouseDown="OnIconMouseDown"
+                                    MouseUp="OnIconMouseUp">
+                                <Border.RenderTransform>
+                                    <ScaleTransform />
+                                </Border.RenderTransform>
+                                <Image Width="26"
+                                       Height="26"
+                                       Source="{Binding Icon}"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <Trigger SourceName="Tile" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Tile" Property="Background" Value="{StaticResource TileHoverFill}" />
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Tile"
+                                                                 Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                                                 To="1.08"
+                                                                 Duration="0:0:0.16"
+                                                                 EasingFunction="{StaticResource TileEase}" />
+                                                <DoubleAnimation Storyboard.TargetName="Tile"
+                                                                 Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                                                 To="1.08"
+                                                                 Duration="0:0:0.16"
+                                                                 EasingFunction="{StaticResource TileEase}" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Tile"
+                                                                 Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                                                 To="1"
+                                                                 Duration="0:0:0.2"
+                                                                 EasingFunction="{StaticResource TileEase}" />
+                                                <DoubleAnimation Storyboard.TargetName="Tile"
+                                                                 Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                                                 To="1"
+                                                                 Duration="0:0:0.2"
+                                                                 EasingFunction="{StaticResource TileEase}" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
+                                </Trigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Height="1" Margin="4,12,4,9" Background="{StaticResource PopupSeparator}" />
+
+                <TextBlock x:Name="Caption"
+                           Margin="4,0,4,0"
                            FontSize="12"
-                           Foreground="{StaticResource PopupSecondaryText}" />
-                <TextBlock FontFamily="Segoe UI Variable Display, Segoe UI"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Text="Segundo plano" />
-            </DockPanel>
-
-            <TextBlock x:Name="EmptyText"
-                       Margin="4,2,4,6"
-                       FontSize="13"
-                       Foreground="{StaticResource PopupSecondaryText}"
-                       Text="Nenhum app na bandeja agora."
-                       Visibility="Collapsed" />
-
-            <ItemsControl x:Name="Icons" MaxWidth="290">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border x:Name="Tile"
-                                Width="52"
-                                Height="52"
-                                Margin="3"
-                                Background="{StaticResource TileFill}"
-                                BorderBrush="{StaticResource TileBorder}"
-                                BorderThickness="1"
-                                CornerRadius="15"
-                                RenderTransformOrigin="0.5,0.5"
-                                MouseEnter="OnIconMouseEnter"
-                                MouseLeave="OnIconMouseLeave"
-                                MouseMove="OnIconMouseMove"
-                                MouseDown="OnIconMouseDown"
-                                MouseUp="OnIconMouseUp">
-                            <Border.RenderTransform>
-                                <ScaleTransform />
-                            </Border.RenderTransform>
-                            <Image Width="26"
-                                   Height="26"
-                                   Source="{Binding Icon}"
-                                   RenderOptions.BitmapScalingMode="HighQuality" />
-                        </Border>
-                        <DataTemplate.Triggers>
-                            <Trigger SourceName="Tile" Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Tile" Property="Background" Value="{StaticResource TileHoverFill}" />
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="Tile"
-                                                             Storyboard.TargetProperty="RenderTransform.ScaleX"
-                                                             To="1.08"
-                                                             Duration="0:0:0.16"
-                                                             EasingFunction="{StaticResource TileEase}" />
-                                            <DoubleAnimation Storyboard.TargetName="Tile"
-                                                             Storyboard.TargetProperty="RenderTransform.ScaleY"
-                                                             To="1.08"
-                                                             Duration="0:0:0.16"
-                                                             EasingFunction="{StaticResource TileEase}" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="Tile"
-                                                             Storyboard.TargetProperty="RenderTransform.ScaleX"
-                                                             To="1"
-                                                             Duration="0:0:0.2"
-                                                             EasingFunction="{StaticResource TileEase}" />
-                                            <DoubleAnimation Storyboard.TargetName="Tile"
-                                                             Storyboard.TargetProperty="RenderTransform.ScaleY"
-                                                             To="1"
-                                                             Duration="0:0:0.2"
-                                                             EasingFunction="{StaticResource TileEase}" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <Border Height="1" Margin="4,12,4,9" Background="{StaticResource PopupSeparator}" />
-
-            <TextBlock x:Name="Caption"
-                       Margin="4,0,4,0"
-                       FontSize="12"
-                       Foreground="{StaticResource PopupSecondaryText}"
-                       MaxWidth="290"
-                       TextTrimming="CharacterEllipsis" />
-        </StackPanel>
-    </Grid>
+                           Foreground="{StaticResource PopupSecondaryText}"
+                           MaxWidth="290"
+                           TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Grid>
+    </Border>
 </Popup>

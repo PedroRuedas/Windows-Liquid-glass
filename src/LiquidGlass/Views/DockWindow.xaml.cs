@@ -292,7 +292,7 @@ public partial class DockWindow : Window
     {
         if (sender is DockItemView { ContextMenu: { } menu, DataContext: DockItemViewModel item } view)
         {
-            ScreenBackdrop.Shared.CaptureAround(view);
+            ScreenBackdrop.Shared.CaptureBeside(view, Settings.Edge);
             DockMenus.Populate(menu, item, _viewModel, view);
             _openMenu = menu;
         }

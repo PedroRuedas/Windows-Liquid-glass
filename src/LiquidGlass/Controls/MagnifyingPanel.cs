@@ -46,10 +46,17 @@ public sealed class MagnifyingPanel : Panel
         typeof(ContentBoundsChangedHandler),
         typeof(MagnifyingPanel));
 
-    private const double Stiffness = 16.0;
+    /// <summary>
+    /// Rapidez com que a escala persegue o alvo (1/s). Alta o bastante para os ícones acompanharem
+    /// o cursor sem "arrastar" atrás dele (constante de tempo de ~33 ms), mas ainda suave.
+    /// </summary>
+    private const double Stiffness = 30.0;
     private const double SettleThreshold = 0.0005;
 
     private readonly Dictionary<UIElement, double> _scales = [];
+
+    /// <summary>Reaproveitado a cada quadro: a ampliação roda na taxa do monitor e não deve gerar lixo.</summary>
+    private readonly Layout _layout = new();
     private double _anchor = double.NaN;
     private bool _isAnimating;
     private TimeSpan _lastFrame;
@@ -231,7 +238,8 @@ public sealed class MagnifyingPanel : Panel
     private Layout ComputeLayout(double panelAlong)
     {
         var count = InternalChildren.Count;
-        var layout = new Layout(count);
+        var layout = _layout;
+        layout.Resize(count);
 
         double baseLength = 0;
         double length = 0;
@@ -284,7 +292,7 @@ public sealed class MagnifyingPanel : Panel
         double basePosition = 0;
         double growth = 0;
 
-        for (var index = 0; index < layout.Lengths.Length; index++)
+        for (var index = 0; index < layout.Count; index++)
         {
             var baseLength = layout.BaseLengths[index];
             if (anchor <= basePosition)
@@ -336,9 +344,12 @@ public sealed class MagnifyingPanel : Panel
         var blend = 1 - Math.Exp(-Math.Min(elapsed, 0.1) * Stiffness * Math.Max(AnimationSpeed, 0.1));
         var changed = false;
         var settled = true;
+        var targets = ComputeTargets();
 
-        foreach (var (child, target) in ComputeTargets())
+        for (var index = 0; index < InternalChildren.Count; index++)
         {
+            var child = InternalChildren[index];
+            var target = targets[index];
             var current = CurrentScale(child);
             var next = current + ((target - current) * blend);
             if (Math.Abs(target - next) < SettleThreshold)
@@ -374,7 +385,7 @@ public sealed class MagnifyingPanel : Panel
     }
 
     /// <summary>Escala desejada de cada item, a partir da distância até o cursor no layout sem ampliação.</summary>
-    private IEnumerable<(UIElement Child, double Target)> ComputeTargets()
+    private double[] ComputeTargets()
     {
         var panelAlong = IsVertical ? ActualHeight : ActualWidth;
         var layout = ComputeLayout(panelAlong);
@@ -391,14 +402,16 @@ public sealed class MagnifyingPanel : Panel
 
             if (!GetIsMagnifiable(child) || double.IsNaN(CursorPosition))
             {
-                yield return (child, 1.0);
+                layout.Targets[index] = 1.0;
                 continue;
             }
 
             var distance = Math.Abs(CursorPosition - center) / range;
             var falloff = distance >= 1 ? 0 : (Math.Cos(distance * Math.PI) + 1) / 2;
-            yield return (child, 1 + ((peak - 1) * falloff));
+            layout.Targets[index] = 1 + ((peak - 1) * falloff);
         }
+
+        return layout.Targets;
     }
 
     private void RaiseContentBounds(Rect bounds)
@@ -419,20 +432,40 @@ public sealed class MagnifyingPanel : Panel
         return IsVertical ? new Rect(cross, along, thickness, length) : new Rect(along, cross, length, thickness);
     }
 
-    private sealed class Layout(int count)
+    private sealed class Layout
     {
-        public double[] Lengths { get; } = new double[count];
+        public int Count { get; private set; }
 
-        public double[] BaseLengths { get; } = new double[count];
+        public double[] Lengths { get; private set; } = [];
 
-        public double[] Thicknesses { get; } = new double[count];
+        public double[] BaseLengths { get; private set; } = [];
 
-        public double[] Gaps { get; } = new double[count];
+        public double[] Thicknesses { get; private set; } = [];
+
+        public double[] Gaps { get; private set; } = [];
+
+        public double[] Targets { get; private set; } = [];
 
         public double Start { get; set; }
 
         public double BaseStart { get; set; }
 
         public double Length { get; set; }
+
+        /// <summary>Realoca os vetores só quando a quantidade de itens muda.</summary>
+        public void Resize(int count)
+        {
+            if (count == Count)
+            {
+                return;
+            }
+
+            Count = count;
+            Lengths = new double[count];
+            BaseLengths = new double[count];
+            Thicknesses = new double[count];
+            Gaps = new double[count];
+            Targets = new double[count];
+        }
     }
 }
