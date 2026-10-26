@@ -263,7 +263,7 @@ public partial class DockWindow : Window
     {
         if (sender is DockItemView { ContextMenu: { } menu, DataContext: DockItemViewModel item })
         {
-            DockMenus.Populate(menu, item, _viewModel);
+            DockMenus.Populate(menu, item, _viewModel, (UIElement)sender);
             _openMenu = menu;
         }
     }
