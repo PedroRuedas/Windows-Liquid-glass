@@ -12,4 +12,11 @@ public partial class SettingsWindow : Window
         DataContext = viewModel;
         Closed += (_, _) => viewModel.Dispose();
     }
+
+    /// <summary>Abre a página Comportamento e rola até a seção de atualizações.</summary>
+    public void ShowUpdates()
+    {
+        Navigation.SelectedIndex = 3;
+        Dispatcher.BeginInvoke(() => UpdatesSection.BringIntoView(), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
 }

@@ -45,6 +45,10 @@ animações de abertura e uma tela de personalização completa.
   mais próxima, levando em conta o embalo. Setas e roda do mouse giram uma face; clique numa face
   para entrar nela. Sempre há uma face "+": pare nela e clique (ou Enter) para criar uma área; o
   cubo continua aberto e ganha outra face "+", para criar quantas quiser.
+- Arraste uma janela para tirá-la da área dela e solte-a em outra face para movê-la para lá (na
+  face "+", ela ganha uma área nova). Para chegar a uma área de trás, segure a janela perto da borda
+  esquerda ou direita da tela, ou gire com a roda do mouse ou as setas; Esc ou soltar fora do cubo
+  devolve a janela. Janelas fixadas em todas as áreas não se arrastam.
 - Ctrl+Win+setas giram o cubo até a área vizinha, recuando um pouco no meio do giro.
 - Minimizar é a "lâmpada mágica": a janela escorre em funil para dentro do ícone dela na dock (e se
   desenrola de lá ao restaurar pela dock). Fechar encolhe a janela enquanto ela some.
@@ -60,7 +64,7 @@ Todas as mudanças aparecem na dock na hora:
 | Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, botão das áreas de trabalho, apps em segundo plano, rede, bateria, Lixeira |
 | Vidro | estilos prontos, refração, desfoque, dispersão de cores, brilho da borda, saturação, sombra, cor e intensidade do tom |
 | Animações | ampliação, tamanho máximo, alcance, quicar ao abrir, quicar por atenção, fechar e minimizar no estilo do GNOME, deslizar entre áreas, velocidade |
-| Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows, Win+Tab abre as áreas de trabalho |
+| Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows, Win+Tab abre as áreas de trabalho, atualizações (procurar, instalar, procurar automaticamente) |
 | Apps fixados | adicionar, importar da barra de tarefas, reordenar e remover |
 
 ## Instalação
@@ -73,6 +77,15 @@ Rode `LiquidGlassDock-Setup-<versão>.exe`. O instalador:
 - marca "Iniciar com o Windows" por padrão, para a dock ficar sempre em segundo plano;
 - cria no menu Iniciar os atalhos "Liquid Glass Dock" e "Encerrar Liquid Glass Dock";
 - encerra a dock que estiver aberta antes de atualizar.
+
+### Atualizar
+
+A dock procura versões novas nas [releases do GitHub](https://github.com/PedroRuedas/Windows-Liquid-glass/releases)
+ao abrir e a cada 6 horas. Quando há uma, o botão direito em qualquer parte da dock mostra
+"Atualizar para a versão X": a dock baixa o instalador, confere o SHA-256 publicado pelo GitHub,
+fecha (devolvendo a barra de tarefas), instala e abre de novo sozinha. O mesmo fica em
+Personalizar → Comportamento → Atualizações, onde também dá para desligar a procura automática.
+Nada é instalado sem você pedir.
 
 Para desinstalar, use Configurações → Aplicativos. O desinstalador encerra a dock, devolve a
 barra de tarefas do Windows e remove a inicialização automática. As preferências em

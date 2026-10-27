@@ -1,8 +1,10 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using LiquidGlass.Models;
+using LiquidGlass.Services;
 using LiquidGlass.ViewModels;
 
 namespace LiquidGlass.Views;
@@ -47,8 +49,35 @@ internal static class DockMenus
             menu.Items.Add(new Separator());
         }
 
+        if (dock.Updates is { } updates)
+        {
+            menu.Items.Add(UpdateItem(updates, dock));
+        }
+
         menu.Items.Add(Command("Personalizar a Dock…", dock.OpenSettingsCommand));
         menu.Items.Add(Command("Sair do Liquid Glass", dock.QuitCommand));
+    }
+
+    /// <summary>Instala a versão nova já encontrada ou procura uma; durante o trabalho, mostra o andamento.</summary>
+    private static MenuItem UpdateItem(UpdateService updates, DockViewModel dock)
+    {
+        return updates.State switch
+        {
+            UpdateState.Checking => new MenuItem { Header = "Procurando atualizações…", IsEnabled = false },
+            UpdateState.Downloading => new MenuItem
+            {
+                Header = string.Create(CultureInfo.CurrentCulture, $"Baixando atualização… {updates.Progress:0%}"),
+                IsEnabled = false,
+            },
+            UpdateState.Installing => new MenuItem { Header = "Instalando atualização…", IsEnabled = false },
+            _ when updates.Available is { } release => new MenuItem
+            {
+                Header = string.Create(CultureInfo.CurrentCulture, $"Atualizar para a versão {release.Version}"),
+                Command = dock.InstallUpdateCommand,
+                FontWeight = FontWeights.SemiBold,
+            },
+            _ => Command("Procurar atualizações…", dock.CheckForUpdatesCommand),
+        };
     }
 
     private static MenuItem Command(string header, ICommand command, object? parameter = null)

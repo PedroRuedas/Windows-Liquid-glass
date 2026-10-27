@@ -63,6 +63,8 @@ Root: HKCU; Subkey: "{#RunKey}"; ValueName: "{#RunValue}"; Flags: deletevalue; T
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "Abrir o {#AppName} agora"; Flags: nowait postinstall skipifsilent
+; Atualização pela própria dock (silenciosa, com /RELAUNCH=1): a dock volta sozinha no fim.
+Filename: "{app}\{#AppExe}"; Flags: nowait; Check: RelaunchRequested
 
 [Code]
 const
@@ -102,6 +104,11 @@ begin
     if Mutex <> 0 then
       CloseHandle(Mutex);
   until (Mutex = 0) or (Waited >= QuitTimeoutMs);
+end;
+
+function RelaunchRequested(): Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;

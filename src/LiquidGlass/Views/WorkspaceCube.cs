@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
@@ -34,6 +35,9 @@ public sealed record OverviewContext(
 /// gira o cubo livremente (e inclina na vertical); ao soltar, ele encaixa na face mais próxima,
 /// levando em conta o embalo. Clique numa face para entrar nela; setas e roda do mouse giram uma face.
 /// Sempre há uma face "+": parar nela e clicar (ou Enter) cria uma área, e o anel ganha outra "+".</item>
+/// <item>Na visão, arrastar uma janela a tira da área dela; soltá-la em outra face a move para lá (na
+/// face "+", cria uma área com ela). Segurar na borda da tela, a roda ou as setas giram o cubo durante
+/// o arrasto; Esc ou soltar fora do cubo devolvem a janela.</item>
 /// <item>Troca rápida (Ctrl+Win+setas): o cubo gira até a área vizinha, recuando um pouco no meio.</item>
 /// </list>
 /// As faces são retratos tirados ao abrir: a área atual vem da tela; as outras, das próprias janelas
@@ -50,6 +54,9 @@ public sealed class WorkspaceCube : Window
     private const double DragDegreesPerScreen = 220;
     private const int MinSides = 4;
 
+    /// <summary>Faixa de cada lado da tela (fração da largura) que gira o cubo durante o arrasto de uma janela.</summary>
+    private const double EdgeZone = 0.06;
+
     /// <summary>Afastamento mínimo das janelas: coplanares à face, as duas camadas piscariam.</summary>
     private const double LayerEpsilon = 0.0008;
 
@@ -57,6 +64,8 @@ public sealed class WorkspaceCube : Window
     private static readonly TimeSpan SnapDuration = TimeSpan.FromMilliseconds(520);
     private static readonly TimeSpan QuickDuration = TimeSpan.FromMilliseconds(820);
     private static readonly TimeSpan VelocityWindow = TimeSpan.FromMilliseconds(90);
+    private static readonly TimeSpan EdgeDwell = TimeSpan.FromMilliseconds(420);
+    private static readonly TimeSpan EdgeRepeat = TimeSpan.FromMilliseconds(700);
 
     /// <summary>
     /// Espera depois de o cubo cobrir a tela antes de trocar a área de verdade: a janela leva alguns
@@ -87,7 +96,10 @@ public sealed class WorkspaceCube : Window
     private readonly DiffuseMaterial _baseMaterial = new(Brushes.Black);
     private readonly Model3DGroup _bases = new();
     private readonly Model3DGroup _layers = new();
+    private readonly Model3DGroup _cube = new();
+    private readonly ModelVisual3D _scene = new();
     private readonly List<Face> _faces = [];
+    private readonly Dictionary<Guid, Shot> _shots = [];
     private DiffuseMaterial? _emptyMaterial;
     private readonly Dictionary<Model3D, Face> _faceOfModel = [];
     private readonly Viewport3D _viewport = new();
@@ -101,6 +113,14 @@ public sealed class WorkspaceCube : Window
         FontSize = 13,
         Margin = new Thickness(0, 7, 0, 0),
         HorizontalAlignment = HorizontalAlignment.Center,
+    };
+
+    private readonly Canvas _dragLayer = new() { IsHitTestVisible = false };
+    private readonly Image _ghost = new()
+    {
+        Stretch = Stretch.Fill,
+        Visibility = Visibility.Collapsed,
+        Effect = new DropShadowEffect { BlurRadius = 28, ShadowDepth = 6, Direction = 270, Opacity = 0.45 },
     };
 
     private readonly Tween _progress = new();
@@ -117,6 +137,7 @@ public sealed class WorkspaceCube : Window
     private bool _isRendering;
     private int _currentDesktop;
     private int _labelFace = -1;
+    private bool _labelDragging;
     private int[] _layerOrder = [];
     private double _pitch = OverviewPitch;
     private bool _isPressed;
@@ -124,6 +145,10 @@ public sealed class WorkspaceCube : Window
     private Point _pressPoint;
     private double _dragYaw;
     private double _dragPitch;
+    private Point _pointer;
+    private Grab? _pressGrab;
+    private WindowDrag? _drag;
+    private int _demoTurn;
 
     public WorkspaceCube(OverviewContext context)
     {
@@ -137,6 +162,11 @@ public sealed class WorkspaceCube : Window
         }
 
         _currentDesktop = _desktops.IndexOf(current);
+        foreach (var desktop in _desktops)
+        {
+            _shots[desktop] = new Shot();
+        }
+
         SetSides(_desktops.Count);
         _halfHeight = (double)_monitor.Height / Math.Max(_monitor.Width, 1);
         _viewDistance = 1 / Math.Tan(FieldOfView / 2 * Math.PI / 180);
@@ -159,6 +189,7 @@ public sealed class WorkspaceCube : Window
         _root.MouseMove += OnMouseMove;
         _root.MouseLeftButtonUp += OnMouseUp;
         _root.MouseWheel += OnMouseWheel;
+        _root.LostMouseCapture += (_, _) => CancelDrag();
         SourceInitialized += OnSourceInitialized;
         ContentRendered += OnContentRendered;
     }
@@ -187,6 +218,7 @@ public sealed class WorkspaceCube : Window
             return;
         }
 
+        CancelDrag();
         var (face, yaw) = NearestFace(_yaw.Target);
         if (face >= _desktops.Count)
         {
@@ -257,15 +289,63 @@ public sealed class WorkspaceCube : Window
         encoder.Save(file);
     }
 
+    /// <summary>Demonstração (Debug): pega a janela na face da área atual, como o mouse faria.</summary>
+    [Conditional("DEBUG")]
+    internal void DemoGrab(nint hwnd)
+    {
+        var desktop = _desktops[_currentDesktop];
+        if (_shots[desktop].Windows.FirstOrDefault(window => window.Handle == hwnd) is { Handle: not 0 } window
+            && Project(_currentDesktop, new Point(window.Bounds.X + (window.Bounds.Width / 2.0), window.Bounds.Y + (window.Bounds.Height / 2.0))) is { } point)
+        {
+            Press(point);
+            Drag(point + new Vector(DragThreshold * 3, 0));
+        }
+    }
+
+    /// <summary>
+    /// Demonstração (Debug): gira o cubo uma face com a janela na mão, como a borda da tela faria. Para
+    /// a demonstração nunca criar uma área, vai para o lado que tem uma área de verdade; com
+    /// <paramref name="back"/>, desfaz o último giro.
+    /// </summary>
+    [Conditional("DEBUG")]
+    internal void DemoRotate(bool back)
+    {
+        if (!back)
+        {
+            _demoTurn = _currentDesktop + 1 < _desktops.Count ? 1 : -1;
+        }
+
+        Rotate(back ? -_demoTurn : _demoTurn);
+    }
+
+    /// <summary>Demonstração (Debug): leva a janela pega até o meio da face da frente.</summary>
+    [Conditional("DEBUG")]
+    internal void DemoPointAtFront()
+    {
+        if (Project(NearestFace(_yaw.Value).Face, new Point(_monitor.Width / 2.0, _monitor.Height / 2.0)) is { } point)
+        {
+            Drag(point);
+        }
+    }
+
+    /// <summary>Demonstração (Debug): solta a janela onde ela está.</summary>
+    [Conditional("DEBUG")]
+    internal void DemoDrop() => Release(_pointer);
+
     public void HandleKey(OverviewKey key)
     {
         switch (key)
         {
+            case OverviewKey.Escape when _drag is not null:
+                CancelDrag();
+                break;
             case OverviewKey.Escape:
                 ZoomIn();
                 break;
+            case OverviewKey.Enter when _drag is not null:
+                break;
             case OverviewKey.Enter when NearestFace(_yaw.Target).Face >= _desktops.Count:
-                AddDesktop();
+                AddDesktop(enter: true);
                 break;
             case OverviewKey.Enter:
                 ZoomIn();
@@ -305,14 +385,31 @@ public sealed class WorkspaceCube : Window
         return new GeometryModel3D(mesh, material) { BackMaterial = back, Transform = transform };
     }
 
-    private static ImageBrush ToBrush(byte[] pixels, int width, int height)
+    private static BitmapSource ToBitmap(byte[] pixels, int width, int height)
     {
         var bitmap = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, width * 4);
         bitmap.Freeze();
-        var brush = new ImageBrush(bitmap);
+        return bitmap;
+    }
+
+    private static ImageBrush ToBrush(byte[] pixels, int width, int height)
+    {
+        var brush = new ImageBrush(ToBitmap(pixels, width, height));
         brush.Freeze();
         return brush;
     }
+
+    private static Int32Rect? Intersect(Int32Rect a, Int32Rect b)
+    {
+        var left = Math.Max(a.X, b.X);
+        var top = Math.Max(a.Y, b.Y);
+        var right = Math.Min(a.X + a.Width, b.X + b.Width);
+        var bottom = Math.Min(a.Y + a.Height, b.Y + b.Height);
+        return right > left && bottom > top ? new Int32Rect(left, top, right - left, bottom - top) : null;
+    }
+
+    private static bool Contains(Int32Rect rect, Point point) =>
+        point.X >= rect.X && point.X < rect.X + rect.Width && point.Y >= rect.Y && point.Y < rect.Y + rect.Height;
 
     private double FaceYaw(int face) => -face * 360.0 / _sides;
 
@@ -382,17 +479,16 @@ public sealed class WorkspaceCube : Window
         BuildRing();
 
         // As camadas das janelas (com transparência) vêm depois das faces opacas, como o 3D do WPF exige.
-        var cube = new Model3DGroup
+        _cube.Transform = new Transform3DGroup
         {
-            Transform = new Transform3DGroup
-            {
-                Children = { new RotateTransform3D(_yawRotation), new RotateTransform3D(_pitchRotation) },
-            },
-            Children = { _bases, _layers },
+            Children = { new RotateTransform3D(_yawRotation), new RotateTransform3D(_pitchRotation) },
         };
+        _cube.Children.Add(_bases);
+        _cube.Children.Add(_layers);
 
         _viewport.Camera = _camera;
-        _viewport.Children.Add(new ModelVisual3D { Content = new Model3DGroup { Children = { _ambient, _keyLight, cube } } });
+        _scene.Content = new Model3DGroup { Children = { _ambient, _keyLight, _cube } };
+        _viewport.Children.Add(_scene);
 
         _root.Children.Add(new Image { Source = _context.Wallpaper.Backdrop, Stretch = Stretch.Fill });
         _root.Children.Add(new Rectangle
@@ -401,6 +497,8 @@ public sealed class WorkspaceCube : Window
         });
         _root.Children.Add(_viewport);
         _root.Children.Add(_pill);
+        _dragLayer.Children.Add(_ghost);
+        _root.Children.Add(_dragLayer);
         UpdateLabel(_currentDesktop);
         Render();
     }
@@ -488,65 +586,139 @@ public sealed class WorkspaceCube : Window
         return brush;
     }
 
+    private Int32Rect MonitorRect => new(_monitor.Left, _monitor.Top, _monitor.Width, _monitor.Height);
+
     /// <summary>
     /// Fundo comum (área de trabalho com os ícones) e a camada de janelas de cada área. A área atual
     /// sai da tela na hora; as outras são desenhadas em segundo plano e aparecem quando ficam prontas.
+    /// Cada área guarda também onde está cada janela, para que ela possa ser arrastada.
     /// </summary>
     private void LoadTextures()
     {
         // A dock não entra nos retratos: ela continua de verdade por cima do cubo.
         User32.SetWindowDisplayAffinity(_context.DockHandle, User32.WdaExcludeFromCapture);
-        var monitor = new Int32Rect(_monitor.Left, _monitor.Top, _monitor.Width, _monitor.Height);
+        var monitor = MonitorRect;
         _baseMaterial.Brush = ToBrush(ScreenCapture.Desktop(monitor), monitor.Width, monitor.Height);
 
-        var current = new List<Int32Rect>();
-        var others = _desktops.ToDictionary(id => id, _ => new List<nint>());
-        var area = new Rect(0, 0, monitor.Width, monitor.Height);
+        var current = _desktops[_currentDesktop];
         foreach (var window in _context.Tracker.EnumerateAllDesktops())
         {
-            if (User32.IsIconic(window.Handle))
+            if (User32.IsIconic(window.Handle) || Bounds(window.Handle) is not { } bounds)
             {
                 continue;
             }
 
-            if (!Dwmapi.IsCloaked(window.Handle))
+            // A lista vem de cima para baixo, a mesma ordem guardada em cada área.
+            var desktop = Dwmapi.IsCloaked(window.Handle) ? _context.Desktops.GetWindowDesktop(window.Handle) : current;
+            if (desktop is { } id && _shots.TryGetValue(id, out var shot))
             {
-                if (Dwmapi.GetVisibleBounds(window.Handle) is { } visible)
-                {
-                    var rect = new Rect(visible.Left - monitor.X, visible.Top - monitor.Y, visible.Width, visible.Height);
-                    rect.Intersect(area);
-                    if (!rect.IsEmpty && rect.Width >= 1 && rect.Height >= 1)
-                    {
-                        current.Add(new Int32Rect((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height));
-                    }
-                }
-            }
-            else if (_context.Desktops.GetWindowDesktop(window.Handle) is { } id && others.TryGetValue(id, out var list))
-            {
-                list.Add(window.Handle);
+                shot.Windows.Add(new WindowShot(window.Handle, bounds));
             }
         }
 
-        _faces[_currentDesktop].LayerMaterial.Brush = ToBrush(ScreenCapture.ScreenWindows(monitor, current), monitor.Width, monitor.Height);
+        SetLayer(current, ScreenCapture.ScreenWindows(monitor, _shots[current].Windows.Select(window => window.Bounds)));
         User32.SetWindowDisplayAffinity(_context.DockHandle, User32.WdaNone);
-        for (var index = 0; index < _desktops.Count; index++)
+        foreach (var desktop in _desktops)
         {
-            if (index != _currentDesktop && others[_desktops[index]] is { Count: > 0 } windows)
+            if (desktop != current && _shots[desktop].Windows.Count > 0)
             {
-                // A ordem da lista é de cima para baixo; desenhadas de baixo para cima, as da frente cobrem as de trás.
-                windows.Reverse();
-                _ = LoadLayerAsync(index, windows, monitor);
+                _ = RebuildLayerAsync(desktop);
             }
         }
     }
 
-    private async Task LoadLayerAsync(int face, List<nint> windows, Int32Rect monitor)
+    /// <summary>Parte visível da janela no monitor, em pixels relativos a ele.</summary>
+    private Int32Rect? Bounds(nint hwnd)
     {
-        var pixels = await Task.Run(() => ScreenCapture.PrintWindows(monitor, windows));
-        if (!_isClosed)
+        if (Dwmapi.GetVisibleBounds(hwnd) is not { } visible)
         {
-            _faces[face].LayerMaterial.Brush = ToBrush(pixels, monitor.Width, monitor.Height);
+            return null;
         }
+
+        return Intersect(
+            new Int32Rect(visible.Left - _monitor.Left, visible.Top - _monitor.Top, visible.Width, visible.Height),
+            new Int32Rect(0, 0, _monitor.Width, _monitor.Height));
+    }
+
+    /// <summary>
+    /// Redesenha a camada da área com as janelas que ela tem agora, em segundo plano. Um retrato pedido
+    /// depois (ou um arrasto começando nela) descarta este quando ele chegar.
+    /// </summary>
+    private async Task RebuildLayerAsync(Guid desktop)
+    {
+        var shot = _shots[desktop];
+        var version = ++shot.Version;
+
+        // Desenhadas de baixo para cima, as da frente cobrem as de trás.
+        var windows = shot.Windows.Select(window => window.Handle).Reverse().ToList();
+        var monitor = MonitorRect;
+        var pixels = await Task.Run(() => ScreenCapture.PrintWindows(monitor, windows));
+        if (!_isClosed && shot.Version == version)
+        {
+            SetLayer(desktop, pixels);
+        }
+    }
+
+    private void SetLayer(Guid desktop, byte[] pixels)
+    {
+        _shots[desktop].Pixels = pixels;
+        var index = _desktops.IndexOf(desktop);
+        if (index >= 0)
+        {
+            _faces[index].LayerMaterial.Brush = ToBrush(pixels, _monitor.Width, _monitor.Height);
+        }
+    }
+
+    /// <summary>O trecho <paramref name="rect"/> de uma camada do tamanho do monitor.</summary>
+    private byte[] Crop(byte[] layer, Int32Rect rect)
+    {
+        var pixels = new byte[rect.Width * rect.Height * 4];
+        for (var row = 0; row < rect.Height; row++)
+        {
+            Buffer.BlockCopy(layer, (((rect.Y + row) * _monitor.Width) + rect.X) * 4, pixels, row * rect.Width * 4, rect.Width * 4);
+        }
+
+        return pixels;
+    }
+
+    /// <summary>Cópia da camada com <paramref name="pixels"/> por cima, em <paramref name="rect"/>.</summary>
+    private byte[] Paste(byte[]? layer, byte[] pixels, Int32Rect rect)
+    {
+        var result = layer is null ? new byte[_monitor.Width * _monitor.Height * 4] : (byte[])layer.Clone();
+        for (var row = 0; row < rect.Height; row++)
+        {
+            Buffer.BlockCopy(pixels, row * rect.Width * 4, result, (((rect.Y + row) * _monitor.Width) + rect.X) * 4, rect.Width * 4);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Cópia da camada sem a janela <paramref name="index"/>: o lugar dela fica transparente, menos onde
+    /// janelas de cima a cobriam. O que estava atrás dela aparece quando a camada for redesenhada.
+    /// </summary>
+    private byte[] Erase(byte[] layer, IReadOnlyList<WindowShot> windows, int index)
+    {
+        var result = (byte[])layer.Clone();
+        var rect = windows[index].Bounds;
+        for (var row = 0; row < rect.Height; row++)
+        {
+            Array.Clear(result, (((rect.Y + row) * _monitor.Width) + rect.X) * 4, rect.Width * 4);
+        }
+
+        for (var above = 0; above < index; above++)
+        {
+            if (Intersect(windows[above].Bounds, rect) is { } cover)
+            {
+                for (var row = 0; row < cover.Height; row++)
+                {
+                    var offset = (((cover.Y + row) * _monitor.Width) + cover.X) * 4;
+                    Buffer.BlockCopy(layer, offset, result, offset, cover.Width * 4);
+                }
+            }
+        }
+
+        return result;
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -623,29 +795,36 @@ public sealed class WorkspaceCube : Window
 
     /// <summary>
     /// Cria uma área: a face "+" vira a área nova, o anel ganha outra face "+" e o cubo continua
-    /// aberto, já virado para a área nova, para criar mais ou entrar nela com um clique.
+    /// aberto, já virado para a área nova, para criar mais ou entrar nela com um clique. Sem
+    /// <paramref name="enter"/>, a área do Windows não muda (a área nova recebe uma janela arrastada).
     /// </summary>
-    private void AddDesktop()
+    private Guid? AddDesktop(bool enter)
     {
         if (_isClosing || _context.Desktops.Add() is not { } id)
         {
-            return;
+            return null;
         }
 
         var (front, frontYaw) = NearestFace(_yaw.Value);
         var offset = _yaw.Value - frontYaw;
         var index = _desktops.Count;
         _desktops.Add(id);
+        _shots[id] = new Shot();
         SetSides(_desktops.Count);
         BuildRing();
 
         // Na nova divisão do círculo, a face que estava de frente continua de frente.
         _yaw.Set(FaceYaw(front) + offset);
-        SwitchTo(index);
+        if (enter)
+        {
+            SwitchTo(index);
+        }
+
         _yaw.Start(NearestYaw(index, _yaw.Value), SnapDuration / Speed, Ease.OutCubic);
         UpdateLabel(_labelFace, force: true);
         Render();
         StartRendering();
+        return id;
     }
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
@@ -656,27 +835,62 @@ public sealed class WorkspaceCube : Window
         }
 
         e.Handled = true;
-        _isPressed = true;
-        _isDragging = false;
-        _pressPoint = e.GetPosition(_root);
-        _dragYaw = _yaw.Value;
-        _dragPitch = _pitch;
-        _samples.Clear();
-        _samples.Enqueue((_clock.Elapsed, _pressPoint.X));
+        Press(e.GetPosition(_root));
         _root.CaptureMouse();
     }
 
-    private void OnMouseMove(object sender, MouseEventArgs e)
+    private void OnMouseMove(object sender, MouseEventArgs e) => Drag(e.GetPosition(_root));
+
+    private void OnMouseUp(object sender, MouseButtonEventArgs e)
     {
         if (!_isPressed)
         {
             return;
         }
 
-        var position = e.GetPosition(_root);
+        e.Handled = true;
+        Release(e.GetPosition(_root));
+        _root.ReleaseMouseCapture();
+    }
+
+    /// <summary>Botão apertado: ainda não se sabe se é clique, giro do cubo ou arrasto de uma janela.</summary>
+    private void Press(Point point)
+    {
+        _isPressed = true;
+        _isDragging = false;
+        _pressPoint = _pointer = point;
+        _pressGrab = WindowAt(point);
+        _dragYaw = _yaw.Value;
+        _dragPitch = _pitch;
+        _samples.Clear();
+        _samples.Enqueue((_clock.Elapsed, _pressPoint.X));
+    }
+
+    private void Drag(Point position)
+    {
+        if (!_isPressed)
+        {
+            return;
+        }
+
+        _pointer = position;
+        if (_drag is not null)
+        {
+            UpdateDropTarget();
+            return;
+        }
+
         var delta = position - _pressPoint;
         if (!_isDragging && delta.Length < DragThreshold)
         {
+            return;
+        }
+
+        if (!_isDragging && _pressGrab is { } grab)
+        {
+            // Apertou sobre uma janela: ela sai da área e acompanha o mouse, e o cubo fica parado.
+            _isDragging = true;
+            BeginWindowDrag(grab);
             return;
         }
 
@@ -701,7 +915,7 @@ public sealed class WorkspaceCube : Window
         Render();
     }
 
-    private void OnMouseUp(object sender, MouseButtonEventArgs e)
+    private void Release(Point position)
     {
         if (!_isPressed)
         {
@@ -709,11 +923,18 @@ public sealed class WorkspaceCube : Window
         }
 
         _isPressed = false;
-        _root.ReleaseMouseCapture();
-        e.Handled = true;
+        _pointer = position;
+        if (_drag is not null)
+        {
+            _isDragging = false;
+            UpdateDropTarget();
+            DropWindow();
+            return;
+        }
+
         if (!_isDragging)
         {
-            Click(e.GetPosition(_viewport));
+            Click(position);
             return;
         }
 
@@ -722,7 +943,7 @@ public sealed class WorkspaceCube : Window
         // O embalo do arrasto conta: um giro rápido passa da face mais próxima.
         var (firstTime, firstX) = _samples.Peek();
         var elapsed = (_clock.Elapsed - firstTime).TotalSeconds;
-        var velocity = elapsed > 0.005 ? (e.GetPosition(_root).X - firstX) / elapsed : 0;
+        var velocity = elapsed > 0.005 ? (position.X - firstX) / elapsed : 0;
         var degreesPerDip = DragDegreesPerScreen / Math.Max(_root.ActualWidth, 1);
         var projected = _yaw.Value + (velocity * degreesPerDip * 0.2);
         var (face, yaw) = NearestFace(projected);
@@ -733,7 +954,8 @@ public sealed class WorkspaceCube : Window
 
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (IsOverviewOpen && !_isPressed)
+        // Com uma janela na mão, a roda gira o cubo para levá-la a uma área de trás.
+        if (IsOverviewOpen && (!_isPressed || _drag is not null))
         {
             Rotate(e.Delta > 0 ? -1 : 1);
         }
@@ -742,7 +964,27 @@ public sealed class WorkspaceCube : Window
     /// <summary>Clique numa face entra nela; numa face vazia cria uma área; fora do cubo, fecha.</summary>
     private void Click(Point point)
     {
-        Face? hit = null;
+        if (FaceAt(point) is not { } hit)
+        {
+            ZoomIn();
+        }
+        else if (!hit.Face.IsReal)
+        {
+            AddDesktop(enter: true);
+        }
+        else
+        {
+            EnterFace(hit.Face.Index, NearestYaw(hit.Face.Index, _yaw.Value));
+        }
+    }
+
+    /// <summary>
+    /// A face sob o ponto (do <see cref="_viewport"/>) e, nela, o pixel do monitor correspondente: a
+    /// textura de cada face cobre o monitor inteiro.
+    /// </summary>
+    private (Face Face, Point Pixel)? FaceAt(Point point)
+    {
+        (Face Face, Point Pixel)? hit = null;
         VisualTreeHelper.HitTest(
             _viewport,
             null,
@@ -750,7 +992,10 @@ public sealed class WorkspaceCube : Window
             {
                 if (result is RayMeshGeometry3DHitTestResult mesh && _faceOfModel.TryGetValue(mesh.ModelHit, out var face))
                 {
-                    hit = face;
+                    var uv = mesh.MeshHit.TextureCoordinates;
+                    var u = (uv[mesh.VertexIndex1].X * mesh.VertexWeight1) + (uv[mesh.VertexIndex2].X * mesh.VertexWeight2) + (uv[mesh.VertexIndex3].X * mesh.VertexWeight3);
+                    var v = (uv[mesh.VertexIndex1].Y * mesh.VertexWeight1) + (uv[mesh.VertexIndex2].Y * mesh.VertexWeight2) + (uv[mesh.VertexIndex3].Y * mesh.VertexWeight3);
+                    hit = (face, new Point(u * _monitor.Width, v * _monitor.Height));
                     return HitTestResultBehavior.Stop;
                 }
 
@@ -758,18 +1003,187 @@ public sealed class WorkspaceCube : Window
             },
             new PointHitTestParameters(point));
 
-        if (hit is null)
+        return hit;
+    }
+
+    /// <summary>Onde o ponto do monitor, numa face, aparece na tela agora (no <see cref="_viewport"/>).</summary>
+    private Point? Project(int face, Point pixel)
+    {
+        var local = new Point3D(
+            (pixel.X / _monitor.Width * 2) - 1,
+            _halfHeight - (pixel.Y / _monitor.Height * 2 * _halfHeight),
+            _apothem);
+
+        var world = _cube.Transform.Transform(_faces[face].Layer.Transform.Transform(local));
+        return _scene.TransformToAncestor(_viewport) is { } transform && transform.TryTransform(world, out var point) ? point : null;
+    }
+
+    /// <summary>
+    /// A janela sob o ponto, se der para arrastá-la: com a visão aberta, numa área com retrato pronto
+    /// e presa a uma área só (janelas fixadas em todas as áreas não mudam de área).
+    /// </summary>
+    private Grab? WindowAt(Point point)
+    {
+        if (_progress.Value < 0.9 || FaceAt(point) is not { } hit || !hit.Face.IsReal)
         {
-            ZoomIn();
+            return null;
         }
-        else if (!hit.IsReal)
+
+        var desktop = _desktops[hit.Face.Index];
+        var shot = _shots[desktop];
+        if (shot.Pixels is null)
         {
-            AddDesktop();
+            return null;
         }
-        else
+
+        foreach (var window in shot.Windows)
         {
-            EnterFace(hit.Index, NearestYaw(hit.Index, _yaw.Value));
+            if (Contains(window.Bounds, hit.Pixel))
+            {
+                return _context.Desktops.GetWindowDesktop(window.Handle) is { } id && id != Guid.Empty
+                    ? new Grab(desktop, window, hit.Pixel - new Point(window.Bounds.X, window.Bounds.Y))
+                    : null;
+            }
         }
+
+        return null;
+    }
+
+    /// <summary>A janela sai da camada da área (na hora) e passa a seguir o mouse, em tamanho de visão.</summary>
+    private void BeginWindowDrag(Grab grab)
+    {
+        var shot = _shots[grab.Desktop];
+        var original = shot.Pixels!;
+        var bounds = grab.Window.Bounds;
+        var index = shot.Windows.IndexOf(grab.Window);
+        _drag = new WindowDrag(grab, index, original, Crop(original, bounds));
+
+        // Na hora, o lugar dela fica vazio; o redesenho mostra o que estava atrás (e descarta um
+        // retrato desta área ainda a caminho, que teria a janela de volta).
+        SetLayer(grab.Desktop, Erase(original, shot.Windows, index));
+        shot.Windows.RemoveAt(index);
+        _ = RebuildLayerAsync(grab.Desktop);
+        _ghost.Source = ToBitmap(_drag.Pixels, bounds.Width, bounds.Height);
+        _ghost.Visibility = Visibility.Visible;
+        UpdateDropTarget();
+        StartRendering();
+        _ = SharpenGhostAsync(_drag);
+    }
+
+    /// <summary>
+    /// O primeiro retrato da janela é recortado da face e pode trazer pedaços de janelas que estavam
+    /// por cima; a própria janela desenhada pelo Windows o substitui assim que fica pronta.
+    /// </summary>
+    private async Task SharpenGhostAsync(WindowDrag drag)
+    {
+        var monitor = MonitorRect;
+        var bounds = drag.Grab.Window.Bounds;
+        var handle = drag.Grab.Window.Handle;
+        var layer = await Task.Run(() => ScreenCapture.PrintWindows(monitor, [handle]));
+        var center = ((((bounds.Y + (bounds.Height / 2)) * _monitor.Width) + bounds.X + (bounds.Width / 2)) * 4) + 3;
+        if (_drag == drag && layer[center] != 0)
+        {
+            drag.Pixels = Crop(layer, bounds);
+            _ghost.Source = ToBitmap(drag.Pixels, bounds.Width, bounds.Height);
+        }
+    }
+
+    /// <summary>A face sob o mouse vira o destino (menos a própria área da janela) e a janela o acompanha.</summary>
+    private void UpdateDropTarget()
+    {
+        if (_drag is not { } drag)
+        {
+            return;
+        }
+
+        var source = _desktops.IndexOf(drag.Grab.Desktop);
+        drag.Target = FaceAt(_pointer) is { } hit && hit.Face.Index != source ? hit.Face.Index : -1;
+
+        // Do tamanho com que as janelas aparecem na face da frente, com o ponto pego sob o mouse.
+        var progress = Math.Clamp(_progress.Value, 0, 1);
+        var distance = (_viewDistance * (1 + ((OverviewZoom - 1) * progress))) - (WindowLift * progress);
+        var scale = _viewDistance / distance / _context.DpiScale;
+        var bounds = drag.Grab.Window.Bounds;
+        _ghost.Width = bounds.Width * scale;
+        _ghost.Height = bounds.Height * scale;
+        Canvas.SetLeft(_ghost, _pointer.X - (drag.Grab.Offset.X * scale));
+        Canvas.SetTop(_ghost, _pointer.Y - (drag.Grab.Offset.Y * scale));
+        _ghost.Opacity = drag.Target >= 0 ? 1 : 0.85;
+    }
+
+    /// <summary>Parado perto da borda esquerda ou direita, o cubo gira uma face (e repete enquanto ali).</summary>
+    private void ScrollAtEdge()
+    {
+        if (_drag is not { } drag)
+        {
+            return;
+        }
+
+        var zone = Math.Max(_root.ActualWidth * EdgeZone, 40);
+        var side = _pointer.X < zone ? -1 : _pointer.X > _root.ActualWidth - zone ? 1 : 0;
+        if (side != drag.EdgeSide)
+        {
+            drag.EdgeSide = side;
+            drag.EdgeSince = _clock.Elapsed;
+        }
+        else if (side != 0 && _clock.Elapsed - drag.EdgeSince >= EdgeDwell)
+        {
+            drag.EdgeSince = _clock.Elapsed + EdgeRepeat - EdgeDwell;
+            Rotate(side);
+        }
+    }
+
+    /// <summary>
+    /// Solta a janela: numa outra área, ela vai para lá; na face "+", para uma área nova. As duas faces
+    /// mudam na hora e são redesenhadas pelo Windows logo depois. Fora do cubo, ela volta.
+    /// </summary>
+    private void DropWindow()
+    {
+        if (_drag is not { } drag)
+        {
+            return;
+        }
+
+        var target = drag.Target;
+        var destination = target < 0 ? null : target < _desktops.Count ? _desktops[target] : AddDesktop(enter: false);
+        if (destination is not { } id || !_context.Desktops.MoveWindow(drag.Grab.Window.Handle, id))
+        {
+            CancelDrag();
+            return;
+        }
+
+        EndDrag();
+        var window = drag.Grab.Window;
+        var shot = _shots[id];
+        shot.Windows.Insert(0, window);
+        SetLayer(id, Paste(shot.Pixels, drag.Pixels, window.Bounds));
+        _ = RebuildLayerAsync(id);
+    }
+
+    /// <summary>Devolve a janela arrastada à área dela.</summary>
+    private void CancelDrag()
+    {
+        if (_drag is not { } drag)
+        {
+            return;
+        }
+
+        _isPressed = false;
+        _isDragging = false;
+        EndDrag();
+        _root.ReleaseMouseCapture();
+        var shot = _shots[drag.Grab.Desktop];
+        shot.Windows.Insert(Math.Min(drag.Index, shot.Windows.Count), drag.Grab.Window);
+        SetLayer(drag.Grab.Desktop, drag.Original);
+        _ = RebuildLayerAsync(drag.Grab.Desktop);
+    }
+
+    private void EndDrag()
+    {
+        _drag = null;
+        _ghost.Visibility = Visibility.Collapsed;
+        _ghost.Source = null;
+        StartRendering();
     }
 
     private void StartRendering()
@@ -795,6 +1209,13 @@ public sealed class WorkspaceCube : Window
         var animating = _progress.Update() | _yaw.Update();
         Render();
         SwitchWhenCovered();
+        if (_drag is not null)
+        {
+            // O cubo pode girar sob a janela parada: o destino muda sem o mouse se mexer.
+            ScrollAtEdge();
+            UpdateDropTarget();
+        }
+
         if (animating || _isPressed || _isSwitchPending)
         {
             return;
@@ -831,7 +1252,7 @@ public sealed class WorkspaceCube : Window
 
         SortLayers();
         _pill.Opacity = Math.Clamp((progress - 0.4) / 0.6, 0, 1);
-        UpdateLabel(NearestFace(_yaw.Value).Face);
+        UpdateLabel(_drag is { } drag ? drag.Target : NearestFace(_yaw.Value).Face);
     }
 
     /// <summary>Camadas transparentes precisam ser desenhadas de trás para frente.</summary>
@@ -855,18 +1276,26 @@ public sealed class WorkspaceCube : Window
         }
     }
 
+    /// <param name="face">Face em destaque; com uma janela arrastada, o destino dela (-1 sem destino).</param>
     private void UpdateLabel(int face, bool force = false)
     {
-        if (face == _labelFace && !force)
+        var dragging = _drag is not null;
+        if (face == _labelFace && dragging == _labelDragging && !force)
         {
             return;
         }
 
         _labelFace = face;
+        _labelDragging = dragging;
         var isNew = face >= _desktops.Count;
-        _label.Text = isNew
-            ? "Nova área de trabalho · clique ou Enter para criar"
-            : string.Create(CultureInfo.CurrentCulture, $"Área de trabalho {face + 1}");
+        _label.Text = (dragging, face < 0, isNew) switch
+        {
+            (true, true, _) => "Solte a janela em outra área de trabalho",
+            (true, _, true) => "Soltar aqui cria uma área de trabalho com a janela",
+            (true, _, _) => string.Create(CultureInfo.CurrentCulture, $"Mover para a área de trabalho {face + 1}"),
+            (_, _, true) => "Nova área de trabalho · clique ou Enter para criar",
+            _ => string.Create(CultureInfo.CurrentCulture, $"Área de trabalho {face + 1}"),
+        };
         _dots.Children.Clear();
         for (var index = 0; index < _desktops.Count; index++)
         {
@@ -983,5 +1412,43 @@ public sealed class WorkspaceCube : Window
         public DiffuseMaterial LayerMaterial { get; } = new(Brushes.Transparent);
 
         public TranslateTransform3D Lift { get; } = new(0, 0, LayerEpsilon);
+    }
+
+    /// <summary>Uma janela no retrato de uma área: onde ela está, em pixels relativos ao monitor.</summary>
+    private readonly record struct WindowShot(nint Handle, Int32Rect Bounds);
+
+    /// <summary>Janela sob o botão apertado; <paramref name="Offset"/> é o ponto pego, em pixels dela.</summary>
+    private sealed record Grab(Guid Desktop, WindowShot Window, Vector Offset);
+
+    /// <summary>O retrato de uma área: a camada de janelas e as janelas nela, de cima para baixo.</summary>
+    private sealed class Shot
+    {
+        public List<WindowShot> Windows { get; } = [];
+
+        public byte[]? Pixels { get; set; }
+
+        /// <summary>Cresce a cada mudança: um retrato que chega atrasado não sobrescreve um mais novo.</summary>
+        public int Version { get; set; }
+    }
+
+    private sealed class WindowDrag(Grab grab, int index, byte[] original, byte[] pixels)
+    {
+        public Grab Grab { get; } = grab;
+
+        /// <summary>Posição da janela na lista da área de origem (de cima para baixo), para devolvê-la.</summary>
+        public int Index { get; } = index;
+
+        /// <summary>Camada da área de origem antes do arrasto, para devolver a janela.</summary>
+        public byte[] Original { get; } = original;
+
+        /// <summary>A janela, do tamanho de <see cref="WindowShot.Bounds"/>.</summary>
+        public byte[] Pixels { get; set; } = pixels;
+
+        /// <summary>Face sob o mouse onde soltar move a janela; -1 se nenhuma.</summary>
+        public int Target { get; set; } = -1;
+
+        public int EdgeSide { get; set; }
+
+        public TimeSpan EdgeSince { get; set; }
     }
 }

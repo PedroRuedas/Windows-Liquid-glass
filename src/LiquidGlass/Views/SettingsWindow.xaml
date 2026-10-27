@@ -26,6 +26,7 @@
             <converters:IndexToVisibilityConverter x:Key="IndexToVisibility" />
             <converters:ColorToBrushConverter x:Key="ColorToBrush" />
             <converters:ColorsEqualConverter x:Key="ColorsEqual" />
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         </ResourceDictionary>
     </Window.Resources>
 
@@ -357,6 +358,24 @@
 
                     <controls:SettingCard Glyph="&#xE7C4;" Header="Win+Tab abre o cubo das áreas de trabalho" Description="Usa o cubo da dock no lugar da Visão de Tarefas do Windows.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.WinTabOpensOverview}" />
+                    </controls:SettingCard>
+
+                    <TextBlock x:Name="UpdatesSection" Style="{StaticResource SectionTitle}" Text="Atualizações" />
+
+                    <controls:SettingCard Glyph="&#xE895;" Header="Liquid Glass Dock" Description="{Binding UpdateStatus}">
+                        <StackPanel Orientation="Horizontal">
+                            <ProgressBar Width="120"
+                                         Margin="0,0,12,0"
+                                         VerticalAlignment="Center"
+                                         Maximum="1"
+                                         Value="{Binding Updates.Progress, Mode=OneWay}"
+                                         Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Command="{Binding UpdateActionCommand}" Content="{Binding UpdateActionText}" />
+                        </StackPanel>
+                    </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE7E7;" Header="Procurar atualizações automaticamente" Description="Ao abrir a dock e a cada 6 horas. A versão nova só é instalada quando você pedir.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.CheckForUpdates}" />
                     </controls:SettingCard>
                 </StackPanel>
             </ScrollViewer>

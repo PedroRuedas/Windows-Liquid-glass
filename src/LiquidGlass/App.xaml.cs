@@ -25,6 +25,7 @@ public partial class App : Application
     private readonly BatteryService _battery = new();
     private readonly NetworkService _network = new();
     private readonly VirtualDesktopService _desktops = new();
+    private readonly UpdateService _updates = new();
 
     /// <summary>Quanto o "--quit" espera a dock em execução devolver a barra de tarefas e encerrar.</summary>
     private static readonly TimeSpan QuitTimeout = TimeSpan.FromSeconds(10);
@@ -116,9 +117,11 @@ public partial class App : Application
             (ImageSource)FindResource("StartIcon"),
             (ImageSource)FindResource("TrayIcon"),
             (ImageSource)FindResource("WorkspacesIcon"));
-        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, _battery, _network, _animator, dockIcons);
+        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, _battery, _network, _animator, dockIcons) { Updates = _updates };
         _dockViewModel.SettingsRequested += (_, _) => OpenSettings();
         _dockViewModel.QuitRequested += (_, _) => Shutdown();
+        _dockViewModel.UpdatesRequested += (_, _) => ShowUpdates();
+        _updates.SetAutomatic(Settings.CheckForUpdates);
 
         _dockWindow = new DockWindow(_dockViewModel, _wallpaper, _tray, _efficiency);
         _dockWindow.Closed += (_, _) => Shutdown();
@@ -157,6 +160,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _settingsWindow?.Close();
+        _updates.Dispose();
         _overview?.Dispose();
         _input?.Dispose();
         _animator?.Dispose();
@@ -209,7 +213,7 @@ public partial class App : Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(new SettingsViewModel(Settings, _icons));
+        _settingsWindow = new SettingsWindow(new SettingsViewModel(Settings, _icons, _updates));
         _settingsWindow.Closed += (_, _) =>
         {
             _settingsWindow = null;
@@ -220,10 +224,24 @@ public partial class App : Application
         _settingsWindow.Activate();
     }
 
+    /// <summary>Personalização aberta nas atualizações; sem versão nova conhecida, procura uma.</summary>
+    private void ShowUpdates()
+    {
+        OpenSettings();
+        _settingsWindow?.ShowUpdates();
+        if (_updates.Available is null)
+        {
+            _ = _updates.CheckAsync(userInitiated: true);
+        }
+    }
+
     private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
         {
+            case nameof(DockSettings.CheckForUpdates):
+                _updates.SetAutomatic(Settings.CheckForUpdates);
+                break;
             case nameof(DockSettings.TaskbarMode):
                 _taskbar?.Apply(Settings.TaskbarMode);
                 break;
@@ -259,7 +277,8 @@ public partial class App : Application
 
     /// <summary>
     /// Só no Debug, para testar sem teclado: LIQUIDGLASS_CUBE_DEMO=1 abre o cubo, gira-o como num
-    /// arrasto e salva quadros; LIQUIDGLASS_GENIE_DEMO com o título de uma janela a minimiza e restaura.
+    /// arrasto e salva quadros; LIQUIDGLASS_DRAG_DEMO com o título de uma janela abre o cubo e a arrasta
+    /// até a área à direita; LIQUIDGLASS_GENIE_DEMO com o título de uma janela a minimiza e restaura.
     /// </summary>
     [System.Diagnostics.Conditional("DEBUG")]
     private void StartDemos()
@@ -267,9 +286,45 @@ public partial class App : Application
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         var step = 0;
         var cubeDemo = Environment.GetEnvironmentVariable("LIQUIDGLASS_CUBE_DEMO") == "1";
+        var dragTitle = Environment.GetEnvironmentVariable("LIQUIDGLASS_DRAG_DEMO");
         timer.Tick += (_, _) =>
         {
             step++;
+            if (dragTitle is { Length: > 0 })
+            {
+                switch (step)
+                {
+                    case 1:
+                        _overview?.Toggle();
+                        break;
+                    case 2:
+                        _overview?.Current?.DemoGrab(User32.FindWindow(null, dragTitle));
+                        break;
+                    case 3:
+                        _overview?.Current?.SaveDemoFrame("drag-grab");
+                        _overview?.Current?.DemoRotate(back: false);
+                        break;
+                    case 4:
+                        _overview?.Current?.DemoPointAtFront();
+                        break;
+                    case 5:
+                        _overview?.Current?.SaveDemoFrame("drag-over");
+                        _overview?.Current?.DemoDrop();
+                        break;
+                    case 6:
+                        _overview?.Current?.SaveDemoFrame("drag-dropped");
+                        _overview?.Current?.DemoRotate(back: true);
+                        break;
+                    case 7:
+                        _overview?.Current?.SaveDemoFrame("drag-back");
+                        _overview?.Toggle();
+                        timer.Stop();
+                        break;
+                }
+
+                return;
+            }
+
             if (cubeDemo)
             {
                 switch (step)

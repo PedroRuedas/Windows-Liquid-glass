@@ -87,6 +87,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     /// <summary>Pedido para encerrar o app.</summary>
     public event EventHandler? QuitRequested;
 
+    /// <summary>Pedido para procurar atualizações, mostrando o resultado na personalização.</summary>
+    public event EventHandler? UpdatesRequested;
+
     /// <summary>Pedido para abrir ou fechar a visão das áreas de trabalho.</summary>
     public event EventHandler? WorkspacesRequested;
 
@@ -94,6 +97,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     public event EventHandler<DockItemViewModel>? ItemActivating;
 
     public DockSettings Settings { get; }
+
+    /// <summary>Atualizações pelo menu da dock; sem ele, o menu não as oferece.</summary>
+    public UpdateService? Updates { get; init; }
 
     public ObservableCollection<DockItemViewModel> Items { get; } = [];
 
@@ -197,6 +203,17 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void Quit() => QuitRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void CheckForUpdates() => UpdatesRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>A personalização abre junto, mostrando o download e qualquer erro.</summary>
+    [RelayCommand]
+    private Task InstallUpdate()
+    {
+        UpdatesRequested?.Invoke(this, EventArgs.Empty);
+        return Updates?.InstallAsync() ?? Task.CompletedTask;
+    }
 
     /// <summary>
     /// Com o app em foco, minimiza (uma janela) ou alterna entre as janelas; senão, traz a mais recente.

@@ -120,6 +120,10 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _winTabOpensOverview = true;
 
+    /// <summary>Procura versões novas ao abrir a dock e a cada poucas horas.</summary>
+    [ObservableProperty]
+    private bool _checkForUpdates = true;
+
     public ObservableCollection<PinnedApp> PinnedApps { get; set; } = [];
 
     /// <summary>Copia todos os valores visuais e de comportamento (não os apps fixados).</summary>
@@ -159,5 +163,6 @@ public sealed partial class DockSettings : ObservableObject
         TaskbarMode = other.TaskbarMode;
         LaunchAtStartup = other.LaunchAtStartup;
         WinTabOpensOverview = other.WinTabOpensOverview;
+        CheckForUpdates = other.CheckForUpdates;
     }
 }

@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Globalization;
 using System.Reflection;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,15 +21,28 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(RemovePinCommand), nameof(MovePinUpCommand), nameof(MovePinDownCommand))]
     private PinnedAppItem? _selectedPin;
 
-    public SettingsViewModel(DockSettings settings, IconService icons)
+    public SettingsViewModel(DockSettings settings, IconService icons, UpdateService updates)
     {
         Settings = settings;
         _icons = icons;
+        Updates = updates;
         Settings.PinnedApps.CollectionChanged += OnPinnedAppsChanged;
+        Updates.PropertyChanged += OnUpdatesChanged;
         RefreshPins();
     }
 
     public DockSettings Settings { get; }
+
+    public UpdateService Updates { get; }
+
+    /// <summary>Com uma versão nova encontrada, o botão instala; senão, procura.</summary>
+    public string UpdateActionText => Updates.Available is not null ? "Atualizar agora" : "Procurar atualizações";
+
+    public string UpdateStatus => Updates.State == UpdateState.Idle
+        ? string.Create(CultureInfo.CurrentCulture, $"Versão atual: {Version}.")
+        : Updates.Message;
+
+    public bool IsDownloading => Updates.State == UpdateState.Downloading;
 
     public ObservableCollection<PinnedAppItem> Pins { get; } = [];
 
@@ -47,7 +62,24 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string Version { get; } =
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 
-    public void Dispose() => Settings.PinnedApps.CollectionChanged -= OnPinnedAppsChanged;
+    public void Dispose()
+    {
+        Settings.PinnedApps.CollectionChanged -= OnPinnedAppsChanged;
+        Updates.PropertyChanged -= OnUpdatesChanged;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunUpdateAction))]
+    private Task UpdateAction() => Updates.Available is not null ? Updates.InstallAsync() : Updates.CheckAsync(userInitiated: true);
+
+    private bool CanRunUpdateAction() => !Updates.IsBusy;
+
+    private void OnUpdatesChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(UpdateActionText));
+        OnPropertyChanged(nameof(UpdateStatus));
+        OnPropertyChanged(nameof(IsDownloading));
+        UpdateActionCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand]
     private void ApplyPreset(GlassPreset preset) => preset.ApplyTo(Settings);
