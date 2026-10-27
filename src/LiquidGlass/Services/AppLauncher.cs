@@ -8,6 +8,7 @@ namespace LiquidGlass.Services;
 public static class AppLauncher
 {
     public const string RecycleBin = "shell:RecycleBinFolder";
+    public const string PowerSettings = "ms-settings:batterysaver";
 
     public static bool Launch(string target)
     {

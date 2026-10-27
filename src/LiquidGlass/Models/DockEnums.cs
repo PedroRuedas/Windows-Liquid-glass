@@ -24,4 +24,6 @@ public enum DockItemKind
     RecycleBin,
     TrayButton,
     Separator,
+    Battery,
+    WorkspacesButton,
 }

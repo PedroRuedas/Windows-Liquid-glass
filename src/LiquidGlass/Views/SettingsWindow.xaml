@@ -158,8 +158,16 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowStartButton}" />
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE7C4;" Header="Botão das áreas de trabalho" Description="Abre o cubo das áreas de trabalho, como no Fedora.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowWorkspacesButton}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xE70E;" Header="Apps em segundo plano" Description="Botão que mostra os ícones da bandeja do sistema.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowTray}" />
+                    </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE83F;" Header="Bateria" Description="Carga e tempo restante. Só aparece em computadores com bateria.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowBattery}" />
                     </controls:SettingCard>
 
                     <controls:SettingCard Glyph="&#xE74D;" Header="Lixeira no final da dock">
@@ -305,6 +313,14 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.BounceOnAttention}" />
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE73F;" Header="Fechar e minimizar no estilo do GNOME" Description="A janela encolhe ao fechar e voa até o ícone dela na dock ao minimizar.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AnimateWindows}" />
+                    </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE8AB;" Header="Cubo ao trocar de área de trabalho" Description="Ctrl+Win+setas giram o cubo das áreas de trabalho, como no Fedora.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AnimateWorkspaceSwitch}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xEC4A;" Header="Velocidade das animações">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0.5" Maximum="2" Value="{Binding Settings.AnimationSpeed}" />
@@ -333,6 +349,10 @@
 
                     <controls:SettingCard Glyph="&#xE7E8;" Header="Iniciar com o Windows">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.LaunchAtStartup}" />
+                    </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE7C4;" Header="Win+Tab abre o cubo das áreas de trabalho" Description="Usa o cubo da dock no lugar da Visão de Tarefas do Windows.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.WinTabOpensOverview}" />
                     </controls:SettingCard>
                 </StackPanel>
             </ScrollViewer>

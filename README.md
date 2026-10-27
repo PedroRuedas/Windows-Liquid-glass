@@ -33,6 +33,18 @@ animações de abertura e uma tela de personalização completa.
   esquerdo e direito são repassados ao app, como na bandeja do Windows.
 - Janelas maximizadas param antes da dock, e a dock some em jogos e vídeos em tela cheia.
 - Opção de ocultar a dock automaticamente.
+- **Bateria:** carga, tempo restante e estado (carregando, economia de energia) num ícone discreto
+  perto da Lixeira. Só aparece em computadores com bateria.
+
+**Áreas de trabalho em cubo, como no Fedora (extensão Desktop Cube do GNOME)**
+- Win+Tab (ou o botão da dock) afasta a câmera e mostra as áreas de trabalho como faces de um cubo,
+  em círculo, com as janelas flutuando à frente do papel de parede desfocado.
+- Arraste com o mouse para girar o cubo (na vertical ele inclina); ao soltar, ele encaixa na área
+  mais próxima, levando em conta o embalo. Setas e roda do mouse giram uma face; clique numa face
+  para entrar nela; com menos de 4 áreas, as faces livres criam uma nova.
+- Ctrl+Win+setas giram o cubo até a área vizinha, recuando um pouco no meio do giro.
+- Minimizar é a "lâmpada mágica": a janela escorre em funil para dentro do ícone dela na dock (e se
+  desenrola de lá ao restaurar pela dock). Fechar encolhe a janela enquanto ela some.
 
 **Personalização**
 
@@ -42,10 +54,10 @@ Todas as mudanças aparecem na dock na hora:
 
 | Seção | Opções |
 | --- | --- |
-| Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, apps em segundo plano, Lixeira |
+| Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, botão das áreas de trabalho, apps em segundo plano, bateria, Lixeira |
 | Vidro | estilos prontos, refração, desfoque, dispersão de cores, brilho da borda, saturação, sombra, cor e intensidade do tom |
-| Animações | ampliação, tamanho máximo, alcance, quicar ao abrir, quicar por atenção, velocidade |
-| Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows |
+| Animações | ampliação, tamanho máximo, alcance, quicar ao abrir, quicar por atenção, fechar e minimizar no estilo do GNOME, deslizar entre áreas, velocidade |
+| Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows, Win+Tab abre as áreas de trabalho |
 | Apps fixados | adicionar, importar da barra de tarefas, reordenar e remover |
 
 ## Instalação

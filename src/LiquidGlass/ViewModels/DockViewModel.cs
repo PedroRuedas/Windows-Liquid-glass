@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LiquidGlass.Graphics;
 using LiquidGlass.Models;
 using LiquidGlass.Services;
 
@@ -22,18 +23,34 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
     private readonly WindowTracker _tracker;
     private readonly IconService _icons;
+    private readonly BatteryService _battery;
+    private readonly WindowAnimator _animator;
     private readonly DockItemViewModel _startItem;
+    private readonly DockItemViewModel _workspacesItem;
+    private readonly DockItemViewModel _batteryItem;
     private readonly DockItemViewModel _separatorItem;
     private readonly DockItemViewModel _recycleBinItem;
     private readonly DockItemViewModel _trayItem;
+    private (int Percent, bool Charging, bool Saver) _batteryIconState;
 
-    public DockViewModel(DockSettings settings, WindowTracker tracker, IconService icons, ImageSource startIcon, ImageSource trayIcon)
+    public DockViewModel(
+        DockSettings settings,
+        WindowTracker tracker,
+        IconService icons,
+        BatteryService battery,
+        WindowAnimator animator,
+        DockIcons dockIcons)
     {
         Settings = settings;
         _tracker = tracker;
         _icons = icons;
+        _battery = battery;
+        _animator = animator;
 
-        _startItem = new DockItemViewModel(this, DockItemKind.StartButton) { Name = "Iniciar", Icon = startIcon };
+        _startItem = new DockItemViewModel(this, DockItemKind.StartButton) { Name = "Iniciar", Icon = dockIcons.Start };
+        _workspacesItem = new DockItemViewModel(this, DockItemKind.WorkspacesButton) { Name = "Áreas de trabalho", Icon = dockIcons.Workspaces };
+        _batteryItem = new DockItemViewModel(this, DockItemKind.Battery);
+        UpdateBatteryItem();
         _separatorItem = new DockItemViewModel(this, DockItemKind.Separator);
         _recycleBinItem = new DockItemViewModel(this, DockItemKind.RecycleBin)
         {
@@ -41,9 +58,10 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             Icon = icons.GetIcon(AppLauncher.RecycleBin),
         };
 
-        _trayItem = new DockItemViewModel(this, DockItemKind.TrayButton) { Name = "Apps em segundo plano", Icon = trayIcon };
+        _trayItem = new DockItemViewModel(this, DockItemKind.TrayButton) { Name = "Apps em segundo plano", Icon = dockIcons.Tray };
 
         Settings.PropertyChanged += OnSettingsChanged;
+        _battery.PropertyChanged += OnBatteryChanged;
         Settings.PinnedApps.CollectionChanged += OnPinnedAppsChanged;
         _tracker.WindowsChanged += OnWindowsChanged;
         _tracker.ForegroundChanged += OnForegroundChanged;
@@ -61,6 +79,12 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     /// <summary>Pedido para encerrar o app.</summary>
     public event EventHandler? QuitRequested;
 
+    /// <summary>Pedido para abrir ou fechar a visão das áreas de trabalho.</summary>
+    public event EventHandler? WorkspacesRequested;
+
+    /// <summary>Um ícone foi clicado; a visão das áreas de trabalho fecha para o app aparecer.</summary>
+    public event EventHandler<DockItemViewModel>? ItemActivating;
+
     public DockSettings Settings { get; }
 
     public ObservableCollection<DockItemViewModel> Items { get; } = [];
@@ -70,10 +94,17 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
     public void Activate(DockItemViewModel item)
     {
+        ItemActivating?.Invoke(this, item);
         switch (item.Kind)
         {
             case DockItemKind.StartButton:
                 AppLauncher.OpenStartMenu();
+                break;
+            case DockItemKind.WorkspacesButton:
+                WorkspacesRequested?.Invoke(this, EventArgs.Empty);
+                break;
+            case DockItemKind.Battery:
+                AppLauncher.Launch(AppLauncher.PowerSettings);
                 break;
             case DockItemKind.RecycleBin:
                 AppLauncher.Launch(AppLauncher.RecycleBin);
@@ -122,23 +153,27 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
     }
 
-    public static void CloseAll(DockItemViewModel item)
+    public void CloseAll(DockItemViewModel item)
     {
         foreach (var window in item.Windows)
         {
-            AppLauncher.Close(window.Handle);
+            _animator.Close(window.Handle);
         }
     }
 
-    public static void ActivateWindow(DockItemViewModel item, AppWindow window)
+    public void ActivateWindow(DockItemViewModel item, AppWindow window)
     {
         item.NeedsAttention = false;
-        AppLauncher.Activate(window.Handle);
+        _animator.Activate(window.Handle);
     }
+
+    /// <summary>Item da dock que mostra a janela (o app dono dela), se houver.</summary>
+    public DockItemViewModel? FindItem(nint hwnd) => Items.FirstOrDefault(item => item.Windows.Any(window => window.Handle == hwnd));
 
     public void Dispose()
     {
         Settings.PropertyChanged -= OnSettingsChanged;
+        _battery.PropertyChanged -= OnBatteryChanged;
         Settings.PinnedApps.CollectionChanged -= OnPinnedAppsChanged;
         _tracker.WindowsChanged -= OnWindowsChanged;
         _tracker.ForegroundChanged -= OnForegroundChanged;
@@ -163,16 +198,16 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
         if (!isFocused)
         {
-            AppLauncher.Activate(windows[0].Handle);
+            _animator.Activate(windows[0].Handle);
         }
         else if (windows.Count == 1)
         {
-            AppLauncher.Minimize(foreground);
+            _animator.Minimize(foreground);
         }
         else
         {
             // As janelas vêm em ordem Z: a última é a usada há mais tempo.
-            AppLauncher.Activate(windows[^1].Handle);
+            _animator.Activate(windows[^1].Handle);
         }
     }
 
@@ -197,6 +232,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             case nameof(DockSettings.ShowStartButton):
             case nameof(DockSettings.ShowRecycleBin):
             case nameof(DockSettings.ShowTray):
+            case nameof(DockSettings.ShowBattery):
+            case nameof(DockSettings.ShowWorkspacesButton):
                 Rebuild();
                 break;
             case nameof(DockSettings.MagnificationEnabled):
@@ -207,6 +244,28 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     }
 
     private void OnPinnedAppsChanged(object? sender, NotifyCollectionChangedEventArgs e) => Rebuild();
+
+    private void OnBatteryChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(BatteryService.IsPresent))
+        {
+            Rebuild();
+        }
+
+        UpdateBatteryItem();
+    }
+
+    /// <summary>O rótulo acompanha cada mudança; o ícone só é redesenhado quando o que ele mostra muda.</summary>
+    private void UpdateBatteryItem()
+    {
+        _batteryItem.Name = _battery.Describe();
+        var state = (_battery.Percent, _battery.IsCharging, _battery.IsSaverOn);
+        if (_batteryItem.Icon is null || state != _batteryIconState)
+        {
+            _batteryIconState = state;
+            _batteryItem.Icon = BatteryIcon.Create(state.Percent, state.IsCharging, state.IsSaverOn);
+        }
+    }
 
     private void OnWindowsChanged(object? sender, EventArgs e) => Rebuild();
 
@@ -248,6 +307,11 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             desired.Add(_startItem);
         }
 
+        if (Settings.ShowWorkspacesButton)
+        {
+            desired.Add(_workspacesItem);
+        }
+
         foreach (var pin in Settings.PinnedApps)
         {
             var windows = ClaimWindows(pin, unclaimed);
@@ -277,7 +341,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         // Apps em execução mantêm a ordem em que apareceram; os novos entram no final.
         desired.AddRange(running.OrderBy(item => Items.IndexOf(item) is var index and >= 0 ? index : int.MaxValue));
 
-        if (Settings.ShowTray || Settings.ShowRecycleBin)
+        var showBattery = Settings.ShowBattery && _battery.IsPresent;
+        if (Settings.ShowTray || showBattery || Settings.ShowRecycleBin)
         {
             desired.Add(_separatorItem);
         }
@@ -285,6 +350,11 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         if (Settings.ShowTray)
         {
             desired.Add(_trayItem);
+        }
+
+        if (showBattery)
+        {
+            desired.Add(_batteryItem);
         }
 
         if (Settings.ShowRecycleBin)
@@ -412,3 +482,6 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
     }
 }
+
+/// <summary>Ícones desenhados (recursos XAML) dos botões fixos da dock.</summary>
+public sealed record DockIcons(ImageSource Start, ImageSource Tray, ImageSource Workspaces);

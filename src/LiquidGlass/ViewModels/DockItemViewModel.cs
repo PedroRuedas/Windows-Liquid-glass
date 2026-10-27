@@ -68,8 +68,8 @@ public sealed partial class DockItemViewModel : ObservableObject
     private void TogglePin() => _owner.TogglePin(this);
 
     [RelayCommand]
-    private void CloseAll() => DockViewModel.CloseAll(this);
+    private void CloseAll() => _owner.CloseAll(this);
 
     [RelayCommand]
-    private void ActivateWindow(AppWindow window) => DockViewModel.ActivateWindow(this, window);
+    private void ActivateWindow(AppWindow window) => _owner.ActivateWindow(this, window);
 }

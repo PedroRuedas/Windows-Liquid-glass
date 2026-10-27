@@ -125,13 +125,19 @@ public sealed class WindowTracker : IDisposable
         _refreshDebounce.Start();
     }
 
-    private List<AppWindow> EnumerateAppWindows()
+    /// <summary>
+    /// Janelas de app de todas as áreas de trabalho, de cima para baixo na ordem Z. As das outras
+    /// áreas estão "cloaked"; quem chama decide quais delas são de fato de outra área.
+    /// </summary>
+    public List<AppWindow> EnumerateAllDesktops() => EnumerateAppWindows(includeCloaked: true);
+
+    private List<AppWindow> EnumerateAppWindows(bool includeCloaked = false)
     {
         var windows = new List<AppWindow>();
         User32.EnumWindows(
             (hwnd, _) =>
             {
-                if (IsAppWindow(hwnd))
+                if (IsAppWindow(hwnd, includeCloaked))
                 {
                     windows.Add(Describe(hwnd));
                 }
@@ -150,9 +156,9 @@ public sealed class WindowTracker : IDisposable
         return windows;
     }
 
-    private bool IsAppWindow(nint hwnd)
+    private bool IsAppWindow(nint hwnd, bool includeCloaked)
     {
-        if (!User32.IsWindowVisible(hwnd) || Dwmapi.IsCloaked(hwnd))
+        if (!User32.IsWindowVisible(hwnd) || (!includeCloaked && Dwmapi.IsCloaked(hwnd)))
         {
             return false;
         }

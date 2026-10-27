@@ -44,6 +44,13 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _showTray = true;
 
+    /// <summary>Só aparece em computadores com bateria.</summary>
+    [ObservableProperty]
+    private bool _showBattery = true;
+
+    [ObservableProperty]
+    private bool _showWorkspacesButton = true;
+
     // Vidro
     [ObservableProperty]
     private double _refraction = 0.7;
@@ -88,6 +95,14 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private double _animationSpeed = 1.0;
 
+    /// <summary>Fechar e minimizar no estilo do GNOME, no lugar das animações do Windows.</summary>
+    [ObservableProperty]
+    private bool _animateWindows = true;
+
+    /// <summary>Ctrl+Win+setas giram o cubo das áreas de trabalho.</summary>
+    [ObservableProperty]
+    private bool _animateWorkspaceSwitch = true;
+
     // Comportamento
     [ObservableProperty]
     private bool _autoHide;
@@ -97,6 +112,10 @@ public sealed partial class DockSettings : ObservableObject
 
     [ObservableProperty]
     private bool _launchAtStartup;
+
+    /// <summary>Win+Tab abre o cubo das áreas de trabalho em vez da Visão de Tarefas.</summary>
+    [ObservableProperty]
+    private bool _winTabOpensOverview = true;
 
     public ObservableCollection<PinnedApp> PinnedApps { get; set; } = [];
 
@@ -114,6 +133,8 @@ public sealed partial class DockSettings : ObservableObject
         ShowStartButton = other.ShowStartButton;
         ShowRecycleBin = other.ShowRecycleBin;
         ShowTray = other.ShowTray;
+        ShowBattery = other.ShowBattery;
+        ShowWorkspacesButton = other.ShowWorkspacesButton;
         Refraction = other.Refraction;
         Blur = other.Blur;
         ChromaticAberration = other.ChromaticAberration;
@@ -128,8 +149,11 @@ public sealed partial class DockSettings : ObservableObject
         BounceOnLaunch = other.BounceOnLaunch;
         BounceOnAttention = other.BounceOnAttention;
         AnimationSpeed = other.AnimationSpeed;
+        AnimateWindows = other.AnimateWindows;
+        AnimateWorkspaceSwitch = other.AnimateWorkspaceSwitch;
         AutoHide = other.AutoHide;
         TaskbarMode = other.TaskbarMode;
         LaunchAtStartup = other.LaunchAtStartup;
+        WinTabOpensOverview = other.WinTabOpensOverview;
     }
 }

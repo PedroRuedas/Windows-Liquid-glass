@@ -21,6 +21,9 @@ public partial class App : Application
 
     private readonly IconService _icons = new();
     private readonly TrayIconService _tray = new();
+    private readonly WallpaperService _wallpaper = new();
+    private readonly BatteryService _battery = new();
+    private readonly VirtualDesktopService _desktops = new();
 
     /// <summary>Quanto o "--quit" espera a dock em execução devolver a barra de tarefas e encerrar.</summary>
     private static readonly TimeSpan QuitTimeout = TimeSpan.FromSeconds(10);
@@ -31,6 +34,9 @@ public partial class App : Application
     private SettingsService? _settingsService;
     private TaskbarController? _taskbar;
     private WindowTracker? _tracker;
+    private WindowAnimator? _animator;
+    private GlobalInputHook? _input;
+    private WorkspaceOverview? _overview;
     private DockViewModel? _dockViewModel;
     private DockWindow? _dockWindow;
     private SettingsWindow? _settingsWindow;
@@ -103,21 +109,40 @@ public partial class App : Application
         _tray.IsEnabled = Settings.ShowTray;
 
         _tracker = new WindowTracker();
-        _dockViewModel = new DockViewModel(
-            Settings,
-            _tracker,
-            _icons,
+        _animator = new WindowAnimator(Settings);
+        var dockIcons = new DockIcons(
             (ImageSource)FindResource("StartIcon"),
-            (ImageSource)FindResource("TrayIcon"));
+            (ImageSource)FindResource("TrayIcon"),
+            (ImageSource)FindResource("WorkspacesIcon"));
+        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, _battery, _animator, dockIcons);
         _dockViewModel.SettingsRequested += (_, _) => OpenSettings();
         _dockViewModel.QuitRequested += (_, _) => Shutdown();
 
-        _dockWindow = new DockWindow(_dockViewModel, new WallpaperService(), _tray, _efficiency);
+        _dockWindow = new DockWindow(_dockViewModel, _wallpaper, _tray, _efficiency);
         _dockWindow.Closed += (_, _) => Shutdown();
         _dockWindow.Show();
+        _animator.IconLocator = _dockWindow.FindIconBounds;
 
         var source = _dockWindow.NativeSource!;
         _tracker.Attach(source);
+        _battery.Attach(source);
+
+        _input = new GlobalInputHook();
+        _overview = new WorkspaceOverview(CreateOverviewContext, _input, _efficiency, keep => _dockWindow.KeepVisible = keep);
+        _input.OverviewKeyPressed += (_, _) => _overview.Toggle();
+        _input.SwitchKeyPressed += (_, direction) => _overview.Switch(direction);
+        _input.OverviewNavigation += (_, key) => _overview.HandleKey(key);
+        _input.CaptionButtonPressed += (_, pressed) => _animator.OnCaptionButtonPressed(pressed.Window, pressed.Button);
+        _dockViewModel.WorkspacesRequested += (_, _) => _overview.Toggle();
+        _dockViewModel.ItemActivating += (_, item) =>
+        {
+            if (item.Kind != DockItemKind.WorkspacesButton)
+            {
+                _overview.Close();
+            }
+        };
+        ApplyWindowFeatures();
+        StartDemos();
         _taskbarCreatedMessage = User32.RegisterWindowMessage("TaskbarCreated");
         source.AddHook(WndProc);
 
@@ -130,8 +155,12 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _settingsWindow?.Close();
+        _overview?.Dispose();
+        _input?.Dispose();
+        _animator?.Dispose();
         _dockWindow?.Close();
         _dockViewModel?.Dispose();
+        _battery.Dispose();
         _tracker?.Dispose();
         _tray.Dispose();
         _efficiency?.Dispose();
@@ -201,7 +230,104 @@ public partial class App : Application
             case nameof(DockSettings.LaunchAtStartup):
                 StartupService.SetEnabled(Settings.LaunchAtStartup);
                 break;
+            case nameof(DockSettings.AnimateWindows):
+            case nameof(DockSettings.AnimateWorkspaceSwitch):
+            case nameof(DockSettings.WinTabOpensOverview):
+                ApplyWindowFeatures();
+                break;
         }
+    }
+
+    /// <summary>Liga só os ganchos que as opções escolhidas usam.</summary>
+    private void ApplyWindowFeatures()
+    {
+        if (_input is null || _animator is null)
+        {
+            return;
+        }
+
+        _animator.IsEnabled = Settings.AnimateWindows;
+        _input.WatchCaptionButtons = Settings.AnimateWindows;
+        _input.InterceptWinTab = Settings.WinTabOpensOverview;
+
+        // Sem a troca de áreas desta versão do Windows, Ctrl+Win+setas ficam com o próprio Windows.
+        _input.InterceptDesktopSwitch = Settings.AnimateWorkspaceSwitch && _desktops.IsAvailable;
+    }
+
+    /// <summary>
+    /// Só no Debug, para testar sem teclado: LIQUIDGLASS_CUBE_DEMO=1 abre o cubo, gira-o como num
+    /// arrasto e salva quadros; LIQUIDGLASS_GENIE_DEMO com o título de uma janela a minimiza e restaura.
+    /// </summary>
+    [System.Diagnostics.Conditional("DEBUG")]
+    private void StartDemos()
+    {
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        var step = 0;
+        var cubeDemo = Environment.GetEnvironmentVariable("LIQUIDGLASS_CUBE_DEMO") == "1";
+        timer.Tick += (_, _) =>
+        {
+            step++;
+            if (cubeDemo)
+            {
+                switch (step)
+                {
+                    case 1:
+                        _overview?.Toggle();
+                        break;
+                    case 2:
+                        _overview?.Current?.SaveDemoFrame("cube-open");
+                        _overview?.Current?.DemoTurn(-38, 26);
+                        break;
+                    case 3:
+                        _overview?.Current?.SaveDemoFrame("cube-turned");
+                        _overview?.Current?.DemoTurn(-12, 34);
+                        break;
+                    case 4:
+                        _overview?.Current?.SaveDemoFrame("cube-turned-more");
+                        _overview?.Current?.DemoTurn(50, 12);
+                        _overview?.Toggle();
+                        break;
+                }
+
+                if (step >= 4)
+                {
+                    timer.Stop();
+                }
+
+                return;
+            }
+
+            if (Environment.GetEnvironmentVariable("LIQUIDGLASS_GENIE_DEMO") is { Length: > 0 } title)
+            {
+                var hwnd = User32.FindWindow(null, title);
+                if (step == 1)
+                {
+                    _animator?.Minimize(hwnd);
+                }
+                else if (step == 2)
+                {
+                    _animator?.Activate(hwnd);
+                }
+            }
+
+            if (step >= 2)
+            {
+                timer.Stop();
+            }
+        };
+        timer.Start();
+    }
+
+    private OverviewContext CreateOverviewContext()
+    {
+        return new OverviewContext(
+            _desktops,
+            _tracker!,
+            _wallpaper,
+            _dockWindow!.NativeSource!.Handle,
+            _dockWindow.OverviewReserve(),
+            VisualTreeHelper.GetDpi(_dockWindow).DpiScaleX,
+            Settings.AnimationSpeed);
     }
 
     /// <summary>O Explorer reiniciou: a barra nativa voltou ao estado padrão e precisa ser escondida de novo.</summary>

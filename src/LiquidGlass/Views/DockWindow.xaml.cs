@@ -167,7 +167,37 @@ public partial class DockWindow : Window
         };
     }
 
-    private bool ShouldStayVisible() => Root.IsMouseOver || _openMenu is { IsOpen: true } || _trayFlyout.IsOpen;
+    /// <summary>Mantém a dock na tela mesmo com a ocultação automática (visão das áreas de trabalho aberta).</summary>
+    public bool KeepVisible { get; set; }
+
+    private bool ShouldStayVisible() => KeepVisible || Root.IsMouseOver || _openMenu is { IsOpen: true } || _trayFlyout.IsOpen;
+
+    /// <summary>Ícone do app dono da janela, em pixels físicos da tela: o destino ao minimizar.</summary>
+    public Rect? FindIconBounds(nint hwnd)
+    {
+        if (_viewModel.FindItem(hwnd) is not { } item
+            || DockItems.ItemContainerGenerator.ContainerFromItem(item) is not FrameworkElement container
+            || PresentationSource.FromVisual(container) is null
+            || Visibility != Visibility.Visible)
+        {
+            return null;
+        }
+
+        return new Rect(container.PointToScreen(new Point(0, 0)), container.PointToScreen(new Point(container.ActualWidth, container.ActualHeight)));
+    }
+
+    /// <summary>Espaço que a dock ocupa em cada borda, em pixels físicos, para a visão geral não ficar por baixo dela.</summary>
+    public Thickness OverviewReserve()
+    {
+        var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        var thickness = (DockThickness + ShadowPadding) * scale;
+        return Settings.Edge switch
+        {
+            DockEdge.Left => new Thickness(thickness, 0, 0, 0),
+            DockEdge.Right => new Thickness(0, 0, thickness, 0),
+            _ => new Thickness(0, 0, 0, thickness),
+        };
+    }
 
     private void OnFullScreenChanged(object? sender, bool isFullScreen)
     {

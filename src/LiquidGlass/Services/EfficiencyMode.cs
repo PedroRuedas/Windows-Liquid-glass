@@ -7,7 +7,7 @@ namespace LiquidGlass.Services;
 /// Coloca a dock no modo de eficiência do Windows (EcoQoS e prioridade abaixo do normal) enquanto
 /// ninguém interage com ela. O Windows então a executa nos núcleos e frequências mais econômicos.
 /// Qualquer interação (cursor na dock, menu, painel ou personalização aberta) volta ao modo normal
-/// na hora, para as animações continuarem fluidas.
+/// na hora, para as animações continuarem fluidas. Ao entrar no modo, a memória ociosa é liberada.
 /// </summary>
 public sealed class EfficiencyMode : IDisposable
 {
@@ -56,10 +56,27 @@ public sealed class EfficiencyMode : IDisposable
 
     private void Apply(bool efficient)
     {
-        if (efficient != _isEfficient)
+        if (efficient == _isEfficient)
         {
-            _isEfficient = efficient;
-            Kernel32.SetEfficiencyMode(efficient);
+            return;
         }
+
+        _isEfficient = efficient;
+        Kernel32.SetEfficiencyMode(efficient);
+        if (efficient)
+        {
+            ReleaseIdleMemory();
+        }
+    }
+
+    /// <summary>
+    /// Parada é quando a dock pode devolver memória sem custo visível: o heap é compactado (e o
+    /// espaço livre devolvido ao sistema) e as páginas que só serviram às animações saem da RAM.
+    /// Sem isso o processo ficava com ~200 MB depois de abrir menus, painéis e a visão geral.
+    /// </summary>
+    private static void ReleaseIdleMemory()
+    {
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+        Kernel32.TrimWorkingSet();
     }
 }

@@ -37,6 +37,32 @@
         </DrawingImage.Drawing>
     </DrawingImage>
 
+    <!-- Áreas de trabalho: três janelas lado a lado, como a visão geral do GNOME. -->
+    <DrawingImage x:Key="WorkspacesIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="Transparent">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="6,6,88,88" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#59FFFFFF">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <RectangleGeometry Rect="10,36,16,28" RadiusX="5" RadiusY="5" />
+                            <RectangleGeometry Rect="74,36,16,28" RadiusX="5" RadiusY="5" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#F2FFFFFF">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="30,28,40,44" RadiusX="7" RadiusY="7" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
     <!-- Bandeja do sistema: seta para cima, como o "mostrar ícones ocultos". -->
     <DrawingImage x:Key="TrayIcon">
         <DrawingImage.Drawing>
