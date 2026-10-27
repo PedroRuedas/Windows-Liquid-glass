@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls.Primitives;
@@ -30,7 +31,8 @@ public partial class TrayFlyout : Popup
 
     private DockEdge _edge;
     private bool _isClosing;
-    private DateTime? _cursorLeftAt;
+    /// <summary>Quando o cursor saiu do painel e da setinha (<see cref="Stopwatch"/>, imune a acertos do relógio).</summary>
+    private long? _cursorLeftAt;
     private INotifyCollectionChanged? _observedIcons;
 
     public TrayFlyout()
@@ -108,8 +110,8 @@ public partial class TrayFlyout : Popup
             return;
         }
 
-        _cursorLeftAt ??= DateTime.Now;
-        if (DateTime.Now - _cursorLeftAt >= DockPopupAnimation.HoverGrace)
+        _cursorLeftAt ??= Stopwatch.GetTimestamp();
+        if (Stopwatch.GetElapsedTime(_cursorLeftAt.Value) >= DockPopupAnimation.HoverGrace)
         {
             CloseAnimated();
         }

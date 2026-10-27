@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -6,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using LiquidGlass.Controls;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
@@ -19,36 +22,54 @@ namespace LiquidGlass.Views;
 /// barra de tarefas do Windows. Clicar numa miniatura traz a janela; o X (ou o botão do meio) a fecha.
 /// </summary>
 /// <remarks>
-/// As miniaturas são do DWM: ele as compõe por cima do popup, nos retângulos dos marcadores do
-/// modelo. Elas não seguem as transformações do WPF, então durante as animações de abrir e fechar
+/// As miniaturas são do DWM: ele as compõe por cima do popup, nos retângulos dos marcadores dos
+/// cartões. Elas não seguem as transformações do WPF, então durante as animações de abrir e fechar
 /// cada quadro reposiciona e esmaece as miniaturas junto com o vidro.
 /// </remarks>
 public partial class WindowPreview : Popup
 {
-    /// <summary>Altura das miniaturas com a dock embaixo; nas laterais, a largura é fixa.</summary>
-    private const double BottomThumbnailHeight = 112;
-    private const double SideThumbnailWidth = 200;
-    private const double MinThumbnailWidth = 96;
-    private const double MaxThumbnailWidth = 208;
-    private const double MinThumbnailHeight = 64;
-    private const double MaxThumbnailHeight = 140;
+    /// <summary>
+    /// Em volta dos cartões: o espaçamento da sombra e a margem interna (WindowPreview.xaml), mais
+    /// uma folga até a borda da tela.
+    /// </summary>
+    private const double PanelChrome = (2 * (14 + 8)) + 16;
+
+    /// <summary>Altura da linha "Mais N janelas", reservada para longe da dock.</summary>
+    private const double MoreWindowsHeight = 24;
+
+    /// <summary>Arredondamento de pixels do WrapPanel, para ele nunca quebrar a linha antes da conta.</summary>
+    private const double WrapSlack = 12;
 
     private readonly DockViewModel _dock;
     private readonly DispatcherTimer _hoverWatcher = new() { Interval = TimeSpan.FromMilliseconds(40) };
-    private List<WindowPreviewItem> _items = [];
+
+    /// <summary>Os cartões na tela, na ordem em que aparecem.</summary>
+    private readonly ObservableCollection<WindowPreviewItem> _cards = [];
+
+    /// <summary>Miniatura do DWM e marcador de cada janela do app, pelo identificador da janela.</summary>
+    private readonly Dictionary<nint, ThumbnailSlot> _slots = [];
+
     private DockItemViewModel? _item;
     private DockItemView? _anchor;
     private DockEdge _edge;
     private nint _probe;
-    private DateTime _trackUntil;
+    private Size _available;
+
+    /// <summary>Tamanho do painel quando o fundo de vidro foi fotografado; maior que isso, o fundo não cobre.</summary>
+    private Size _capturedSize;
+    private long _trackStart;
+    private TimeSpan _trackDuration;
     private bool _isTracking;
     private bool _isClosing;
-    private DateTime? _cursorLeftAt;
+    /// <summary>Quando o cursor saiu do painel e do ícone (<see cref="Stopwatch"/>, imune a acertos do relógio).</summary>
+    private long? _cursorLeftAt;
+    private WindowPreviewItem? _pressedCard;
 
     public WindowPreview(DockViewModel dock)
     {
         InitializeComponent();
         _dock = dock;
+        Cards.ItemsSource = _cards;
         CustomPopupPlacementCallback = (popup, target, _) => DockPopupPlacement.Beside(_edge, popup, target);
         _hoverWatcher.Tick += (_, _) => CloseWhenCursorLeaves();
         Opened += OnOpened;
@@ -76,9 +97,12 @@ public partial class WindowPreview : Popup
         _edge = edge;
         _probe = probe;
         _item.PropertyChanged += OnItemPropertyChanged;
+        _available = AvailableArea(anchor, edge);
         Cards.ItemsPanel = (ItemsPanelTemplate)FindResource(edge == DockEdge.Bottom ? "HorizontalCards" : "VerticalCards");
+        Cards.MaxWidth = edge == DockEdge.Bottom ? _available.Width : double.PositiveInfinity;
+        Cards.MaxHeight = edge == DockEdge.Bottom ? double.PositiveInfinity : _available.Height;
         Rebuild();
-        if (_items.Count == 0)
+        if (_cards.Count == 0)
         {
             Detach();
             return;
@@ -86,8 +110,8 @@ public partial class WindowPreview : Popup
 
         anchor.IsPreviewOpen = true;
         PlacementTarget = anchor;
-        Child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        ScreenBackdrop.Shared.CaptureBeside(anchor, edge, Child.DesiredSize);
+        _capturedSize = MeasurePanel();
+        ScreenBackdrop.Shared.CaptureBeside(anchor, edge, _capturedSize);
         IsOpen = true;
     }
 
@@ -112,10 +136,33 @@ public partial class WindowPreview : Popup
 
         // As miniaturas não encolhem com o vidro sozinhas: acompanham quadro a quadro.
         Track(DockPopupAnimation.CloseDuration);
+#if DEBUG
         CaptureCollapse();
+#endif
     }
 
     private static WindowPreviewItem? ItemOf(object sender) => (sender as FrameworkElement)?.DataContext as WindowPreviewItem;
+
+    /// <summary>
+    /// Espaço para os cartões, em DIPs: a área de trabalho inteira ao longo da dock e, para longe
+    /// dela, do ícone até a borda oposta.
+    /// </summary>
+    private static Size AvailableArea(FrameworkElement anchor, DockEdge edge)
+    {
+        var work = User32.GetPrimaryMonitorInfo().WorkArea;
+        var icon = new Rect(anchor.PointToScreen(new Point(0, 0)), anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight)));
+        (double Along, double Across) reach = edge switch
+        {
+            DockEdge.Left => (work.Bottom - work.Top, work.Right - icon.Right),
+            DockEdge.Right => (work.Bottom - work.Top, icon.Left - work.Left),
+            _ => (work.Right - work.Left, icon.Top - work.Top),
+        };
+
+        var scale = VisualTreeHelper.GetDpi(anchor).DpiScaleX;
+        var along = Math.Max((reach.Along / scale) - PanelChrome, 0);
+        var across = Math.Max((reach.Across / scale) - PanelChrome - MoreWindowsHeight, 0);
+        return edge == DockEdge.Bottom ? new Size(along, across) : new Size(across, along);
+    }
 
     /// <summary>Encaixa a janela (com a proporção dela) no retângulo do marcador, centralizada.</summary>
     private static User32.Rect FitInside(Rect bounds, Size source)
@@ -134,6 +181,12 @@ public partial class WindowPreview : Popup
         };
     }
 
+    private Size MeasurePanel()
+    {
+        Child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        return Child.DesiredSize;
+    }
+
     private void OnOpened(object? sender, EventArgs e)
     {
         _cursorLeftAt = null;
@@ -149,13 +202,13 @@ public partial class WindowPreview : Popup
         _hoverWatcher.Stop();
         StopTracking();
         _isClosing = false;
-        foreach (var item in _items)
+        foreach (var slot in _slots.Values)
         {
-            Dwmapi.UnregisterThumbnail(item.Thumbnail);
+            slot.Release();
         }
 
-        _items = [];
-        Cards.ItemsSource = null;
+        _slots.Clear();
+        _cards.Clear();
         Detach();
     }
 
@@ -174,23 +227,37 @@ public partial class WindowPreview : Popup
         }
     }
 
+    /// <summary>Janela aberta, fechada ou com título novo enquanto o painel está na tela.</summary>
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(DockItemViewModel.Windows) || !IsOpen)
+        if (e.PropertyName != nameof(DockItemViewModel.Windows) || !IsOpen || _isClosing)
         {
             return;
         }
 
         Rebuild();
-        if (_items.Count == 0)
+        if (_cards.Count == 0)
         {
             IsOpen = false;
+            return;
         }
+
+        // Painel maior que o retrato do fundo: abre de novo, com um retrato do tamanho certo.
+        var size = MeasurePanel();
+        if ((size.Width > _capturedSize.Width + 1 || size.Height > _capturedSize.Height + 1) && _anchor is { } anchor && _item is { } item)
+        {
+            IsOpen = false;
+            Show(anchor, item, _edge, _probe);
+            return;
+        }
+
+        // Cartões que mudaram de lugar levam a miniatura junto, depois do novo layout.
+        Dispatcher.BeginInvoke(UpdateThumbnails, DispatcherPriority.Loaded);
     }
 
     /// <summary>
-    /// Um cartão por janela. Janelas que continuam abertas mantêm o lugar e a miniatura já
-    /// registrada; as novas entram no fim, para os cartões não trocarem de posição sob o mouse.
+    /// Um cartão por janela. Janelas que continuam abertas mantêm o lugar, o cartão e a miniatura
+    /// já registrada; as novas entram no fim, para os cartões não trocarem de posição sob o mouse.
     /// </summary>
     private void Rebuild()
     {
@@ -199,38 +266,59 @@ public partial class WindowPreview : Popup
             return;
         }
 
-        var foreground = User32.GetForegroundWindow();
         var windows = _item.Windows.ToDictionary(window => window.Handle);
-        var items = new List<WindowPreviewItem>();
-        foreach (var previous in _items)
+        foreach (var closed in _slots.Keys.Where(handle => !windows.ContainsKey(handle)).ToList())
         {
-            if (windows.Remove(previous.Window.Handle, out var window))
+            _slots[closed].Release();
+            _slots.Remove(closed);
+        }
+
+        var ordered = _cards.Select(card => card.Window.Handle).Where(windows.ContainsKey).ToList();
+        ordered.AddRange(_item.Windows.Select(window => window.Handle).Where(handle => !ordered.Contains(handle)));
+        foreach (var handle in ordered.Where(handle => !_slots.ContainsKey(handle)))
+        {
+            _slots[handle] = new ThumbnailSlot(MeasureSource(handle));
+        }
+
+        // Com janelas demais para a tela, as que sobram ficam no menu do botão direito.
+        var fitArea = _edge == DockEdge.Bottom
+            ? new Size(_available.Width - WrapSlack, _available.Height)
+            : new Size(_available.Width, _available.Height - WrapSlack);
+        var (scale, count) = WindowPreviewLayout.Fit([.. ordered.Select(handle => _slots[handle].Source)], _edge, fitArea);
+        var visible = ordered.Take(count).ToList();
+
+        for (var index = _cards.Count - 1; index >= 0; index--)
+        {
+            var handle = _cards[index].Window.Handle;
+            if (!visible.Contains(handle))
             {
-                items.Add(CreateItem(window, previous.SourceSize, foreground, previous.Thumbnail));
-            }
-            else
-            {
-                Dwmapi.UnregisterThumbnail(previous.Thumbnail);
+                _cards.RemoveAt(index);
+                if (_slots.TryGetValue(handle, out var slot))
+                {
+                    slot.Release();
+                }
             }
         }
 
-        foreach (var window in _item.Windows.Where(window => windows.ContainsKey(window.Handle)))
+        var foreground = User32.GetForegroundWindow();
+        foreach (var handle in visible)
         {
-            items.Add(CreateItem(window, MeasureSource(window.Handle), foreground, thumbnail: 0));
+            var size = WindowPreviewLayout.ThumbnailSize(_slots[handle].Source, _edge, scale);
+            if (_cards.FirstOrDefault(card => card.Window.Handle == handle) is not { } card)
+            {
+                card = new WindowPreviewItem(windows[handle], _item.Icon);
+                _cards.Add(card);
+            }
+
+            card.Window = windows[handle];
+            card.ThumbnailWidth = size.Width;
+            card.ThumbnailHeight = size.Height;
+            card.IsActive = handle == foreground;
         }
 
-        _items = items;
-        Cards.ItemsSource = items;
-    }
-
-    private WindowPreviewItem CreateItem(AppWindow window, Size source, nint foreground, nint thumbnail)
-    {
-        var aspect = source.Width / source.Height;
-        var (width, height) = _edge == DockEdge.Bottom
-            ? (Math.Clamp(BottomThumbnailHeight * aspect, MinThumbnailWidth, MaxThumbnailWidth), BottomThumbnailHeight)
-            : (SideThumbnailWidth, Math.Clamp(SideThumbnailWidth / aspect, MinThumbnailHeight, MaxThumbnailHeight));
-
-        return new WindowPreviewItem(window, _item?.Icon, width, height, window.Handle == foreground, source) { Thumbnail = thumbnail };
+        var hidden = ordered.Count - count;
+        MoreWindows.Text = hidden == 1 ? "Mais 1 janela no menu do botão direito" : $"Mais {hidden} janelas no menu do botão direito";
+        MoreWindows.Visibility = hidden > 0 && count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Tamanho da janela como o DWM a mostra (de uma minimizada, o da última imagem).</summary>
@@ -254,9 +342,12 @@ public partial class WindowPreview : Popup
             return;
         }
 
-        foreach (var item in _items.Where(item => item.Thumbnail == 0))
+        foreach (var card in _cards)
         {
-            item.Thumbnail = Dwmapi.RegisterThumbnail(source.Handle, item.Window.Handle);
+            if (_slots.TryGetValue(card.Window.Handle, out var slot) && slot is { Thumbnail: 0, Placeholder: not null })
+            {
+                slot.Thumbnail = Dwmapi.RegisterThumbnail(source.Handle, card.Window.Handle);
+            }
         }
 
         UpdateThumbnails();
@@ -271,9 +362,9 @@ public partial class WindowPreview : Popup
         }
 
         var opacity = (byte)Math.Round(Math.Clamp(PopupContent.Opacity, 0, 1) * 255);
-        foreach (var item in _items)
+        foreach (var slot in _slots.Values)
         {
-            if (item.Thumbnail == 0 || item.Placeholder is not { IsLoaded: true } placeholder
+            if (slot.Thumbnail == 0 || slot.Placeholder is not { IsLoaded: true } placeholder
                 || PresentationSource.FromVisual(placeholder) is not HwndSource { RootVisual: { } root } source)
             {
                 continue;
@@ -281,14 +372,15 @@ public partial class WindowPreview : Popup
 
             var bounds = placeholder.TransformToAncestor(root).TransformBounds(new Rect(placeholder.RenderSize));
             bounds.Transform(source.CompositionTarget.TransformToDevice);
-            Dwmapi.UpdateThumbnail(item.Thumbnail, FitInside(bounds, item.SourceSize), opacity, visible: true);
+            Dwmapi.UpdateThumbnail(slot.Thumbnail, FitInside(bounds, slot.Source), opacity, visible: true);
         }
     }
 
     /// <summary>Acompanha o vidro quadro a quadro enquanto ele anima.</summary>
     private void Track(TimeSpan duration)
     {
-        _trackUntil = DateTime.Now + duration;
+        _trackStart = Stopwatch.GetTimestamp();
+        _trackDuration = duration;
         if (!_isTracking)
         {
             _isTracking = true;
@@ -308,56 +400,30 @@ public partial class WindowPreview : Popup
     private void OnRendering(object? sender, EventArgs e)
     {
         UpdateThumbnails();
-        if (DateTime.Now > _trackUntil)
+        if (Stopwatch.GetElapsedTime(_trackStart) > _trackDuration)
         {
             StopTracking();
         }
     }
 
-    /// <summary>Demonstração (Debug): o painel fica aberto sem o mouse por perto.</summary>
-    internal bool IsDemo { get; set; }
-
-    /// <summary>Demonstração (Debug): fotografa o próximo recolhimento no meio do caminho.</summary>
-    internal bool CaptureNextCollapse { get; set; }
-
-    /// <summary>Demonstração (Debug): fotografa a tela em volta do painel e do ícone.</summary>
-    [System.Diagnostics.Conditional("DEBUG")]
-    internal void SaveDemoFrame(string name)
-    {
-        if (IsOpen)
-        {
-            Graphics.DemoCapture.Save(name, PopupContent, _anchor);
-        }
-    }
-
-    [System.Diagnostics.Conditional("DEBUG")]
-    private void CaptureCollapse()
-    {
-        if (!CaptureNextCollapse)
-        {
-            return;
-        }
-
-        CaptureNextCollapse = false;
-        var timer = new DispatcherTimer { Interval = DockPopupAnimation.CloseDuration * 0.8 };
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            SaveDemoFrame("preview-collapsing");
-        };
-        timer.Start();
-    }
-
     private void CloseWhenCursorLeaves()
     {
-        if (IsDemo || DockPopupPlacement.IsCursorOver(PopupContent) || DockPopupPlacement.IsCursorOver(_anchor))
+#if DEBUG
+        if (IsDemo)
+        {
+            _cursorLeftAt = null;
+            return;
+        }
+#endif
+
+        if (DockPopupPlacement.IsCursorOver(PopupContent) || DockPopupPlacement.IsCursorOver(_anchor))
         {
             _cursorLeftAt = null;
             return;
         }
 
-        _cursorLeftAt ??= DateTime.Now;
-        if (DateTime.Now - _cursorLeftAt >= DockPopupAnimation.HoverGrace)
+        _cursorLeftAt ??= Stopwatch.GetTimestamp();
+        if (Stopwatch.GetElapsedTime(_cursorLeftAt.Value) >= DockPopupAnimation.HoverGrace)
         {
             CloseAnimated();
         }
@@ -365,16 +431,25 @@ public partial class WindowPreview : Popup
 
     private void OnThumbnailLoaded(object sender, RoutedEventArgs e)
     {
-        if (ItemOf(sender) is { } item)
+        if (ItemOf(sender) is { } card && _slots.TryGetValue(card.Window.Handle, out var slot))
         {
-            item.Placeholder = (FrameworkElement)sender;
+            slot.Placeholder = (FrameworkElement)sender;
             RegisterThumbnails();
         }
     }
 
+    private void OnCardLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _pressedCard = ItemOf(sender);
+        e.Handled = true;
+    }
+
+    /// <summary>Só um clique que começou no mesmo cartão traz a janela; soltar o botão vindo de fora não.</summary>
     private void OnCardLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (ItemOf(sender) is { } preview && _item is { } item)
+        var pressed = _pressedCard;
+        _pressedCard = null;
+        if (ItemOf(sender) is { } preview && preview == pressed && _item is { } item)
         {
             IsOpen = false;
             _dock.ActivateWindow(item, preview.Window);
@@ -400,28 +475,45 @@ public partial class WindowPreview : Popup
             _dock.CloseWindow(preview.Window);
         }
     }
+
+    /// <summary>A miniatura do DWM de uma janela e o retângulo da tela onde ela é desenhada.</summary>
+    private sealed class ThumbnailSlot(Size source)
+    {
+        /// <summary>Tamanho da janela de origem, em pixels.</summary>
+        public Size Source => source;
+
+        public nint Thumbnail { get; set; }
+
+        public FrameworkElement? Placeholder { get; set; }
+
+        /// <summary>O cartão saiu da tela: a miniatura deixa de ser desenhada.</summary>
+        public void Release()
+        {
+            Dwmapi.UnregisterThumbnail(Thumbnail);
+            Thumbnail = 0;
+            Placeholder = null;
+        }
+    }
 }
 
-/// <summary>Cartão de uma janela no painel de miniaturas.</summary>
-public sealed class WindowPreviewItem(AppWindow window, ImageSource? icon, double width, double height, bool isActive, Size sourceSize)
+/// <summary>Cartão de uma janela no painel de miniaturas. Atualiza no lugar quando a janela muda de título.</summary>
+public sealed partial class WindowPreviewItem(AppWindow window, ImageSource? icon) : ObservableObject
 {
-    public AppWindow Window => window;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title))]
+    private AppWindow _window = window;
 
-    public string Title => window.Title;
+    [ObservableProperty]
+    private double _thumbnailWidth;
 
-    public ImageSource? Icon => icon;
-
-    public double ThumbnailWidth => width;
-
-    public double ThumbnailHeight => height;
+    [ObservableProperty]
+    private double _thumbnailHeight;
 
     /// <summary>A janela em primeiro plano ganha um contorno.</summary>
-    public bool IsActive => isActive;
+    [ObservableProperty]
+    private bool _isActive;
 
-    /// <summary>Tamanho da janela de origem, em pixels.</summary>
-    internal Size SourceSize => sourceSize;
+    public string Title => Window.Title;
 
-    internal nint Thumbnail { get; set; }
-
-    internal FrameworkElement? Placeholder { get; set; }
+    public ImageSource? Icon => icon;
 }

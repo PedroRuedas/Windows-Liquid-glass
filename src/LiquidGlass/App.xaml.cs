@@ -90,6 +90,7 @@ public partial class App : Application
         }
 
         RegisterCrashHandlers();
+        JumpListService.DeleteStaleLinks();
         _instance.Listen(
             onShowSettings: () => Dispatcher.BeginInvoke(OpenSettings),
             onQuit: () => Dispatcher.BeginInvoke(Shutdown));
@@ -138,6 +139,8 @@ public partial class App : Application
         _input.SwitchKeyPressed += (_, direction) => _overview.Switch(direction);
         _input.OverviewNavigation += (_, key) => _overview.HandleKey(key);
         _input.CaptionButtonPressed += (_, pressed) => _animator.OnCaptionButtonPressed(pressed.Window, pressed.Button);
+        _input.EscapePressed += (_, _) => _dockWindow.CloseWindowPreview();
+        _dockWindow.WindowPreviewOpenChanged += (_, isOpen) => _input.WatchEscape = isOpen;
         _dockViewModel.WorkspacesRequested += (_, _) => _overview.Toggle();
         _dockViewModel.ItemActivating += (_, item) =>
         {
@@ -147,7 +150,9 @@ public partial class App : Application
             }
         };
         ApplyWindowFeatures();
+#if DEBUG
         StartDemos();
+#endif
         _taskbarCreatedMessage = User32.RegisterWindowMessage("TaskbarCreated");
         source.AddHook(WndProc);
 
@@ -275,6 +280,7 @@ public partial class App : Application
         _input.InterceptDesktopSwitch = Settings.AnimateWorkspaceSwitch && _desktops.IsAvailable;
     }
 
+#if DEBUG
     /// <summary>
     /// Só no Debug, para testar sem teclado: LIQUIDGLASS_CUBE_DEMO=1 abre o cubo, gira-o como num
     /// arrasto e salva quadros; LIQUIDGLASS_DRAG_DEMO com o título de uma janela abre o cubo e a arrasta
@@ -282,7 +288,6 @@ public partial class App : Application
     /// LIQUIDGLASS_PREVIEW_DEMO com o nome de um app aberto mostra as miniaturas dele e as fotografa;
     /// LIQUIDGLASS_MENU_DEMO com o nome de um app abre o menu do botão direito dele e o fotografa.
     /// </summary>
-    [System.Diagnostics.Conditional("DEBUG")]
     private void StartDemos()
     {
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -410,6 +415,7 @@ public partial class App : Application
         };
         timer.Start();
     }
+#endif
 
     private OverviewContext CreateOverviewContext()
     {

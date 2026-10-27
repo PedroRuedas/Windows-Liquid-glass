@@ -12,12 +12,15 @@
         <SolidColorBrush x:Key="CardActiveBorder" Color="#40FFFFFF" />
         <SolidColorBrush x:Key="ThumbnailPlaceholder" Color="#14FFFFFF" />
 
-        <!-- Lado a lado com a dock embaixo; empilhadas com ela nas laterais. -->
+        <!--
+            Lado a lado com a dock embaixo; empilhadas com ela nas laterais. Com muitas janelas, o
+            limite do painel (MaxWidth ou MaxHeight, definido no código) as quebra em mais linhas.
+        -->
         <ItemsPanelTemplate x:Key="HorizontalCards">
-            <StackPanel Orientation="Horizontal" />
+            <WrapPanel Orientation="Horizontal" />
         </ItemsPanelTemplate>
         <ItemsPanelTemplate x:Key="VerticalCards">
-            <StackPanel Orientation="Vertical" />
+            <WrapPanel Orientation="Vertical" />
         </ItemsPanelTemplate>
 
         <Style x:Key="CloseButton" TargetType="Button">
@@ -57,62 +60,71 @@
 
             <controls:LiquidGlassSurface Style="{StaticResource PopupGlassSurface}" CornerRadius="22" />
 
-            <ItemsControl x:Name="Cards"
-                          Margin="8"
-                          TextElement.Foreground="White"
-                          TextElement.FontFamily="Segoe UI Variable Text, Segoe UI">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border x:Name="Card"
-                                Margin="2"
-                                Padding="8,6,8,8"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="1"
-                                CornerRadius="14"
-                                MouseLeftButtonUp="OnCardLeftButtonUp"
-                                MouseUp="OnCardMouseUp">
-                            <StackPanel Width="{Binding ThumbnailWidth, Mode=OneTime}">
-                                <DockPanel Height="22" Margin="2,0,0,6">
-                                    <Button x:Name="Close"
-                                            DockPanel.Dock="Right"
-                                            Margin="6,0,0,0"
-                                            Style="{StaticResource CloseButton}"
-                                            ToolTip="Fechar janela"
-                                            Visibility="Hidden"
-                                            Click="OnCloseClick" />
-                                    <Image Width="16"
-                                           Height="16"
-                                           Margin="0,0,7,0"
-                                           Source="{Binding Icon, Mode=OneTime}"
-                                           RenderOptions.BitmapScalingMode="HighQuality" />
-                                    <TextBlock VerticalAlignment="Center"
-                                               FontSize="12"
-                                               Text="{Binding Title, Mode=OneTime}"
-                                               TextTrimming="CharacterEllipsis" />
-                                </DockPanel>
+            <StackPanel Margin="8"
+                        TextElement.Foreground="White"
+                        TextElement.FontFamily="Segoe UI Variable Text, Segoe UI">
+                <ItemsControl x:Name="Cards">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Card"
+                                    Margin="2"
+                                    Padding="8,6,8,8"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="1"
+                                    CornerRadius="14"
+                                    MouseLeftButtonDown="OnCardLeftButtonDown"
+                                    MouseLeftButtonUp="OnCardLeftButtonUp"
+                                    MouseUp="OnCardMouseUp">
+                                <StackPanel Width="{Binding ThumbnailWidth}">
+                                    <DockPanel Height="22" Margin="2,0,0,6">
+                                        <Button x:Name="Close"
+                                                DockPanel.Dock="Right"
+                                                Margin="6,0,0,0"
+                                                Style="{StaticResource CloseButton}"
+                                                ToolTip="Fechar janela"
+                                                Visibility="Hidden"
+                                                Click="OnCloseClick" />
+                                        <Image Width="16"
+                                               Height="16"
+                                               Margin="0,0,7,0"
+                                               Source="{Binding Icon, Mode=OneTime}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <TextBlock VerticalAlignment="Center"
+                                                   FontSize="12"
+                                                   Text="{Binding Title}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </DockPanel>
 
-                                <!-- O DWM desenha a miniatura viva da janela exatamente por cima deste retângulo. -->
-                                <Border x:Name="Thumbnail"
-                                        Width="{Binding ThumbnailWidth, Mode=OneTime}"
-                                        Height="{Binding ThumbnailHeight, Mode=OneTime}"
-                                        Background="{StaticResource ThumbnailPlaceholder}"
-                                        CornerRadius="6"
-                                        Loaded="OnThumbnailLoaded" />
-                            </StackPanel>
-                        </Border>
-                        <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsActive, Mode=OneTime}" Value="True">
-                                <Setter TargetName="Card" Property="BorderBrush" Value="{StaticResource CardActiveBorder}" />
-                            </DataTrigger>
-                            <Trigger SourceName="Card" Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="Background" Value="{StaticResource CardHoverFill}" />
-                                <Setter TargetName="Close" Property="Visibility" Value="Visible" />
-                            </Trigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                                    <!-- O DWM desenha a miniatura viva da janela exatamente por cima deste retângulo. -->
+                                    <Border x:Name="Thumbnail"
+                                            Width="{Binding ThumbnailWidth}"
+                                            Height="{Binding ThumbnailHeight}"
+                                            Background="{StaticResource ThumbnailPlaceholder}"
+                                            CornerRadius="6"
+                                            Loaded="OnThumbnailLoaded" />
+                                </StackPanel>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                    <Setter TargetName="Card" Property="BorderBrush" Value="{StaticResource CardActiveBorder}" />
+                                </DataTrigger>
+                                <Trigger SourceName="Card" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Card" Property="Background" Value="{StaticResource CardHoverFill}" />
+                                    <Setter TargetName="Close" Property="Visibility" Value="Visible" />
+                                </Trigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Só com mais janelas do que cabem na tela: o menu do botão direito lista todas. -->
+                <TextBlock x:Name="MoreWindows"
+                           Margin="10,4,10,2"
+                           FontSize="12"
+                           Opacity="0.75"
+                           Visibility="Collapsed" />
+            </StackPanel>
         </Grid>
     </Border>
 </Popup>

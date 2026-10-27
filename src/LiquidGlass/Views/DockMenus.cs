@@ -14,6 +14,9 @@ internal static class DockMenus
 {
     private const int MaxTitleLength = 48;
 
+    /// <summary>"Nova janela" em português, inglês, espanhol, francês, alemão e italiano.</summary>
+    private static readonly string[] NewWindowTitles = ["nova janela", "new window", "nueva ventana", "nouvelle fenêtre", "neues fenster", "nuova finestra"];
+
     /// <summary>
     /// Preenche o menu. Com <paramref name="anchor"/>, o menu abre ao lado do ícone, voltado para
     /// dentro da tela; sem ele, abre no cursor.
@@ -90,7 +93,7 @@ internal static class DockMenus
                 }
 
                 var menuItem = new MenuItem { Header = Shorten(entry.Title) };
-                menuItem.Click += (_, _) => JumpListService.Launch(entry);
+                menuItem.Click += (_, _) => Launch(entry);
                 menu.Items.Add(menuItem);
             }
 
@@ -98,11 +101,28 @@ internal static class DockMenus
         }
     }
 
-    /// <summary>"Nova janela", "Abrir nova janela"; não "Nova janela anônima", que é outra coisa.</summary>
-    private static bool IsNewWindowTask(JumpListEntry entry)
+    /// <summary>A barra de tarefas avisa quando o item não abre; sem o aviso, o clique pareceria ignorado.</summary>
+    private static void Launch(JumpListEntry entry)
     {
-        return entry.Title.EndsWith("nova janela", StringComparison.CurrentCultureIgnoreCase)
-            || entry.Title.EndsWith("new window", StringComparison.CurrentCultureIgnoreCase);
+        if (!JumpListService.Launch(entry))
+        {
+            MessageBox.Show(
+                $"Não foi possível abrir “{entry.Title}”. O arquivo ou o programa pode ter sido movido ou apagado.",
+                "Liquid Glass Dock",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// "Nova janela", "Abrir nova janela", "Nueva ventana"; não "Nova janela anônima", que é outra
+    /// coisa. O título vem no idioma do app, que pode não ser o do Windows: daí os idiomas mais comuns.
+    /// </summary>
+    internal static bool IsNewWindowTask(JumpListEntry entry)
+    {
+        var compare = CultureInfo.InvariantCulture.CompareInfo;
+        var title = entry.Title.Trim();
+        return NewWindowTitles.Any(suffix => compare.IsSuffix(title, suffix, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace));
     }
 
     /// <summary>Instala a versão nova já encontrada ou procura uma; durante o trabalho, mostra o andamento.</summary>

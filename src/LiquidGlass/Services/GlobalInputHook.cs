@@ -28,6 +28,7 @@ public enum CaptionButton
 /// <list type="bullet">
 /// <item>Win+Tab abre a visão das áreas de trabalho; Ctrl+Win+setas trocam de área com animação.</item>
 /// <item>Com a visão aberta, Esc, setas e Enter vão para ela.</item>
+/// <item>Com as miniaturas abertas, Esc as fecha sem tirar a tecla do app em foco.</item>
 /// <item>Clique em minimizar ou fechar de qualquer janela avisa antes de a janela reagir, a tempo
 /// de desligar a animação nativa e tocar a da dock.</item>
 /// </list>
@@ -63,6 +64,7 @@ public sealed class GlobalInputHook : IDisposable
     private volatile bool _interceptDesktopSwitch;
     private volatile bool _captureOverviewKeys;
     private volatile bool _watchCaptionButtons;
+    private volatile bool _watchEscape;
 
     public GlobalInputHook()
     {
@@ -82,6 +84,9 @@ public sealed class GlobalInputHook : IDisposable
     public event EventHandler<OverviewKey>? OverviewNavigation;
 
     public event EventHandler<(nint Window, CaptionButton Button)>? CaptionButtonPressed;
+
+    /// <summary>Esc apertado com <see cref="WatchEscape"/> ligado. A tecla segue para o app em foco.</summary>
+    public event EventHandler? EscapePressed;
 
     public bool InterceptWinTab
     {
@@ -117,6 +122,20 @@ public sealed class GlobalInputHook : IDisposable
             if (_captureOverviewKeys != value)
             {
                 _captureOverviewKeys = value;
+                RequestHookUpdate();
+            }
+        }
+    }
+
+    /// <summary>Avisa de Esc sem consumi-lo: os painéis da dock não tiram o foco do app para ouvir o teclado.</summary>
+    public bool WatchEscape
+    {
+        get => _watchEscape;
+        set
+        {
+            if (_watchEscape != value)
+            {
+                _watchEscape = value;
                 RequestHookUpdate();
             }
         }
@@ -209,7 +228,7 @@ public sealed class GlobalInputHook : IDisposable
     private void UpdateHooks()
     {
         var module = Kernel32.GetModuleHandle(null);
-        var wantsKeyboard = _interceptWinTab || _interceptDesktopSwitch || _captureOverviewKeys;
+        var wantsKeyboard = _interceptWinTab || _interceptDesktopSwitch || _captureOverviewKeys || _watchEscape;
         if (wantsKeyboard && _keyboardHook == 0)
         {
             _keyboardHook = User32.SetWindowsHookEx(User32.WhKeyboardLl, _keyboardProc, module, 0);
@@ -336,6 +355,11 @@ public sealed class GlobalInputHook : IDisposable
                 Post(() => OverviewNavigation?.Invoke(this, pressed));
                 return true;
             }
+        }
+
+        if (_watchEscape && key.VirtualKey == User32.VkEscape)
+        {
+            Post(() => EscapePressed?.Invoke(this, EventArgs.Empty));
         }
 
         return false;

@@ -27,6 +27,13 @@ public static class JumpListService
     private const int TasksCategory = 2;
     private const uint CategoryFooter = 0xBABFFBAB;
 
+    /// <summary>Cabeçalho: versão do formato, número de grupos e um campo reservado (4 bytes cada).</summary>
+    private const int HeaderVersionSize = 4;
+    private const int HeaderReservedSize = 4;
+
+    /// <summary>Grupo do Windows (recentes ou frequentes): só o número dele.</summary>
+    private const int KnownCategoryIdSize = 4;
+
     /// <summary>Polinômio do CRC-64 que o Windows usa nos nomes dos arquivos das listas.</summary>
     private const ulong HashPolynomial = 0x92C64265D32139A4;
 
@@ -39,14 +46,39 @@ public static class JumpListService
 
     private static readonly TimeSpan TemporaryLinkLifetime = TimeSpan.FromSeconds(30);
 
+    private const string TemporaryLinkPattern = "jumplist-*.lnk";
+
+    /// <summary>
+    /// Quanto o menu espera pela lista antes de abrir sem ela. Ler um item do shell pode demorar
+    /// (uma pasta recente num disco de rede desligado); a leitura continua e fica para a próxima vez.
+    /// </summary>
+    private static readonly TimeSpan LoadTimeout = TimeSpan.FromMilliseconds(250);
+
     private static readonly string Folder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         @"Microsoft\Windows\Recent\CustomDestinations");
 
+    /// <summary>Listas já lidas, por arquivo; valem enquanto o arquivo não muda. Protegidas por <see cref="CacheLock"/>.</summary>
+    private static readonly Dictionary<string, CachedList> Cache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Lock CacheLock = new();
+
+    /// <summary>Onde ficam, por alguns segundos, os atalhos que <see cref="Launch"/> abre.</summary>
+    internal static string TemporaryFolder { get; } = Path.Combine(Path.GetTempPath(), "LiquidGlass");
+
+    /// <summary>
+    /// Um resolvedor por thread: um objeto COM só pode ser usado no apartamento em que nasceu, e a
+    /// interface (não documentada) não tem proxy para ser chamada de outro.
+    /// </summary>
+    [ThreadStatic]
     private static IApplicationResolver? _resolver;
+
+    [ThreadStatic]
     private static bool _resolverFailed;
 
-    /// <summary>Lista de atalhos do app dono da janela ou do atalho fixado; vazia se ele não registrou nenhuma.</summary>
+    /// <summary>
+    /// Lista de atalhos do app dono da janela ou do atalho fixado; vazia se ele não registrou nenhuma.
+    /// Pode ser chamada de qualquer thread STA (a da interface, na dock).
+    /// </summary>
     public static IReadOnlyList<JumpListCategory> Load(AppWindow? window, PinnedApp? pin)
     {
         if (ResolveAppId(window, pin) is not { } appId)
@@ -55,43 +87,84 @@ public static class JumpListService
         }
 
         var path = Path.Combine(Folder, FileNameFor(appId));
-        byte[] data;
-        try
-        {
-            data = File.ReadAllBytes(path);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        var info = new FileInfo(path);
+        if (!info.Exists)
         {
             return [];
         }
 
-        return Parse(data);
+        Task<IReadOnlyList<JumpListCategory>> reading;
+        lock (CacheLock)
+        {
+            if (!Cache.TryGetValue(path, out var cached) || cached.WriteTime != info.LastWriteTimeUtc)
+            {
+                cached = new CachedList(info.LastWriteTimeUtc, ReadInBackground(path));
+                Cache[path] = cached;
+            }
+
+            reading = cached.Categories;
+        }
+
+        return reading.Wait(LoadTimeout) ? reading.Result : [];
     }
 
-    /// <summary>Executa o item como a barra de tarefas faria: abrindo o atalho que o app registrou.</summary>
-    public static void Launch(JumpListEntry entry)
+    /// <summary>
+    /// Executa o item como a barra de tarefas faria: abrindo o atalho que o app registrou. Devolve
+    /// <c>false</c> se não deu (o arquivo ou o programa do atalho não existe mais, por exemplo).
+    /// </summary>
+    public static bool Launch(JumpListEntry entry)
     {
         if (entry.ParsingName is { } parsingName)
         {
-            AppLauncher.Launch(parsingName);
-            return;
+            return AppLauncher.Launch(parsingName);
+        }
+
+        if (entry.Link.IsEmpty)
+        {
+            return false;
         }
 
         // O atalho serializado tem exatamente o formato de um arquivo .lnk.
-        var folder = Path.Combine(Path.GetTempPath(), "LiquidGlass");
-        var file = Path.Combine(folder, $"jumplist-{Guid.NewGuid():N}.lnk");
+        DeleteStaleLinks();
+        var file = Path.Combine(TemporaryFolder, $"jumplist-{Guid.NewGuid():N}.lnk");
         try
         {
-            Directory.CreateDirectory(folder);
+            Directory.CreateDirectory(TemporaryFolder);
             File.WriteAllBytes(file, entry.Link.ToArray());
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            return;
+            return false;
         }
 
-        AppLauncher.Launch(file);
+        var launched = AppLauncher.Launch(file);
         DeleteLater(file);
+        return launched;
+    }
+
+    /// <summary>
+    /// Apaga os atalhos temporários que já serviram. O apagamento agendado não acontece se a dock
+    /// fecha antes do prazo; eles ficam para a próxima abertura da dock ou de um item.
+    /// </summary>
+    public static void DeleteStaleLinks()
+    {
+        try
+        {
+            var folder = new DirectoryInfo(TemporaryFolder);
+            if (!folder.Exists)
+            {
+                return;
+            }
+
+            foreach (var file in folder.EnumerateFiles(TemporaryLinkPattern).Where(file => DateTime.UtcNow - file.LastWriteTimeUtc > TemporaryLinkLifetime))
+            {
+                file.Delete();
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Um atalho em uso agora fica para a próxima limpeza.
+        }
     }
 
     /// <summary>Nome do arquivo da lista: CRC-64 do AppID em maiúsculas (UTF-16), em hexadecimal.</summary>
@@ -169,78 +242,112 @@ public static class JumpListService
         return _resolver;
     }
 
-    private static List<JumpListCategory> Parse(byte[] data)
+    /// <summary>
+    /// Lê a lista numa thread própria (STA, como o shell espera), para um item lento não travar a
+    /// dock. Só dados gerenciados saem dela: os objetos COM nascem e morrem lá dentro.
+    /// </summary>
+    private static Task<IReadOnlyList<JumpListCategory>> ReadInBackground(string path)
+    {
+        var result = new TaskCompletionSource<IReadOnlyList<JumpListCategory>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                result.SetResult(Parse(File.ReadAllBytes(path)));
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                result.SetResult([]);
+            }
+            catch (Exception exception)
+            {
+                // Erro inesperado: segue para a thread da interface, que o trata como antes.
+                result.SetException(exception);
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "Lista de atalhos",
+        };
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        return result.Task;
+    }
+
+    internal static List<JumpListCategory> Parse(byte[] data)
     {
         var categories = new List<JumpListCategory>();
-        var stream = Shell32.CreateMemoryStream(data);
-        if (stream is null)
+        using var reader = ListReader.Open(data);
+        if (reader is null)
         {
             return categories;
         }
 
         try
         {
-            var offset = 4; // versão
-            var count = ReadInt32(data, ref offset);
-            offset += 4;
-
+            reader.Skip(HeaderVersionSize);
+            var count = reader.ReadInt32();
+            reader.Skip(HeaderReservedSize);
             for (var index = 0; index < count; index++)
             {
-                string? name = null;
-                var entryCount = 0;
-                var type = ReadInt32(data, ref offset);
-                switch (type)
+                if (ReadCategory(reader) is not { } category)
                 {
-                    case CustomCategory:
-                        var length = BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(offset));
-                        name = Encoding.Unicode.GetString(data, offset + 2, length * 2);
-                        offset += 2 + (length * 2);
-                        entryCount = ReadInt32(data, ref offset);
-                        break;
-                    case KnownCategory:
-                        // Recentes e frequentes: os itens moram na lista automática, não aqui.
-                        offset += 4;
-                        break;
-                    case TasksCategory:
-                        entryCount = ReadInt32(data, ref offset);
-                        break;
-                    default:
-                        return categories;
+                    break;
                 }
 
-                var entries = new List<JumpListEntry>();
-                for (var entry = 0; entry < entryCount; entry++)
-                {
-                    // Sem saber ler o objeto, não há como saber onde ele termina: o resto do arquivo se perde.
-                    if (ReadEntry(data, stream, ref offset) is not { } read)
-                    {
-                        return categories;
-                    }
-
-                    if (read.Title.Length > 0 || read.IsSeparator)
-                    {
-                        entries.Add(read);
-                    }
-                }
-
-                if ((uint)ReadInt32(data, ref offset) != CategoryFooter)
-                {
-                    return categories;
-                }
-
-                AddCategory(categories, name, entries, isTasks: type == TasksCategory);
+                AddCategory(categories, category.Name, category.Entries, category.IsTasks);
             }
         }
         catch (Exception exception) when (exception is COMException or ArgumentException or InvalidCastException or IndexOutOfRangeException)
         {
             // Arquivo truncado ou de um formato novo: fica com o que já foi lido.
         }
-        finally
-        {
-            Marshal.ReleaseComObject(stream);
-        }
 
         return categories;
+    }
+
+    /// <summary>
+    /// Um grupo: o tipo, o nome (só nos personalizados), os itens e a marca de fim. <c>null</c>
+    /// quando não dá para continuar: sem entender um item, não há como saber onde ele termina.
+    /// </summary>
+    private static (string? Name, List<JumpListEntry> Entries, bool IsTasks)? ReadCategory(ListReader reader)
+    {
+        var type = reader.ReadInt32();
+        string? name = null;
+        var entryCount = 0;
+        switch (type)
+        {
+            case CustomCategory:
+                name = reader.ReadName();
+                entryCount = reader.ReadInt32();
+                break;
+            case KnownCategory:
+                // Recentes e frequentes: os itens moram na lista automática, não aqui.
+                reader.Skip(KnownCategoryIdSize);
+                break;
+            case TasksCategory:
+                entryCount = reader.ReadInt32();
+                break;
+            default:
+                return null;
+        }
+
+        var entries = new List<JumpListEntry>();
+        for (var index = 0; index < entryCount; index++)
+        {
+            if (ReadEntry(reader) is not { } entry)
+            {
+                return null;
+            }
+
+            if (entry.Title.Length > 0 || entry.IsSeparator)
+            {
+                entries.Add(entry);
+            }
+        }
+
+        return reader.ReadUInt32() == CategoryFooter ? (name, entries, type == TasksCategory) : null;
     }
 
     private static void AddCategory(List<JumpListCategory> categories, string? name, List<JumpListEntry> entries, bool isTasks)
@@ -274,10 +381,9 @@ public static class JumpListService
         categories.Add(new JumpListCategory(isTasks ? null : name ?? string.Empty, entries));
     }
 
-    private static JumpListEntry? ReadEntry(byte[] data, IStream stream, ref int offset)
+    private static JumpListEntry? ReadEntry(ListReader reader)
     {
-        var classId = new Guid(data.AsSpan(offset, 16));
-        offset += 16;
+        var classId = reader.ReadGuid();
 
         // Só as duas classes que o shell grava nas listas; nunca um objeto COM qualquer vindo de um arquivo.
         if (classId != ShellLinkClass && classId != ShellItemClass)
@@ -288,11 +394,7 @@ public static class JumpListService
         var instance = Activator.CreateInstance(Type.GetTypeFromCLSID(classId, throwOnError: true)!)!;
         try
         {
-            var start = offset;
-            stream.Seek(start, StreamSeekSet, 0);
-            ((IPersistStream)instance).Load(stream);
-            offset = (int)Position(stream);
-
+            var link = reader.ReadObject((IPersistStream)instance);
             if (classId == ShellItemClass)
             {
                 var item = (IShellItem)instance;
@@ -307,7 +409,7 @@ public static class JumpListService
                 return new JumpListEntry(string.Empty, ReadOnlyMemory<byte>.Empty, null, IsSeparator: true);
             }
 
-            return new JumpListEntry(ResolveTitle(Shell32.GetString(store, Shell32.Title)), data.AsMemory(start, offset - start), null);
+            return new JumpListEntry(ResolveTitle(Shell32.GetString(store, Shell32.Title)), link, null);
         }
         finally
         {
@@ -331,27 +433,6 @@ public static class JumpListService
         return title;
     }
 
-    private static long Position(IStream stream)
-    {
-        var position = Marshal.AllocCoTaskMem(sizeof(long));
-        try
-        {
-            stream.Seek(0, StreamSeekCurrent, position);
-            return Marshal.ReadInt64(position);
-        }
-        finally
-        {
-            Marshal.FreeCoTaskMem(position);
-        }
-    }
-
-    private static int ReadInt32(byte[] data, ref int offset)
-    {
-        var value = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(offset));
-        offset += 4;
-        return value;
-    }
-
     private static async void DeleteLater(string file)
     {
         // O shell lê o atalho depois que a chamada volta; apagar na hora poderia cancelar a abertura.
@@ -365,4 +446,70 @@ public static class JumpListService
             // Fica para a limpeza da pasta temporária do Windows.
         }
     }
+
+    /// <summary>
+    /// Percorre o arquivo com uma posição só. Números e nomes saem direto dos bytes; os objetos COM
+    /// são lidos pelo fluxo, porque só eles sabem onde terminam, e a posição continua de onde pararam.
+    /// </summary>
+    private sealed class ListReader(byte[] data, IStream stream) : IDisposable
+    {
+        private int _offset;
+
+        public static ListReader? Open(byte[] data) => Shell32.CreateMemoryStream(data) is { } stream ? new ListReader(data, stream) : null;
+
+        public int ReadInt32()
+        {
+            var value = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(_offset));
+            _offset += sizeof(int);
+            return value;
+        }
+
+        public uint ReadUInt32() => unchecked((uint)ReadInt32());
+
+        public Guid ReadGuid()
+        {
+            var value = new Guid(data.AsSpan(_offset, 16));
+            _offset += 16;
+            return value;
+        }
+
+        /// <summary>Nome de grupo: quantidade de caracteres (2 bytes) seguida do texto em UTF-16.</summary>
+        public string ReadName()
+        {
+            var length = BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(_offset)) * 2;
+            var name = Encoding.Unicode.GetString(data, _offset + sizeof(ushort), length);
+            _offset += sizeof(ushort) + length;
+            return name;
+        }
+
+        public void Skip(int count) => _offset += count;
+
+        /// <summary>Carrega o objeto a partir da posição atual e devolve os bytes que ele ocupou.</summary>
+        public ReadOnlyMemory<byte> ReadObject(IPersistStream target)
+        {
+            var start = _offset;
+            stream.Seek(start, StreamSeekSet, 0);
+            target.Load(stream);
+            _offset = (int)Position();
+            return data.AsMemory(start, _offset - start);
+        }
+
+        public void Dispose() => Marshal.ReleaseComObject(stream);
+
+        private long Position()
+        {
+            var position = Marshal.AllocCoTaskMem(sizeof(long));
+            try
+            {
+                stream.Seek(0, StreamSeekCurrent, position);
+                return Marshal.ReadInt64(position);
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(position);
+            }
+        }
+    }
+
+    private sealed record CachedList(DateTime WriteTime, Task<IReadOnlyList<JumpListCategory>> Categories);
 }

@@ -40,6 +40,7 @@ animações de abertura e uma tela de personalização completa.
   navegadores, "Nova janela" e pastas recentes no VS Code, e assim por diante.
 - **Miniaturas das janelas:** pare o mouse sobre um app aberto para ver uma miniatura viva de cada
   janela dele (dois VS Codes, por exemplo). Clique numa para trazê-la; o X ou o botão do meio a fecha.
+  Com muitas janelas, as miniaturas quebram em linhas e diminuem até todas caberem na tela.
 - Arraste atalhos ou programas para a dock para fixá-los.
 - Botão Iniciar e Lixeira.
 - **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
@@ -98,6 +99,7 @@ Todas as mudanças aparecem na dock na hora:
 | Ícone de um app | botão direito | janelas abertas, lista de atalhos do app, fixar, fechar |
 | Ícone de um app aberto | parar o mouse | miniaturas das janelas; clique numa para trazê-la |
 | Miniatura | X ou clique do meio | fecha a janela |
+| Miniaturas abertas | Esc | fecha as miniaturas |
 | Qualquer parte da dock | botão direito | atualizar, personalizar, sair |
 | Teclado | Win+Tab | abre e fecha o cubo das áreas de trabalho |
 | Teclado | Ctrl+Win+← / → | vai para a área de trabalho vizinha |
@@ -225,6 +227,13 @@ src/LiquidGlass/
 └── Views/         Janela da dock, painel da bandeja, miniaturas das janelas, cubo das
                    áreas de trabalho, lâmpada mágica, personalização, menus, ocultar
                    automaticamente
+```
+
+Os testes ficam em `tests/LiquidGlass.Tests` (listas de atalhos, layout das miniaturas e menus).
+Os de listas de atalhos gravam uma lista de teste pelo próprio Windows e a apagam no fim:
+
+```powershell
+dotnet test
 ```
 
 O código segue o `.editorconfig` do repositório. O build trata avisos como erros, e o
