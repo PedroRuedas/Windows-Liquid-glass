@@ -10,6 +10,10 @@ public static class AppLauncher
     public const string RecycleBin = "shell:RecycleBinFolder";
     public const string PowerSettings = "ms-settings:batterysaver";
 
+    /// <summary>Lista de redes Wi-Fi do Windows 11 (o mesmo painel das Configurações rápidas).</summary>
+    public const string WifiNetworks = "ms-availablenetworks:";
+    public const string NetworkSettings = "ms-settings:network-status";
+
     public static bool Launch(string target)
     {
         try

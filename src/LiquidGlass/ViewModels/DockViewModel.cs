@@ -24,20 +24,24 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     private readonly WindowTracker _tracker;
     private readonly IconService _icons;
     private readonly BatteryService _battery;
+    private readonly NetworkService _network;
     private readonly WindowAnimator _animator;
     private readonly DockItemViewModel _startItem;
     private readonly DockItemViewModel _workspacesItem;
     private readonly DockItemViewModel _batteryItem;
+    private readonly DockItemViewModel _networkItem;
     private readonly DockItemViewModel _separatorItem;
     private readonly DockItemViewModel _recycleBinItem;
     private readonly DockItemViewModel _trayItem;
     private (int Percent, bool Charging, bool Saver) _batteryIconState;
+    private (NetworkKind Kind, int Bars, bool HasWifi)? _networkIconState;
 
     public DockViewModel(
         DockSettings settings,
         WindowTracker tracker,
         IconService icons,
         BatteryService battery,
+        NetworkService network,
         WindowAnimator animator,
         DockIcons dockIcons)
     {
@@ -45,12 +49,15 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         _tracker = tracker;
         _icons = icons;
         _battery = battery;
+        _network = network;
         _animator = animator;
 
         _startItem = new DockItemViewModel(this, DockItemKind.StartButton) { Name = "Iniciar", Icon = dockIcons.Start };
         _workspacesItem = new DockItemViewModel(this, DockItemKind.WorkspacesButton) { Name = "Áreas de trabalho", Icon = dockIcons.Workspaces };
         _batteryItem = new DockItemViewModel(this, DockItemKind.Battery);
+        _networkItem = new DockItemViewModel(this, DockItemKind.Network);
         UpdateBatteryItem();
+        UpdateNetworkItem();
         _separatorItem = new DockItemViewModel(this, DockItemKind.Separator);
         _recycleBinItem = new DockItemViewModel(this, DockItemKind.RecycleBin)
         {
@@ -62,6 +69,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
         Settings.PropertyChanged += OnSettingsChanged;
         _battery.PropertyChanged += OnBatteryChanged;
+        _network.PropertyChanged += OnNetworkChanged;
         Settings.PinnedApps.CollectionChanged += OnPinnedAppsChanged;
         _tracker.WindowsChanged += OnWindowsChanged;
         _tracker.ForegroundChanged += OnForegroundChanged;
@@ -105,6 +113,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
                 break;
             case DockItemKind.Battery:
                 AppLauncher.Launch(AppLauncher.PowerSettings);
+                break;
+            case DockItemKind.Network:
+                AppLauncher.Launch(_network.HasWifi ? AppLauncher.WifiNetworks : AppLauncher.NetworkSettings);
                 break;
             case DockItemKind.RecycleBin:
                 AppLauncher.Launch(AppLauncher.RecycleBin);
@@ -174,6 +185,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     {
         Settings.PropertyChanged -= OnSettingsChanged;
         _battery.PropertyChanged -= OnBatteryChanged;
+        _network.PropertyChanged -= OnNetworkChanged;
         Settings.PinnedApps.CollectionChanged -= OnPinnedAppsChanged;
         _tracker.WindowsChanged -= OnWindowsChanged;
         _tracker.ForegroundChanged -= OnForegroundChanged;
@@ -234,6 +246,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             case nameof(DockSettings.ShowTray):
             case nameof(DockSettings.ShowBattery):
             case nameof(DockSettings.ShowWorkspacesButton):
+            case nameof(DockSettings.ShowNetwork):
                 Rebuild();
                 break;
             case nameof(DockSettings.MagnificationEnabled):
@@ -253,6 +266,19 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
 
         UpdateBatteryItem();
+    }
+
+    private void OnNetworkChanged(object? sender, PropertyChangedEventArgs e) => UpdateNetworkItem();
+
+    private void UpdateNetworkItem()
+    {
+        _networkItem.Name = _network.Describe();
+        var state = (_network.Kind, NetworkIcon.Bars(_network.Signal), _network.HasWifi);
+        if (state != _networkIconState)
+        {
+            _networkIconState = state;
+            _networkItem.Icon = NetworkIcon.Create(state.Kind, state.Item2, state.HasWifi);
+        }
     }
 
     /// <summary>O rótulo acompanha cada mudança; o ícone só é redesenhado quando o que ele mostra muda.</summary>
@@ -342,7 +368,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         desired.AddRange(running.OrderBy(item => Items.IndexOf(item) is var index and >= 0 ? index : int.MaxValue));
 
         var showBattery = Settings.ShowBattery && _battery.IsPresent;
-        if (Settings.ShowTray || showBattery || Settings.ShowRecycleBin)
+        if (Settings.ShowTray || Settings.ShowNetwork || showBattery || Settings.ShowRecycleBin)
         {
             desired.Add(_separatorItem);
         }
@@ -350,6 +376,11 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         if (Settings.ShowTray)
         {
             desired.Add(_trayItem);
+        }
+
+        if (Settings.ShowNetwork)
+        {
+            desired.Add(_networkItem);
         }
 
         if (showBattery)

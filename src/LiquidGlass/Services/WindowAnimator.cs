@@ -14,7 +14,9 @@ namespace LiquidGlass.Services;
 /// Animações de janela no estilo do GNOME para as janelas de todos os apps:
 /// <list type="bullet">
 /// <item>Minimizar: "lâmpada mágica", a janela escorre em funil para dentro do ícone dela na dock
-/// (e se desenrola de lá ao restaurar pela dock).</item>
+/// (e se desenrola de lá ao restaurar pela dock). O efeito usa um retrato da janela numa malha lisa
+/// (<see cref="GenieWindow"/>); sem retrato (janela minimizada por outro caminho), fatias de
+/// miniaturas do DWM fazem o mesmo efeito.</item>
 /// <item>Fechar: a janela encolhe um pouco enquanto some.</item>
 /// </list>
 /// A animação nativa do Windows é desligada só na janela e só no instante em que a da dock vai
@@ -23,13 +25,18 @@ namespace LiquidGlass.Services;
 /// </summary>
 public sealed class WindowAnimator : IDisposable
 {
-    private static readonly TimeSpan MinimizeDuration = TimeSpan.FromMilliseconds(560);
+    private static readonly TimeSpan MinimizeDuration = TimeSpan.FromMilliseconds(520);
+
+    /// <summary>Retratos guardados para restaurar com o efeito (cada um ocupa alguns MB).</summary>
+    private const int MaxRestoreImages = 3;
     private static readonly TimeSpan CloseDuration = TimeSpan.FromMilliseconds(150);
 
     /// <summary>Quanto tempo um clique em minimizar ou fechar espera a janela reagir.</summary>
     private static readonly TimeSpan ArmTimeout = TimeSpan.FromSeconds(3);
 
     private readonly DockSettings _settings;
+    private readonly EfficiencyMode _efficiency;
+    private readonly List<RestoreImage> _restoreImages = [];
     private readonly User32.WinEventProc _minimizeProc;
     private readonly User32.WinEventProc _closeProc;
     private readonly Dictionary<nint, Armed> _armed = [];
@@ -40,9 +47,10 @@ public sealed class WindowAnimator : IDisposable
     private nint _minimizeHook;
     private bool _isRendering;
 
-    public WindowAnimator(DockSettings settings)
+    public WindowAnimator(DockSettings settings, EfficiencyMode efficiency)
     {
         _settings = settings;
+        _efficiency = efficiency;
         _minimizeProc = OnMinimizeStart;
         _closeProc = OnWindowGone;
         _expiry.Tick += (_, _) => ExpireArms();
@@ -93,6 +101,12 @@ public sealed class WindowAnimator : IDisposable
         if (!IsEnabled || !User32.IsIconic(hwnd) || RestoredBounds(hwnd) is not { } target)
         {
             AppLauncher.Activate(hwnd);
+            return;
+        }
+
+        if (TakeRestoreImage(hwnd) is { } restore)
+        {
+            PlayRestore(hwnd, restore, target);
             return;
         }
 
@@ -171,6 +185,66 @@ public sealed class WindowAnimator : IDisposable
 
     private static Rect ToRect(User32.Rect rect) => new(rect.Left, rect.Top, rect.Width, rect.Height);
 
+    private static Rect Deflate(Rect rect, Thickness inset) => new(
+        rect.X + inset.Left,
+        rect.Y + inset.Top,
+        Math.Max(rect.Width - inset.Left - inset.Right, 1),
+        Math.Max(rect.Height - inset.Top - inset.Bottom, 1));
+
+    /// <summary>Restaurar com o retrato tirado ao minimizar: a malha sai do ícone até o lugar da janela.</summary>
+    private void PlayRestore(nint hwnd, RestoreImage restore, Rect target)
+    {
+        var visible = Deflate(target, restore.Inset);
+        var genie = new GenieWindow(restore.Image, visible, IconBounds(hwnd, visible), _settings.Edge, MinimizeDuration / Speed, isReversed: true);
+        var token = new object();
+        var restored = false;
+        Dwmapi.SetTransitionsDisabled(hwnd, true);
+        _efficiency.SetActive(token, active: true);
+        genie.Play(
+            onProgress: time =>
+            {
+                // A janela de verdade aparece por baixo no fim, já do tamanho do retrato.
+                if (!restored && time <= 0.03)
+                {
+                    restored = true;
+                    AppLauncher.Activate(hwnd);
+                }
+            },
+            onCompleted: () =>
+            {
+                if (!restored)
+                {
+                    AppLauncher.Activate(hwnd);
+                }
+
+                Dwmapi.SetTransitionsDisabled(hwnd, false);
+                _efficiency.SetActive(token, active: false);
+            });
+    }
+
+    private RestoreImage? TakeRestoreImage(nint hwnd)
+    {
+        var index = _restoreImages.FindIndex(entry => entry.Window == hwnd);
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var entry = _restoreImages[index];
+        _restoreImages.RemoveAt(index);
+        return entry;
+    }
+
+    private void KeepRestoreImage(RestoreImage image)
+    {
+        _restoreImages.RemoveAll(entry => entry.Window == image.Window || !User32.IsWindow(entry.Window));
+        _restoreImages.Add(image);
+        if (_restoreImages.Count > MaxRestoreImages)
+        {
+            _restoreImages.RemoveAt(0);
+        }
+    }
+
     /// <summary>Onde a janela minimizada vai aparecer, em pixels físicos (com as bordas invisíveis).</summary>
     internal static Rect? RestoredBounds(nint hwnd)
     {
@@ -246,12 +320,20 @@ public sealed class WindowAnimator : IDisposable
             HookClose(hwnd);
         }
 
-        else
+        else if (Dwmapi.GetVisibleBounds(hwnd) is { Width: > 0, Height: > 0 } visible)
         {
-            // As fatias já ficam prontas (invisíveis): ao minimizar, o efeito começa no mesmo quadro
-            // em que a janela some, sem um instante de tela vazia.
-            armed = armed with { Prepared = CreateGenie(hwnd, armed.Bounds) };
-            _overlay?.Show();
+            // O retrato é tirado agora, com a janela na tela, e a janela do efeito já fica desenhada
+            // fora da tela: ao minimizar, o efeito começa no mesmo quadro em que a janela some.
+            var visibleRect = ToRect(visible);
+            var snapshot = Capture(visible);
+            var genie = new GenieWindow(snapshot, visibleRect, IconBounds(hwnd, visibleRect), _settings.Edge, MinimizeDuration / Speed, isReversed: false);
+            genie.Prepare();
+            var inset = new Thickness(
+                visible.Left - bounds.Left,
+                visible.Top - bounds.Top,
+                bounds.Right - visible.Right,
+                bounds.Bottom - visible.Bottom);
+            armed = armed with { Snapshot = snapshot, Genie = genie, Inset = inset };
         }
 
         Dwmapi.SetTransitionsDisabled(hwnd, true);
@@ -272,12 +354,7 @@ public sealed class WindowAnimator : IDisposable
     {
         if (_armed.Remove(hwnd, out var armed))
         {
-            armed.Prepared?.Release();
-            if (_flights.Count == 0)
-            {
-                _overlay?.Hide();
-            }
-
+            armed.Genie?.Close();
             Dwmapi.SetTransitionsDisabled(hwnd, false);
             if (armed.Kind == ArmKind.Close)
             {
@@ -349,13 +426,25 @@ public sealed class WindowAnimator : IDisposable
         }
 
         _armed.Remove(hwnd);
-        if ((armed.Prepared ?? CreateGenie(hwnd, armed.Bounds)) is not { } flight)
+        if (armed is { Genie: { } genie, Snapshot: { } snapshot })
+        {
+            var token = new object();
+            _efficiency.SetActive(token, active: true);
+            genie.Play(onCompleted: () =>
+            {
+                Dwmapi.SetTransitionsDisabled(hwnd, false);
+                _efficiency.SetActive(token, active: false);
+                KeepRestoreImage(new RestoreImage(hwnd, snapshot, armed.Inset));
+            });
+            return;
+        }
+
+        if (CreateGenie(hwnd, armed.Bounds) is not { } flight)
         {
             Dwmapi.SetTransitionsDisabled(hwnd, false);
             return;
         }
 
-        flight.Clock.Restart();
         flight.OnCompleted = () => Dwmapi.SetTransitionsDisabled(hwnd, false);
         Fly(flight);
     }
@@ -380,6 +469,7 @@ public sealed class WindowAnimator : IDisposable
     private void Fly(Flight flight)
     {
         _flights.Add(flight);
+        _efficiency.SetActive(_flights, active: true);
         _overlay!.Show();
         Step(flight, 0);
         if (!_isRendering)
@@ -408,6 +498,7 @@ public sealed class WindowAnimator : IDisposable
             _isRendering = false;
             CompositionTarget.Rendering -= OnRendering;
             _overlay?.Hide();
+            _efficiency.SetActive(_flights, active: false);
         }
     }
 
@@ -447,9 +538,14 @@ public sealed class WindowAnimator : IDisposable
     {
         public BitmapSource? Snapshot { get; init; }
 
-        /// <summary>Fatias da lâmpada mágica registradas no clique, à espera da janela minimizar.</summary>
-        public Flight? Prepared { get; init; }
+        /// <summary>Lâmpada mágica pronta (fora da tela) desde o clique, à espera da janela minimizar.</summary>
+        public GenieWindow? Genie { get; init; }
+
+        /// <summary>Bordas invisíveis da janela (entre o retângulo dela e a parte visível).</summary>
+        public Thickness Inset { get; init; }
     }
+
+    private sealed record RestoreImage(nint Window, BitmapSource Image, Thickness Inset);
 
     private sealed class Flight(List<nint> thumbnails, Genie genie, TimeSpan duration)
     {

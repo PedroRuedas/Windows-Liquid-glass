@@ -51,6 +51,9 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _showWorkspacesButton = true;
 
+    [ObservableProperty]
+    private bool _showNetwork = true;
+
     // Vidro
     [ObservableProperty]
     private double _refraction = 0.7;
@@ -135,6 +138,7 @@ public sealed partial class DockSettings : ObservableObject
         ShowTray = other.ShowTray;
         ShowBattery = other.ShowBattery;
         ShowWorkspacesButton = other.ShowWorkspacesButton;
+        ShowNetwork = other.ShowNetwork;
         Refraction = other.Refraction;
         Blur = other.Blur;
         ChromaticAberration = other.ChromaticAberration;

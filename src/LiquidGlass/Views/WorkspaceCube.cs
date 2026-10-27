@@ -31,8 +31,9 @@ public sealed record OverviewContext(
 /// face, todas em volta de um círculo, com as janelas flutuando à frente do papel de parede.
 /// <list type="bullet">
 /// <item>Visão (Win+Tab ou o botão da dock): a câmera se afasta e o cubo aparece. Arrastar com o mouse
-/// gira o cubo livremente (e inclina na vertical); ao soltar, ele encaixa na área mais próxima,
-/// levando em conta o embalo. Clique numa face para entrar nela; setas e roda do mouse giram uma face.</item>
+/// gira o cubo livremente (e inclina na vertical); ao soltar, ele encaixa na face mais próxima,
+/// levando em conta o embalo. Clique numa face para entrar nela; setas e roda do mouse giram uma face.
+/// Sempre há uma face "+": parar nela e clicar (ou Enter) cria uma área, e o anel ganha outra "+".</item>
 /// <item>Troca rápida (Ctrl+Win+setas): o cubo gira até a área vizinha, recuando um pouco no meio.</item>
 /// </list>
 /// As faces são retratos tirados ao abrir: a área atual vem da tela; as outras, das próprias janelas
@@ -68,8 +69,8 @@ public sealed class WorkspaceCube : Window
     private readonly OverviewContext _context;
     private readonly User32.Rect _monitor;
     private readonly List<Guid> _desktops;
-    private readonly int _sides;
-    private readonly double _apothem;
+    private int _sides;
+    private double _apothem;
     private readonly double _halfHeight;
     private readonly double _viewDistance;
     private readonly PerspectiveCamera _camera = new()
@@ -84,8 +85,10 @@ public sealed class WorkspaceCube : Window
     private readonly AmbientLight _ambient = new(Colors.White);
     private readonly DirectionalLight _keyLight = new(Colors.Black, new Vector3D(0, -0.15, -1));
     private readonly DiffuseMaterial _baseMaterial = new(Brushes.Black);
+    private readonly Model3DGroup _bases = new();
     private readonly Model3DGroup _layers = new();
     private readonly List<Face> _faces = [];
+    private DiffuseMaterial? _emptyMaterial;
     private readonly Dictionary<Model3D, Face> _faceOfModel = [];
     private readonly Viewport3D _viewport = new();
     private readonly Grid _root = new() { Background = Brushes.Black };
@@ -134,8 +137,7 @@ public sealed class WorkspaceCube : Window
         }
 
         _currentDesktop = _desktops.IndexOf(current);
-        _sides = Math.Max(_desktops.Count, MinSides);
-        _apothem = 1 / Math.Tan(Math.PI / _sides);
+        SetSides(_desktops.Count);
         _halfHeight = (double)_monitor.Height / Math.Max(_monitor.Width, 1);
         _viewDistance = 1 / Math.Tan(FieldOfView / 2 * Math.PI / 180);
         _yaw.Set(FaceYaw(_currentDesktop));
@@ -186,6 +188,11 @@ public sealed class WorkspaceCube : Window
         }
 
         var (face, yaw) = NearestFace(_yaw.Target);
+        if (face >= _desktops.Count)
+        {
+            (face, yaw) = (_currentDesktop, NearestYaw(_currentDesktop, _yaw.Target));
+        }
+
         EnterFace(face, yaw);
     }
 
@@ -194,16 +201,22 @@ public sealed class WorkspaceCube : Window
     {
         WhenShown(() =>
         {
-            if (!IsOverviewOpen)
+            var start = _yaw.Target;
+            if (IsOverviewOpen)
             {
-                // Troca rápida: recua no meio do giro e volta à tela cheia no fim.
-                _isClosing = true;
-                _progress.Start(QuickPeak, QuickDuration / Speed / 2, Ease.OutQuad);
-                _progress.Then(0, QuickDuration / Speed / 2, Ease.InOutQuad);
+                // Na visão, o giro passa por todas as faces, inclusive a "+".
+                var next = (((NearestFace(start).Face + direction) % _sides) + _sides) % _sides;
+                SwitchTo(next);
+                _yaw.Start(DirectionalYaw(next, direction, start), SnapDuration / Speed, Ease.OutCubic);
+                StartRendering();
+                return;
             }
 
-            var duration = (IsOverviewOpen ? SnapDuration : QuickDuration) / Speed;
-            var start = _yaw.Target;
+            // Troca rápida: recua no meio do giro e volta à tela cheia no fim.
+            _isClosing = true;
+            _progress.Start(QuickPeak, QuickDuration / Speed / 2, Ease.OutQuad);
+            _progress.Then(0, QuickDuration / Speed / 2, Ease.InOutQuad);
+            var duration = QuickDuration / Speed;
             if (_desktops.Count < 2)
             {
                 // Uma área só: o cubo ensaia o giro e volta.
@@ -214,12 +227,15 @@ public sealed class WorkspaceCube : Window
             {
                 var next = (((_currentDesktop + direction) % _desktops.Count) + _desktops.Count) % _desktops.Count;
                 SwitchTo(next);
-                _yaw.Start(DirectionalYaw(next, direction, start), duration, IsOverviewOpen ? Ease.OutCubic : Ease.InOutCubic);
+                _yaw.Start(DirectionalYaw(next, direction, start), duration, Ease.InOutCubic);
             }
 
             StartRendering();
         });
     }
+
+    /// <summary>Demonstração (Debug): ângulo entre duas faces vizinhas.</summary>
+    internal double DemoFaceStep => 360.0 / _sides;
 
     /// <summary>Demonstração (Debug): gira e inclina como um arrasto parado no meio.</summary>
     [Conditional("DEBUG")]
@@ -246,6 +262,11 @@ public sealed class WorkspaceCube : Window
         switch (key)
         {
             case OverviewKey.Escape:
+                ZoomIn();
+                break;
+            case OverviewKey.Enter when NearestFace(_yaw.Target).Face >= _desktops.Count:
+                AddDesktop();
+                break;
             case OverviewKey.Enter:
                 ZoomIn();
                 break;
@@ -311,11 +332,11 @@ public sealed class WorkspaceCube : Window
             : faceYaw + (360 * Math.Ceiling((from - faceYaw + 1e-6) / 360));
     }
 
-    /// <summary>A área (face com área de trabalho) mais perto de ficar de frente.</summary>
+    /// <summary>A face mais perto de ficar de frente (uma área ou a face "+").</summary>
     private (int Face, double Yaw) NearestFace(double yaw)
     {
         var best = (Face: _currentDesktop, Yaw: NearestYaw(_currentDesktop, yaw));
-        for (var face = 0; face < _desktops.Count; face++)
+        for (var face = 0; face < _sides; face++)
         {
             var candidate = NearestYaw(face, yaw);
             if (Math.Abs(candidate - yaw) < Math.Abs(best.Yaw - yaw))
@@ -349,32 +370,16 @@ public sealed class WorkspaceCube : Window
         };
     }
 
-    /// <summary>Uma face por área, em volta do eixo vertical; faces sobrando (menos de 4 áreas) criam uma nova.</summary>
+    /// <summary>Uma face por área e sempre mais uma, a "+", para criar outra (no mínimo 4 faces).</summary>
+    private void SetSides(int desktopCount)
+    {
+        _sides = Math.Max(desktopCount + 1, MinSides);
+        _apothem = 1 / Math.Tan(Math.PI / _sides);
+    }
+
     private void BuildScene()
     {
-        var h = _halfHeight;
-        var r = _apothem;
-        var corners = new[] { new Point3D(-1, -h, r), new Point3D(1, -h, r), new Point3D(1, h, r), new Point3D(-1, h, r) };
-        var empty = new DiffuseMaterial(EmptyFaceBrush());
-        var bases = new Model3DGroup();
-
-        for (var index = 0; index < _sides; index++)
-        {
-            var placement = new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(0, 1, 0), index * 360.0 / _sides));
-            var isReal = index < _desktops.Count;
-            var face = new Face(index)
-            {
-                // Sem lado de dentro: visto de cima, o cubo é um anel de painéis, como no vídeo.
-                Base = Mesh(corners, isReal ? _baseMaterial : empty, null, placement),
-                IsReal = isReal,
-            };
-
-            face.Layer = Mesh(corners, face.LayerMaterial, null, new Transform3DGroup { Children = { face.Lift, placement } });
-            bases.Children.Add(face.Base);
-            _faceOfModel[face.Base] = face;
-            _faceOfModel[face.Layer] = face;
-            _faces.Add(face);
-        }
+        BuildRing();
 
         // As camadas das janelas (com transparência) vêm depois das faces opacas, como o 3D do WPF exige.
         var cube = new Model3DGroup
@@ -383,7 +388,7 @@ public sealed class WorkspaceCube : Window
             {
                 Children = { new RotateTransform3D(_yawRotation), new RotateTransform3D(_pitchRotation) },
             },
-            Children = { bases, _layers },
+            Children = { _bases, _layers },
         };
 
         _viewport.Camera = _camera;
@@ -400,7 +405,48 @@ public sealed class WorkspaceCube : Window
         Render();
     }
 
-    /// <summary>Face sobrando: o papel de parede em vidro fosco com um "+" para criar uma área.</summary>
+    /// <summary>
+    /// Monta as faces em volta do eixo vertical. Ao crescer (área nova), as janelas já retratadas
+    /// continuam nas faces de mesmo número.
+    /// </summary>
+    private void BuildRing()
+    {
+        var layerBrushes = _faces.Select(face => face.LayerMaterial.Brush).ToList();
+        _faces.Clear();
+        _faceOfModel.Clear();
+        _bases.Children.Clear();
+        _layers.Children.Clear();
+        _layerOrder = [];
+
+        var h = _halfHeight;
+        var r = _apothem;
+        var corners = new[] { new Point3D(-1, -h, r), new Point3D(1, -h, r), new Point3D(1, h, r), new Point3D(-1, h, r) };
+        _emptyMaterial ??= new DiffuseMaterial(EmptyFaceBrush());
+        for (var index = 0; index < _sides; index++)
+        {
+            var placement = new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(0, 1, 0), index * 360.0 / _sides));
+            var isReal = index < _desktops.Count;
+            var face = new Face(index)
+            {
+                // Sem lado de dentro: visto de cima, o cubo é um anel de painéis, como no vídeo.
+                Base = Mesh(corners, isReal ? _baseMaterial : _emptyMaterial, null, placement),
+                IsReal = isReal,
+            };
+
+            if (index < layerBrushes.Count)
+            {
+                face.LayerMaterial.Brush = layerBrushes[index];
+            }
+
+            face.Layer = Mesh(corners, face.LayerMaterial, null, new Transform3DGroup { Children = { face.Lift, placement } });
+            _bases.Children.Add(face.Base);
+            _faceOfModel[face.Base] = face;
+            _faceOfModel[face.Layer] = face;
+            _faces.Add(face);
+        }
+    }
+
+    /// <summary>Face "+": o papel de parede em vidro fosco com um "+" para criar uma área.</summary>
     private DrawingBrush EmptyFaceBrush()
     {
         var bounds = new Rect(0, 0, _monitor.Width, _monitor.Height);
@@ -489,17 +535,17 @@ public sealed class WorkspaceCube : Window
             {
                 // A ordem da lista é de cima para baixo; desenhadas de baixo para cima, as da frente cobrem as de trás.
                 windows.Reverse();
-                _ = LoadLayerAsync(_faces[index], windows, monitor);
+                _ = LoadLayerAsync(index, windows, monitor);
             }
         }
     }
 
-    private async Task LoadLayerAsync(Face face, List<nint> windows, Int32Rect monitor)
+    private async Task LoadLayerAsync(int face, List<nint> windows, Int32Rect monitor)
     {
         var pixels = await Task.Run(() => ScreenCapture.PrintWindows(monitor, windows));
         if (!_isClosed)
         {
-            face.LayerMaterial.Brush = ToBrush(pixels, monitor.Width, monitor.Height);
+            _faces[face].LayerMaterial.Brush = ToBrush(pixels, monitor.Width, monitor.Height);
         }
     }
 
@@ -575,19 +621,31 @@ public sealed class WorkspaceCube : Window
         StartRendering();
     }
 
+    /// <summary>
+    /// Cria uma área: a face "+" vira a área nova, o anel ganha outra face "+" e o cubo continua
+    /// aberto, já virado para a área nova, para criar mais ou entrar nela com um clique.
+    /// </summary>
     private void AddDesktop()
     {
-        if (_desktops.Count >= _sides || _context.Desktops.Add() is not { } id)
+        if (_isClosing || _context.Desktops.Add() is not { } id)
         {
             return;
         }
 
-        var face = _faces[_desktops.Count];
+        var (front, frontYaw) = NearestFace(_yaw.Value);
+        var offset = _yaw.Value - frontYaw;
+        var index = _desktops.Count;
         _desktops.Add(id);
-        face.IsReal = true;
-        face.Base.Material = _baseMaterial;
+        SetSides(_desktops.Count);
+        BuildRing();
+
+        // Na nova divisão do círculo, a face que estava de frente continua de frente.
+        _yaw.Set(FaceYaw(front) + offset);
+        SwitchTo(index);
+        _yaw.Start(NearestYaw(index, _yaw.Value), SnapDuration / Speed, Ease.OutCubic);
         UpdateLabel(_labelFace, force: true);
-        EnterFace(face.Index, NearestYaw(face.Index, _yaw.Value));
+        Render();
+        StartRendering();
     }
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
@@ -805,7 +863,10 @@ public sealed class WorkspaceCube : Window
         }
 
         _labelFace = face;
-        _label.Text = string.Create(CultureInfo.CurrentCulture, $"Área de trabalho {face + 1}");
+        var isNew = face >= _desktops.Count;
+        _label.Text = isNew
+            ? "Nova área de trabalho · clique ou Enter para criar"
+            : string.Create(CultureInfo.CurrentCulture, $"Área de trabalho {face + 1}");
         _dots.Children.Clear();
         for (var index = 0; index < _desktops.Count; index++)
         {
@@ -818,6 +879,17 @@ public sealed class WorkspaceCube : Window
                 Background = index == face ? Brushes.White : DotBrush,
             });
         }
+
+        _dots.Children.Add(new TextBlock
+        {
+            Text = "+",
+            FontFamily = TextFont,
+            FontSize = 14,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(5, -6, 2, -4),
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = isNew ? Brushes.White : DotBrush,
+        });
     }
 
     /// <summary>Curvas de animação.</summary>

@@ -166,6 +166,10 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowTray}" />
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE701;" Header="Rede" Description="Wi-Fi com a força do sinal, ou rede cabeada. O clique abre a lista de redes.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowNetwork}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xE83F;" Header="Bateria" Description="Carga e tempo restante. Só aparece em computadores com bateria.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowBattery}" />
                     </controls:SettingCard>

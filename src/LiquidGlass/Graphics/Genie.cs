@@ -44,7 +44,49 @@ internal sealed class Genie(Rect window, Rect icon, Size source, DockEdge edge)
         }
     }
 
+    /// <summary>
+    /// Contorno contínuo da janela deformada em <paramref name="t"/>: <paramref name="rows"/>+1 linhas
+    /// transversais, da borda longe da dock até a perto, cada uma com as duas pontas na tela e as
+    /// coordenadas de textura correspondentes. Uma malha ligando linhas vizinhas desenha o efeito
+    /// com bordas lisas (sem os degraus das fatias).
+    /// </summary>
+    public IEnumerable<(Point Start, Point End, Point StartTexture, Point EndTexture)> Outline(double t, int rows)
+    {
+        var (windowFar, windowNear, windowStart, windowEnd) = Axes(window);
+        var (iconFar, iconNear, iconStart, iconEnd) = Axes(icon);
+
+        var bend = SmoothStep(Math.Clamp(t / 0.4, 0, 1));
+        var near = Lerp(windowNear, iconNear, EaseInOut(Math.Clamp(t / 0.55, 0, 1)));
+        var far = Lerp(windowFar, iconFar, EaseInOut(Math.Clamp((t - 0.15) / 0.85, 0, 1)));
+        var funnelLength = Math.Max(iconFar - windowFar, 1);
+
+        for (var index = 0; index <= rows; index++)
+        {
+            var from = (double)index / rows;
+            var a = Lerp(far, near, from);
+            var funnel = SmoothStep(Math.Clamp((a - windowFar) / funnelLength, 0, 1)) * bend;
+            var c0 = Lerp(windowStart, iconStart, funnel);
+            var c1 = Lerp(windowEnd, iconEnd, funnel);
+            yield return (ToScreen(a, c0), ToScreen(a, c1), Texture(from, 0), Texture(from, 1));
+        }
+    }
+
     private static double Lerp(double from, double to, double t) => from + ((to - from) * t);
+
+    private Point ToScreen(double a, double c) => edge switch
+    {
+        DockEdge.Right => new Point(a, c),
+        DockEdge.Left => new Point(-a, c),
+        _ => new Point(c, a),
+    };
+
+    /// <summary>Ponto da imagem da janela: <paramref name="along"/> no eixo da dock (0 = longe), <paramref name="across"/> no outro.</summary>
+    private Point Texture(double along, double across) => edge switch
+    {
+        DockEdge.Right => new Point(along, across),
+        DockEdge.Left => new Point(1 - along, across),
+        _ => new Point(across, along),
+    };
 
     private static double SmoothStep(double t) => t * t * (3 - (2 * t));
 

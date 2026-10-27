@@ -23,6 +23,7 @@ public partial class App : Application
     private readonly TrayIconService _tray = new();
     private readonly WallpaperService _wallpaper = new();
     private readonly BatteryService _battery = new();
+    private readonly NetworkService _network = new();
     private readonly VirtualDesktopService _desktops = new();
 
     /// <summary>Quanto o "--quit" espera a dock em execução devolver a barra de tarefas e encerrar.</summary>
@@ -109,12 +110,13 @@ public partial class App : Application
         _tray.IsEnabled = Settings.ShowTray;
 
         _tracker = new WindowTracker();
-        _animator = new WindowAnimator(Settings);
+        _animator = new WindowAnimator(Settings, _efficiency);
+        _network.Start();
         var dockIcons = new DockIcons(
             (ImageSource)FindResource("StartIcon"),
             (ImageSource)FindResource("TrayIcon"),
             (ImageSource)FindResource("WorkspacesIcon"));
-        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, _battery, _animator, dockIcons);
+        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, _battery, _network, _animator, dockIcons);
         _dockViewModel.SettingsRequested += (_, _) => OpenSettings();
         _dockViewModel.QuitRequested += (_, _) => Shutdown();
 
@@ -161,6 +163,7 @@ public partial class App : Application
         _dockWindow?.Close();
         _dockViewModel?.Dispose();
         _battery.Dispose();
+        _network.Dispose();
         _tracker?.Dispose();
         _tray.Dispose();
         _efficiency?.Dispose();
@@ -276,15 +279,15 @@ public partial class App : Application
                         break;
                     case 2:
                         _overview?.Current?.SaveDemoFrame("cube-open");
-                        _overview?.Current?.DemoTurn(-38, 26);
+
+                        // Uma face para a esquerda: a face "+" (o anel tem uma face a mais que as áreas).
+                        _overview?.Current?.DemoTurn(_overview.Current.DemoFaceStep, 18);
                         break;
                     case 3:
-                        _overview?.Current?.SaveDemoFrame("cube-turned");
-                        _overview?.Current?.DemoTurn(-12, 34);
+                        _overview?.Current?.SaveDemoFrame("cube-plus");
                         break;
                     case 4:
-                        _overview?.Current?.SaveDemoFrame("cube-turned-more");
-                        _overview?.Current?.DemoTurn(50, 12);
+                        // Na face "+", fechar volta para a área atual sem criar outra.
                         _overview?.Toggle();
                         break;
                 }

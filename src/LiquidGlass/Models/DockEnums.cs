@@ -26,4 +26,5 @@ public enum DockItemKind
     Separator,
     Battery,
     WorkspacesButton,
+    Network,
 }
