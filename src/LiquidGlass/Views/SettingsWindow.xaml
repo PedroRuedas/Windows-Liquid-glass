@@ -374,7 +374,7 @@
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE7E7;" Header="Procurar atualizações automaticamente" Description="Ao abrir a dock e a cada 6 horas. A versão nova só é instalada quando você pedir.">
+                    <controls:SettingCard Glyph="&#xE823;" Header="Procurar atualizações automaticamente" Description="Ao abrir a dock e a cada 6 horas. A versão nova só é instalada quando você pedir.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.CheckForUpdates}" />
                     </controls:SettingCard>
                 </StackPanel>
