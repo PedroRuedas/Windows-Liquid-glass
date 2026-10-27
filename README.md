@@ -6,6 +6,15 @@ animações de abertura e uma tela de personalização completa.
 
 ![Dock](docs/dock.png)
 
+**Destaques**
+- Vidro líquido de verdade: o papel de parede é curvado nas bordas por um shader, como uma lente.
+- Barra de tarefas completa: apps fixados e abertos, miniaturas das janelas, listas de atalhos
+  ("Nova guia", "Nova janela anônima"), bandeja do sistema, rede e bateria.
+- Áreas de trabalho num cubo 3D (Win+Tab), com troca animada entre áreas e janelas arrastáveis de
+  uma área para outra.
+- Minimizar em "lâmpada mágica" para dentro do ícone e fechar encolhendo a janela.
+- Atualiza sozinha pelas releases do GitHub e gasta quase nada parada.
+
 ## Recursos
 
 **Vidro líquido**
@@ -26,21 +35,33 @@ animações de abertura e uma tela de personalização completa.
 **Comportamento de barra de tarefas**
 - Apps fixados e apps em execução, agrupados por aplicativo (inclusive apps da Microsoft Store).
 - Clique abre o app, traz a janela para frente, minimiza ou alterna entre janelas.
-- Clique do meio abre uma nova janela; o botão direito mostra as janelas abertas e as ações.
+- Clique do meio abre uma nova janela; o botão direito mostra as janelas abertas, as ações e a
+  lista de atalhos do app, como na barra do Windows: "Nova guia" e "Nova janela anônima" nos
+  navegadores, "Nova janela" e pastas recentes no VS Code, e assim por diante.
+- **Miniaturas das janelas:** pare o mouse sobre um app aberto para ver uma miniatura viva de cada
+  janela dele (dois VS Codes, por exemplo). Clique numa para trazê-la; o X ou o botão do meio a fecha.
 - Arraste atalhos ou programas para a dock para fixá-los.
 - Botão Iniciar e Lixeira.
 - **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
   esquerdo e direito são repassados ao app, como na bandeja do Windows.
 - Janelas maximizadas param antes da dock, e a dock some em jogos e vídeos em tela cheia.
 - Opção de ocultar a dock automaticamente.
+- Funciona com a dock embaixo, à esquerda ou à direita da tela.
 - **Rede:** ícone de Wi-Fi com a força do sinal e o nome da rede (ou de rede cabeada); o clique
   abre a lista de redes do Windows.
 - **Bateria:** carga, tempo restante e estado (carregando, economia de energia) num ícone discreto
   perto da Lixeira. Só aparece em computadores com bateria.
 
+| Lista de atalhos no botão direito | Miniaturas das janelas |
+| --- | --- |
+| ![Menu do botão direito do Opera GX com Nova guia, Nova janela e Nova janela privada](docs/jump-list.png) | ![Miniatura viva de uma janela do VS Code acima do ícone](docs/window-previews.png) |
+
 **Áreas de trabalho em cubo, como no Fedora (extensão Desktop Cube do GNOME)**
 - Win+Tab (ou o botão da dock) afasta a câmera e mostra as áreas de trabalho como faces de um cubo,
   em círculo, com as janelas flutuando à frente do papel de parede desfocado.
+
+  ![Cubo das áreas de trabalho](docs/workspaces.png)
+
 - Arraste com o mouse para girar o cubo (na vertical ele inclina); ao soltar, ele encaixa na área
   mais próxima, levando em conta o embalo. Setas e roda do mouse giram uma face; clique numa face
   para entrar nela. Sempre há uma face "+": pare nela e clique (ou Enter) para criar uma área; o
@@ -49,7 +70,8 @@ animações de abertura e uma tela de personalização completa.
   face "+", ela ganha uma área nova). Para chegar a uma área de trás, segure a janela perto da borda
   esquerda ou direita da tela, ou gire com a roda do mouse ou as setas; Esc ou soltar fora do cubo
   devolve a janela. Janelas fixadas em todas as áreas não se arrastam.
-- Ctrl+Win+setas giram o cubo até a área vizinha, recuando um pouco no meio do giro.
+- **Trocar de área de trabalho:** Ctrl+Win+← e → giram o cubo até a área vizinha, recuando um pouco
+  no meio do giro, sem precisar abrir a visão geral.
 - Minimizar é a "lâmpada mágica": a janela escorre em funil para dentro do ícone dela na dock (e se
   desenrola de lá ao restaurar pela dock). Fechar encolhe a janela enquanto ela some.
 
@@ -61,11 +83,28 @@ Todas as mudanças aparecem na dock na hora:
 
 | Seção | Opções |
 | --- | --- |
-| Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, botão Iniciar, botão das áreas de trabalho, apps em segundo plano, rede, bateria, Lixeira |
+| Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, miniaturas das janelas, botão Iniciar, botão das áreas de trabalho, apps em segundo plano, rede, bateria, Lixeira |
 | Vidro | estilos prontos, refração, desfoque, dispersão de cores, brilho da borda, saturação, sombra, cor e intensidade do tom |
 | Animações | ampliação, tamanho máximo, alcance, quicar ao abrir, quicar por atenção, fechar e minimizar no estilo do GNOME, deslizar entre áreas, velocidade |
 | Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows, Win+Tab abre as áreas de trabalho, atualizações (procurar, instalar, procurar automaticamente) |
 | Apps fixados | adicionar, importar da barra de tarefas, reordenar e remover |
+
+## Atalhos
+
+| Onde | Ação | Efeito |
+| --- | --- | --- |
+| Ícone de um app | clique | abre o app, traz a janela, minimiza ou alterna entre as janelas dele |
+| Ícone de um app | clique do meio | abre uma nova janela |
+| Ícone de um app | botão direito | janelas abertas, lista de atalhos do app, fixar, fechar |
+| Ícone de um app aberto | parar o mouse | miniaturas das janelas; clique numa para trazê-la |
+| Miniatura | X ou clique do meio | fecha a janela |
+| Qualquer parte da dock | botão direito | atualizar, personalizar, sair |
+| Teclado | Win+Tab | abre e fecha o cubo das áreas de trabalho |
+| Teclado | Ctrl+Win+← / → | vai para a área de trabalho vizinha |
+| Cubo | arrastar, setas, roda do mouse | gira o cubo |
+| Cubo | clique numa face ou Enter | entra na área (na face "+", cria uma) |
+| Cubo | arrastar uma janela até outra face | move a janela para aquela área |
+| Cubo | Esc | fecha o cubo (ou devolve a janela arrastada) |
 
 ## Instalação
 
@@ -179,10 +218,12 @@ src/LiquidGlass/
 ├── Interop/       Chamadas Win32 (user32, shell32, dwmapi, gdi32, kernel32)
 ├── Models/        Configurações, apps fixados, presets
 ├── Services/      Janelas abertas, ícones, papel de parede, bandeja, barra nativa,
-│                  app bar, modo de eficiência, persistência
+│                  app bar, listas de atalhos, áreas de trabalho virtuais, animação
+│                  das janelas, atualizações, modo de eficiência, persistência
 ├── Themes/        Estilos da dock, menus, ícones e da janela de personalização
 ├── ViewModels/    Dock e personalização (MVVM com CommunityToolkit.Mvvm)
-└── Views/         Janela da dock, painel da bandeja, personalização, menus, ocultar
+└── Views/         Janela da dock, painel da bandeja, miniaturas das janelas, cubo das
+                   áreas de trabalho, lâmpada mágica, personalização, menus, ocultar
                    automaticamente
 ```
 

@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using LiquidGlass.Controls;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
@@ -28,10 +29,15 @@ public partial class DockWindow : Window
 
     private static readonly TimeSpan WallpaperSettleDelay = TimeSpan.FromMilliseconds(600);
 
+    /// <summary>Quanto o mouse precisa parar sobre um app aberto para as miniaturas aparecerem.</summary>
+    private static readonly TimeSpan PreviewDelay = TimeSpan.FromMilliseconds(450);
+
     private readonly DockViewModel _viewModel;
     private readonly WallpaperService _wallpaper;
     private readonly TrayIconService _tray;
     private readonly TrayFlyout _trayFlyout = new();
+    private readonly WindowPreview _preview;
+    private readonly DispatcherTimer _previewDelay = new() { Interval = PreviewDelay };
     private readonly EfficiencyMode _efficiency;
     private readonly object _menuActivity = new();
     private HwndSource? _source;
@@ -41,6 +47,7 @@ public partial class DockWindow : Window
     private MagnifyingPanel? _panel;
     private Rect _contentBounds = Rect.Empty;
     private bool _isPointerInside;
+    private DockItemView? _previewCandidate;
 
     public DockWindow(DockViewModel viewModel, WallpaperService wallpaper, TrayIconService tray, EfficiencyMode efficiency)
     {
@@ -51,6 +58,10 @@ public partial class DockWindow : Window
         _efficiency = efficiency;
         _trayFlyout.Opened += (_, _) => _efficiency.SetActive(_trayFlyout, active: true);
         _trayFlyout.Closed += (_, _) => _efficiency.SetActive(_trayFlyout, active: false);
+        _preview = new WindowPreview(viewModel);
+        _preview.Opened += (_, _) => _efficiency.SetActive(_preview, active: true);
+        _preview.Closed += (_, _) => _efficiency.SetActive(_preview, active: false);
+        _previewDelay.Tick += (_, _) => ShowPendingPreview();
         ContextMenuClosing += (_, _) => _efficiency.SetActive(_menuActivity, active: false);
         DataContext = viewModel;
 
@@ -61,6 +72,7 @@ public partial class DockWindow : Window
         Settings.PropertyChanged += OnSettingsChanged;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.TrayToggleRequested += OnTrayToggleRequested;
+        _viewModel.ItemActivating += OnItemActivating;
         _wallpaper.Changed += OnWallpaperChanged;
     }
 
@@ -97,8 +109,10 @@ public partial class DockWindow : Window
         Settings.PropertyChanged -= OnSettingsChanged;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.TrayToggleRequested -= OnTrayToggleRequested;
+        _viewModel.ItemActivating -= OnItemActivating;
         _wallpaper.Changed -= OnWallpaperChanged;
         _trayFlyout.IsOpen = false;
+        CancelPreview();
         _source?.RemoveHook(WndProc);
         _autoHide?.Stop();
         _appBar?.Dispose();
@@ -170,7 +184,7 @@ public partial class DockWindow : Window
     /// <summary>Mantém a dock na tela mesmo com a ocultação automática (visão das áreas de trabalho aberta).</summary>
     public bool KeepVisible { get; set; }
 
-    private bool ShouldStayVisible() => KeepVisible || Root.IsMouseOver || _openMenu is { IsOpen: true } || _trayFlyout.IsOpen;
+    private bool ShouldStayVisible() => KeepVisible || Root.IsMouseOver || _openMenu is { IsOpen: true } || _trayFlyout.IsOpen || _preview.IsOpen;
 
     /// <summary>Ícone do app dono da janela, em pixels físicos da tela: o destino ao minimizar.</summary>
     public Rect? FindIconBounds(nint hwnd)
@@ -330,6 +344,7 @@ public partial class DockWindow : Window
     {
         if (sender is DockItemView { ContextMenu: { } menu, DataContext: DockItemViewModel item } view)
         {
+            CancelPreview();
             _efficiency.SetActive(_menuActivity, active: true);
             ScreenBackdrop.Shared.CaptureBeside(view, Settings.Edge);
             DockMenus.Populate(menu, item, _viewModel, view);
@@ -347,6 +362,125 @@ public partial class DockWindow : Window
             _openMenu = menu;
         }
     }
+
+    /// <summary>
+    /// Parar o mouse sobre um app aberto mostra as janelas dele. Com as miniaturas já abertas,
+    /// passar para outro app aberto troca na hora, como na barra de tarefas.
+    /// </summary>
+    private void OnItemMouseEnter(object sender, MouseEventArgs e)
+    {
+        _previewDelay.Stop();
+        _previewCandidate = null;
+        if (sender is not DockItemView { DataContext: DockItemViewModel { IsApplication: true, IsRunning: true } } view
+            || !Settings.ShowWindowPreviews
+            || _openMenu is { IsOpen: true })
+        {
+            return;
+        }
+
+        _previewCandidate = view;
+        if (_preview.IsOpen)
+        {
+            ShowPendingPreview();
+        }
+        else
+        {
+            _previewDelay.Start();
+        }
+    }
+
+    private void OnItemMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (sender == _previewCandidate)
+        {
+            _previewDelay.Stop();
+            _previewCandidate = null;
+        }
+    }
+
+    private void ShowPendingPreview()
+    {
+        _previewDelay.Stop();
+        if (_source is not null && _previewCandidate is { IsMouseOver: true, DataContext: DockItemViewModel { IsRunning: true } item } view)
+        {
+            _preview.Show(view, item, Settings.Edge, _source.Handle);
+        }
+    }
+
+    private void CancelPreview()
+    {
+        _previewDelay.Stop();
+        _previewCandidate = null;
+        _preview.IsOpen = false;
+    }
+
+    /// <summary>
+    /// Demonstração (Debug): abre as miniaturas do app aberto com esse nome, como o mouse parado
+    /// faria, e as mantém abertas sem o mouse; sem nome, fecha.
+    /// </summary>
+    [System.Diagnostics.Conditional("DEBUG")]
+    internal void DemoPreview(string? name)
+    {
+        _preview.IsDemo = name is not null;
+        if (name is null)
+        {
+            _preview.CloseAnimated();
+            return;
+        }
+
+        if (_source is not null
+            && _viewModel.Items.FirstOrDefault(item => item.IsRunning && item.Name.Contains(name, StringComparison.OrdinalIgnoreCase)) is { } item
+            && DockItems.ItemContainerGenerator.ContainerFromItem(item) is DockItemView view)
+        {
+            _preview.Show(view, item, Settings.Edge, _source.Handle);
+        }
+    }
+
+    [System.Diagnostics.Conditional("DEBUG")]
+    internal void SaveDemoPreview(string name) => _preview.SaveDemoFrame(name);
+
+    /// <summary>
+    /// Demonstração (Debug): abre o menu do botão direito do app com esse nome, como o clique faria,
+    /// e o fotografa junto com o ícone; sem nome, fecha.
+    /// </summary>
+    [System.Diagnostics.Conditional("DEBUG")]
+    internal void DemoMenu(string? name)
+    {
+        if (name is null)
+        {
+            if (_openMenu is { } open)
+            {
+                Graphics.DemoCapture.Save("menu", open, open.PlacementTarget as FrameworkElement);
+                open.IsOpen = false;
+            }
+
+            return;
+        }
+
+        if (_viewModel.Items.FirstOrDefault(item => item.IsApplication && item.Name.Contains(name, StringComparison.OrdinalIgnoreCase)) is { } item
+            && DockItems.ItemContainerGenerator.ContainerFromItem(item) is DockItemView { ContextMenu: { } menu } view)
+        {
+            _efficiency.SetActive(_menuActivity, active: true);
+            ScreenBackdrop.Shared.CaptureBeside(view, Settings.Edge);
+            DockMenus.Populate(menu, item, _viewModel, view);
+            menu.PlacementTarget = view;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Custom;
+            menu.StaysOpen = true;
+            menu.IsOpen = true;
+            _openMenu = menu;
+        }
+    }
+
+    /// <summary>Demonstração (Debug): devolve o painel ao mouse e fotografa o recolhimento, se acontecer.</summary>
+    [System.Diagnostics.Conditional("DEBUG")]
+    internal void DemoReleasePreview()
+    {
+        _preview.IsDemo = false;
+        _preview.CaptureNextCollapse = true;
+    }
+
+    /// <summary>Um clique no ícone já decide a janela; as miniaturas saem da frente.</summary>
+    private void OnItemActivating(object? sender, DockItemViewModel item) => CancelPreview();
 
     private void OnTrayToggleRequested(object? sender, DockItemViewModel item)
     {
@@ -387,6 +521,9 @@ public partial class DockWindow : Window
             case nameof(DockSettings.AutoHide):
             case nameof(DockSettings.AnimationSpeed):
                 UpdatePlacement();
+                break;
+            case nameof(DockSettings.ShowWindowPreviews) when !Settings.ShowWindowPreviews:
+                CancelPreview();
                 break;
             case nameof(DockSettings.Roundness):
             case nameof(DockSettings.DockLength):

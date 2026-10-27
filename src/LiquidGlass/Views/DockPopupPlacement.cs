@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using LiquidGlass.Interop;
 using LiquidGlass.Models;
 
 namespace LiquidGlass.Views;
@@ -32,5 +33,22 @@ internal static class DockPopupPlacement
         };
 
         return [placement];
+    }
+
+    /// <summary>
+    /// O cursor está sobre o elemento? Painéis que fecham sozinhos perguntam isso a cada instante,
+    /// inclusive sobre o ícone que os abriu, em outra janela.
+    /// </summary>
+    public static bool IsCursorOver(FrameworkElement? element)
+    {
+        if (element is null || PresentationSource.FromVisual(element) is null)
+        {
+            return false;
+        }
+
+        User32.GetCursorPos(out var cursor);
+        var topLeft = element.PointToScreen(new Point(0, 0));
+        var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+        return new Rect(topLeft, bottomRight).Contains(cursor.X, cursor.Y);
     }
 }

@@ -24,12 +24,17 @@ internal static class Shell32
     public const uint AbeBottom = 3;
 
     public const uint SigdnNormalDisplay = 0;
+    public const uint SigdnDesktopAbsoluteParsing = 0x80028000;
 
     public const int SiigbfResizeToFit = 0x00;
     public const int SiigbfIconOnly = 0x04;
 
     public static readonly PropertyKey AppUserModelId = new("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3", 5);
     public static readonly PropertyKey LinkTargetParsingPath = new("B9B4B3FC-2B51-4A42-B5D8-324146AFCF25", 2);
+    public static readonly PropertyKey Title = new("F29F85E0-4FF9-1068-AB91-08002B27B3D9", 2);
+
+    /// <summary>Marca as linhas divisórias entre as tarefas de uma lista de atalhos.</summary>
+    public static readonly PropertyKey IsDestListSeparator = new("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3", 6);
 
     private static readonly Guid ShellItemId = typeof(IShellItem).GUID;
     private static readonly Guid ImageFactoryId = typeof(IShellItemImageFactory).GUID;
@@ -69,6 +74,57 @@ internal static class Shell32
 
     [DllImport("ole32.dll")]
     private static extern int PropVariantClear(ref PropVariant value);
+
+    [DllImport("shlwapi.dll")]
+    [return: MarshalAs(UnmanagedType.Interface)]
+    private static extern System.Runtime.InteropServices.ComTypes.IStream? SHCreateMemStream(byte[] data, uint length);
+
+    [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+    private static extern int SHLoadIndirectString(string source, [Out] char[] output, uint length, nint reserved);
+
+    /// <summary>Fluxo COM em memória com uma cópia de <paramref name="data"/>.</summary>
+    public static System.Runtime.InteropServices.ComTypes.IStream? CreateMemoryStream(byte[] data)
+    {
+        return SHCreateMemStream(data, (uint)data.Length);
+    }
+
+    /// <summary>Resolve textos indiretos ("@shell32.dll,-123", "@{pacote?ms-resource://...}").</summary>
+    public static string? LoadIndirectString(string source)
+    {
+        var buffer = new char[1024];
+        if (SHLoadIndirectString(source, buffer, (uint)buffer.Length, 0) != 0)
+        {
+            return null;
+        }
+
+        var length = Array.IndexOf(buffer, '\0');
+        return new string(buffer, 0, length < 0 ? buffer.Length : length);
+    }
+
+    /// <summary>Lê uma string de um repositório de propriedades sem liberá-lo.</summary>
+    public static string? GetString(IPropertyStore store, PropertyKey key)
+    {
+        if (store.GetValue(ref key, out var value) != 0)
+        {
+            return null;
+        }
+
+        var text = value.AsString();
+        _ = PropVariantClear(ref value);
+        return string.IsNullOrWhiteSpace(text) ? null : text;
+    }
+
+    public static bool GetBoolean(IPropertyStore store, PropertyKey key)
+    {
+        if (store.GetValue(ref key, out var value) != 0)
+        {
+            return false;
+        }
+
+        var flag = value.AsBoolean();
+        _ = PropVariantClear(ref value);
+        return flag;
+    }
 
     public static AppBarData CreateAppBarData(nint hwnd = 0)
     {
@@ -134,14 +190,7 @@ internal static class Shell32
     {
         try
         {
-            if (store.GetValue(ref key, out var value) != 0)
-            {
-                return null;
-            }
-
-            var text = value.AsString();
-            _ = PropVariantClear(ref value);
-            return string.IsNullOrWhiteSpace(text) ? null : text;
+            return GetString(store, key);
         }
         finally
         {

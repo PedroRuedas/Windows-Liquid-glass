@@ -101,6 +101,7 @@
                 <MultiTrigger.Conditions>
                     <Condition Property="IsMouseOver" Value="True" />
                     <Condition Property="ShowLabel" Value="True" />
+                    <Condition Property="IsPreviewOpen" Value="False" />
                 </MultiTrigger.Conditions>
                 <MultiTrigger.EnterActions>
                     <BeginStoryboard>

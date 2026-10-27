@@ -41,6 +41,13 @@ public sealed class DockItemView : ButtonBase
         typeof(DockItemView),
         new PropertyMetadata(true));
 
+    /// <summary>Com as miniaturas das janelas abertas sobre o ícone, o rótulo não aparece por baixo delas.</summary>
+    public static readonly DependencyProperty IsPreviewOpenProperty = DependencyProperty.Register(
+        nameof(IsPreviewOpen),
+        typeof(bool),
+        typeof(DockItemView),
+        new PropertyMetadata(false));
+
     /// <summary>Deslocamento do ícone para longe da borda (quique), em DIPs.</summary>
     public static readonly DependencyProperty LiftProperty = DependencyProperty.Register(
         nameof(Lift),
@@ -95,6 +102,12 @@ public sealed class DockItemView : ButtonBase
     {
         get => (bool)GetValue(ShowIndicatorProperty);
         set => SetValue(ShowIndicatorProperty, value);
+    }
+
+    public bool IsPreviewOpen
+    {
+        get => (bool)GetValue(IsPreviewOpenProperty);
+        set => SetValue(IsPreviewOpenProperty, value);
     }
 
     public double Lift

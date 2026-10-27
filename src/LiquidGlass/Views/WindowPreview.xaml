@@ -1,0 +1,118 @@
+<Popup x:Class="LiquidGlass.Views.WindowPreview"
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:controls="clr-namespace:LiquidGlass.Controls"
+       AllowsTransparency="True"
+       Placement="Custom"
+       PopupAnimation="None"
+       StaysOpen="True">
+
+    <Popup.Resources>
+        <SolidColorBrush x:Key="CardHoverFill" Color="#24FFFFFF" />
+        <SolidColorBrush x:Key="CardActiveBorder" Color="#40FFFFFF" />
+        <SolidColorBrush x:Key="ThumbnailPlaceholder" Color="#14FFFFFF" />
+
+        <!-- Lado a lado com a dock embaixo; empilhadas com ela nas laterais. -->
+        <ItemsPanelTemplate x:Key="HorizontalCards">
+            <StackPanel Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+        <ItemsPanelTemplate x:Key="VerticalCards">
+            <StackPanel Orientation="Vertical" />
+        </ItemsPanelTemplate>
+
+        <Style x:Key="CloseButton" TargetType="Button">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Back" Width="22" Height="22" Background="Transparent" CornerRadius="11">
+                            <TextBlock HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="9"
+                                       Text="&#xE8BB;" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Back" Property="Background" Value="#33FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Back" Property="Background" Value="#1AFFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Popup.Resources>
+
+    <!-- O espaçamento é a área da sombra; dentro dele fica o único elemento animado. -->
+    <Border Padding="14">
+        <Grid x:Name="PopupContent">
+            <Grid.RenderTransform>
+                <ScaleTransform />
+            </Grid.RenderTransform>
+
+            <controls:LiquidGlassSurface Style="{StaticResource PopupGlassSurface}" CornerRadius="22" />
+
+            <ItemsControl x:Name="Cards"
+                          Margin="8"
+                          TextElement.Foreground="White"
+                          TextElement.FontFamily="Segoe UI Variable Text, Segoe UI">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="Card"
+                                Margin="2"
+                                Padding="8,6,8,8"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                MouseLeftButtonUp="OnCardLeftButtonUp"
+                                MouseUp="OnCardMouseUp">
+                            <StackPanel Width="{Binding ThumbnailWidth, Mode=OneTime}">
+                                <DockPanel Height="22" Margin="2,0,0,6">
+                                    <Button x:Name="Close"
+                                            DockPanel.Dock="Right"
+                                            Margin="6,0,0,0"
+                                            Style="{StaticResource CloseButton}"
+                                            ToolTip="Fechar janela"
+                                            Visibility="Hidden"
+                                            Click="OnCloseClick" />
+                                    <Image Width="16"
+                                           Height="16"
+                                           Margin="0,0,7,0"
+                                           Source="{Binding Icon, Mode=OneTime}"
+                                           RenderOptions.BitmapScalingMode="HighQuality" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Text="{Binding Title, Mode=OneTime}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DockPanel>
+
+                                <!-- O DWM desenha a miniatura viva da janela exatamente por cima deste retângulo. -->
+                                <Border x:Name="Thumbnail"
+                                        Width="{Binding ThumbnailWidth, Mode=OneTime}"
+                                        Height="{Binding ThumbnailHeight, Mode=OneTime}"
+                                        Background="{StaticResource ThumbnailPlaceholder}"
+                                        CornerRadius="6"
+                                        Loaded="OnThumbnailLoaded" />
+                            </StackPanel>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsActive, Mode=OneTime}" Value="True">
+                                <Setter TargetName="Card" Property="BorderBrush" Value="{StaticResource CardActiveBorder}" />
+                            </DataTrigger>
+                            <Trigger SourceName="Card" Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Card" Property="Background" Value="{StaticResource CardHoverFill}" />
+                                <Setter TargetName="Close" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+    </Border>
+</Popup>

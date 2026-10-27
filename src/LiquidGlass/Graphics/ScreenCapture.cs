@@ -16,6 +16,15 @@ internal static class ScreenCapture
     /// <summary>Papel de parede como o Windows o desenha, para um monitor do tamanho informado (em pixels físicos).</summary>
     public static byte[] Wallpaper(int monitorWidth, int monitorHeight, int factor, out int width, out int height)
     {
+#if DEBUG
+        if (DemoWallpaper.IsEnabled)
+        {
+            width = Math.Max(monitorWidth / factor, 1);
+            height = Math.Max(monitorHeight / factor, 1);
+            return DemoWallpaper.Render(width, height);
+        }
+#endif
+
         var screenDc = User32.GetDC(0);
         var paintDc = Gdi32.CreateCompatibleDC(screenDc);
         var paintBitmap = Gdi32.CreateCompatibleBitmap(screenDc, monitorWidth, monitorHeight);
@@ -42,6 +51,13 @@ internal static class ScreenCapture
     /// </summary>
     public static byte[] Desktop(Int32Rect monitor)
     {
+#if DEBUG
+        if (DemoWallpaper.IsEnabled)
+        {
+            return DemoWallpaper.Render(monitor.Width, monitor.Height);
+        }
+#endif
+
         var desktop = User32.FindWindow("Progman", null);
         var screen = User32.GetVirtualScreen();
         var pixels = new byte[monitor.Width * monitor.Height * 4];
@@ -218,3 +234,53 @@ internal static class ScreenCapture
         }
     }
 }
+
+#if DEBUG
+/// <summary>
+/// Demonstrações (Debug): com LIQUIDGLASS_DEMO_WALLPAPER=1, um gradiente neutro com manchas de cor
+/// toma o lugar do papel de parede e da área de trabalho, para prints sem nada pessoal no fundo.
+/// </summary>
+internal static class DemoWallpaper
+{
+    private static readonly (double X, double Y, double Radius, byte R, byte G, byte B)[] Blobs =
+    [
+        (0.2, 0.28, 0.32, 40, 120, 255),
+        (0.76, 0.24, 0.29, 255, 70, 150),
+        (0.51, 0.76, 0.36, 0, 200, 180),
+    ];
+
+    public static bool IsEnabled { get; } = Environment.GetEnvironmentVariable("LIQUIDGLASS_DEMO_WALLPAPER") == "1";
+
+    public static byte[] Render(int width, int height)
+    {
+        var pixels = new byte[width * height * 4];
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var u = (double)x / width;
+                var v = (double)y / height;
+                var t = (u + v) / 2;
+                double r = 18 + (40 * t), g = 24 - (4 * t), b = 58 + (14 * t);
+                foreach (var blob in Blobs)
+                {
+                    var dx = (u - blob.X) * width / height;
+                    var dy = v - blob.Y;
+                    var weight = 0.6 * Math.Exp(-((dx * dx) + (dy * dy)) / (blob.Radius * blob.Radius / 2));
+                    r += (blob.R - r) * weight;
+                    g += (blob.G - g) * weight;
+                    b += (blob.B - b) * weight;
+                }
+
+                var offset = ((y * width) + x) * 4;
+                pixels[offset] = (byte)Math.Clamp(b, 0, 255);
+                pixels[offset + 1] = (byte)Math.Clamp(g, 0, 255);
+                pixels[offset + 2] = (byte)Math.Clamp(r, 0, 255);
+                pixels[offset + 3] = 255;
+            }
+        }
+
+        return pixels;
+    }
+}
+#endif

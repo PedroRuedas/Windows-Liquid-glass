@@ -5,7 +5,6 @@ using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
@@ -22,18 +21,6 @@ namespace LiquidGlass.Views;
 public partial class TrayFlyout : Popup
 {
     private const string Hint = "Clique para abrir · botão direito para mais opções";
-
-    /// <summary>Escala final ao recolher: largura e altura para a dock embaixo (invertidas nas laterais).</summary>
-    private const double CollapsedWidth = 0.78;
-    private const double CollapsedHeight = 0.35;
-
-    /// <summary>Fração da animação de recolher em que o painel começa a sumir.</summary>
-    private const double FadeStart = 0.25;
-
-    private static readonly TimeSpan CloseDuration = TimeSpan.FromSeconds(0.24);
-
-    /// <summary>Tempo para levar o mouse da setinha até o painel (ou voltar) sem que ele feche.</summary>
-    private static readonly TimeSpan HoverGrace = TimeSpan.FromMilliseconds(400);
 
     /// <summary>
     /// Enquanto o painel está aberto, um timer leve acompanha o cursor: ele fecha quando o mouse
@@ -55,7 +42,7 @@ public partial class TrayFlyout : Popup
         Opened += (_, _) =>
         {
             _cursorLeftAt = null;
-            PlayOpenAnimation();
+            DockPopupAnimation.Open(this, PopupContent, _edge);
             _hoverWatcher.Start();
         };
         Closed += (_, _) =>
@@ -110,70 +97,22 @@ public partial class TrayFlyout : Popup
         _isClosing = true;
         _hoverWatcher.Stop();
 
-        // Recolhe para dentro da setinha: um leve respiro para fora responde ao clique na hora, e
-        // então o painel é puxado, achatando mais no eixo da dock. Só some depois que a contração
-        // já está visível.
-        var (toScaleX, toScaleY) = _edge == DockEdge.Bottom ? (CollapsedWidth, CollapsedHeight) : (CollapsedHeight, CollapsedWidth);
-        var pull = new BackEase { EasingMode = EasingMode.EaseIn, Amplitude = 0.3 };
-        var scaleX = new DoubleAnimation(toScaleX, CloseDuration) { EasingFunction = pull };
-        var scaleY = new DoubleAnimation(toScaleY, CloseDuration) { EasingFunction = pull };
-
-        var fade = new DoubleAnimationUsingKeyFrames { Duration = CloseDuration };
-        fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromPercent(FadeStart)));
-        fade.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromPercent(1), new QuadraticEase { EasingMode = EasingMode.EaseIn }));
-        fade.Completed += (_, _) => IsOpen = false;
-
-        var scale = (ScaleTransform)PopupContent.RenderTransform;
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleX);
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleY);
-        PopupContent.BeginAnimation(OpacityProperty, fade);
-    }
-
-    private static bool IsCursorOver(FrameworkElement? element)
-    {
-        if (element is null || PresentationSource.FromVisual(element) is null)
-        {
-            return false;
-        }
-
-        User32.GetCursorPos(out var cursor);
-        var topLeft = element.PointToScreen(new Point(0, 0));
-        var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
-        return new Rect(topLeft, bottomRight).Contains(cursor.X, cursor.Y);
+        DockPopupAnimation.Collapse(PopupContent, _edge, () => IsOpen = false);
     }
 
     private void CloseWhenCursorLeaves()
     {
-        if (IsCursorOver(PopupContent) || IsCursorOver(PlacementTarget as FrameworkElement))
+        if (DockPopupPlacement.IsCursorOver(PopupContent) || DockPopupPlacement.IsCursorOver(PlacementTarget as FrameworkElement))
         {
             _cursorLeftAt = null;
             return;
         }
 
         _cursorLeftAt ??= DateTime.Now;
-        if (DateTime.Now - _cursorLeftAt >= HoverGrace)
+        if (DateTime.Now - _cursorLeftAt >= DockPopupAnimation.HoverGrace)
         {
             CloseAnimated();
         }
-    }
-
-    private void PlayOpenAnimation()
-    {
-        PopupContent.RenderTransformOrigin = _edge switch
-        {
-            DockEdge.Left => new Point(0, 0.5),
-            DockEdge.Right => new Point(1, 0.5),
-            _ => new Point(0.5, 1),
-        };
-
-        // Remove o estado final de um fechamento animado anterior antes de animar a entrada.
-        var scale = (ScaleTransform)PopupContent.RenderTransform;
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-        PopupContent.BeginAnimation(OpacityProperty, null);
-
-        var storyboard = (Storyboard)FindResource("PopupOpenStoryboard");
-        storyboard.Begin(this);
     }
 
     private void SetIcons(ICollectionView? icons)

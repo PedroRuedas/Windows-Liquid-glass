@@ -35,6 +35,10 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _showRunningIndicators = true;
 
+    /// <summary>Miniaturas das janelas do app ao parar o mouse sobre o ícone, para alternar entre elas.</summary>
+    [ObservableProperty]
+    private bool _showWindowPreviews = true;
+
     [ObservableProperty]
     private bool _showStartButton = true;
 
@@ -137,6 +141,7 @@ public sealed partial class DockSettings : ObservableObject
         Roundness = other.Roundness;
         ShowLabels = other.ShowLabels;
         ShowRunningIndicators = other.ShowRunningIndicators;
+        ShowWindowPreviews = other.ShowWindowPreviews;
         ShowStartButton = other.ShowStartButton;
         ShowRecycleBin = other.ShowRecycleBin;
         ShowTray = other.ShowTray;

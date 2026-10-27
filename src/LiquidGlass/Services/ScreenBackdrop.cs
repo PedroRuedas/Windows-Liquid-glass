@@ -44,17 +44,27 @@ public sealed partial class ScreenBackdrop : ObservableObject
 
     /// <summary>
     /// Captura só o lado da âncora para onde os popups da dock abrem. Ler a tela é a parte cara
-    /// (cresce com a área), então a região cobre o maior popup e nada além.
+    /// (cresce com a área), então a região cobre o maior popup e nada além. Um popup maior que os
+    /// menus informa o próprio <paramref name="popupSize"/> (em DIPs).
     /// </summary>
-    public void CaptureBeside(FrameworkElement anchor, DockEdge edge)
+    public void CaptureBeside(FrameworkElement anchor, DockEdge edge, Size? popupSize = null)
     {
         var bounds = ScreenBounds(anchor);
         var center = new Point(bounds.X + (bounds.Width / 2), bounds.Y + (bounds.Height / 2));
+        var (halfSpan, reach) = (PopupHalfSpan, PopupReach);
+        if (popupSize is { } size)
+        {
+            var scale = VisualTreeHelper.GetDpi(anchor).DpiScaleX;
+            var (along, across) = edge == DockEdge.Bottom ? (size.Width, size.Height) : (size.Height, size.Width);
+            halfSpan = Math.Max(halfSpan, along * scale / 2);
+            reach = Math.Max(reach, across * scale);
+        }
+
         var region = edge switch
         {
-            DockEdge.Left => new Rect(bounds.Left, center.Y - PopupHalfSpan, bounds.Width + PopupReach, PopupHalfSpan * 2),
-            DockEdge.Right => new Rect(bounds.Left - PopupReach, center.Y - PopupHalfSpan, bounds.Width + PopupReach, PopupHalfSpan * 2),
-            _ => new Rect(center.X - PopupHalfSpan, bounds.Top - PopupReach, PopupHalfSpan * 2, bounds.Height + PopupReach),
+            DockEdge.Left => new Rect(bounds.Left, center.Y - halfSpan, bounds.Width + reach, halfSpan * 2),
+            DockEdge.Right => new Rect(bounds.Left - reach, center.Y - halfSpan, bounds.Width + reach, halfSpan * 2),
+            _ => new Rect(center.X - halfSpan, bounds.Top - reach, halfSpan * 2, bounds.Height + reach),
         };
 
         Capture(region);

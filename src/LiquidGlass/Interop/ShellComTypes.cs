@@ -23,11 +23,13 @@ internal struct PropertyKey
 }
 
 /// <summary>
-/// PROPVARIANT reduzido: só lemos valores do tipo string (VT_LPWSTR).
+/// PROPVARIANT reduzido: só lemos strings (VT_LPWSTR e VT_BSTR) e booleanos (VT_BOOL).
 /// </summary>
 [StructLayout(LayoutKind.Explicit, Size = 24)]
 internal struct PropVariant
 {
+    private const ushort VtBstr = 8;
+    private const ushort VtBool = 11;
     private const ushort VtLpwstr = 31;
 
     [FieldOffset(0)]
@@ -36,7 +38,50 @@ internal struct PropVariant
     [FieldOffset(8)]
     private readonly nint _pointer;
 
-    public readonly string? AsString() => _valueType == VtLpwstr ? Marshal.PtrToStringUni(_pointer) : null;
+    [FieldOffset(8)]
+    private readonly short _boolean;
+
+    public readonly string? AsString() => _valueType switch
+    {
+        VtLpwstr => Marshal.PtrToStringUni(_pointer),
+        VtBstr => Marshal.PtrToStringBSTR(_pointer),
+        _ => null,
+    };
+
+    public readonly bool AsBoolean() => _valueType == VtBool && _boolean != 0;
+}
+
+/// <summary>Objeto COM que se grava e se lê de um fluxo, como os atalhos dentro das listas de atalhos.</summary>
+[ComImport]
+[Guid("00000109-0000-0000-C000-000000000046")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IPersistStream
+{
+    void GetClassID(out Guid classId);
+
+    [PreserveSig]
+    int IsDirty();
+
+    void Load(System.Runtime.InteropServices.ComTypes.IStream stream);
+}
+
+/// <summary>
+/// Resolvedor interno que a barra de tarefas usa para descobrir o AppID de uma janela ou atalho
+/// (explícito ou deduzido do executável). Não é documentado, mas é estável desde o Windows 8.
+/// </summary>
+[ComImport]
+[Guid("DE25675A-72DE-44b4-9373-05170450C140")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IApplicationResolver
+{
+    [PreserveSig]
+    int GetAppIDForShortcut(IShellItem item, [MarshalAs(UnmanagedType.LPWStr)] out string appId);
+
+    [PreserveSig]
+    int GetAppIDForShortcutObject(nint link, nint item, [MarshalAs(UnmanagedType.LPWStr)] out string appId);
+
+    [PreserveSig]
+    int GetAppIDForWindow(nint hwnd, [MarshalAs(UnmanagedType.LPWStr)] out string appId, out int pinningPrevented, out int explicitAppId, out int embeddedShortcutValid);
 }
 
 [ComImport]

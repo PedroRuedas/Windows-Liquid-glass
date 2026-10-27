@@ -16,7 +16,7 @@
         <AssemblyName>LiquidGlass</AssemblyName>
         <RootNamespace>LiquidGlass</RootNamespace>
         <Product>Liquid Glass Dock</Product>
-        <Version>0.4.0</Version>
+        <Version>0.5.0</Version>
         <!--
             WPF0001: o tema Fluent do WPF ainda é marcado como experimental.
             WFO0003: regra de DPI para apps Windows Forms; este é um app WPF (o DPI vem do app.manifest).

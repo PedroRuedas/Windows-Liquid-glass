@@ -52,6 +52,8 @@
                     <Setter Property="ShowIndicator" Value="{Binding DataContext.Settings.ShowRunningIndicators, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     <Setter Property="AnimationSpeed" Value="{Binding DataContext.Settings.AnimationSpeed, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     <EventSetter Event="ContextMenuOpening" Handler="OnItemContextMenuOpening" />
+                    <EventSetter Event="MouseEnter" Handler="OnItemMouseEnter" />
+                    <EventSetter Event="MouseLeave" Handler="OnItemMouseLeave" />
                     <Setter Property="ContextMenu">
                         <Setter.Value>
                             <ContextMenu />

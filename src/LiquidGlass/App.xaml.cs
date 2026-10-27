@@ -278,7 +278,9 @@ public partial class App : Application
     /// <summary>
     /// Só no Debug, para testar sem teclado: LIQUIDGLASS_CUBE_DEMO=1 abre o cubo, gira-o como num
     /// arrasto e salva quadros; LIQUIDGLASS_DRAG_DEMO com o título de uma janela abre o cubo e a arrasta
-    /// até a área à direita; LIQUIDGLASS_GENIE_DEMO com o título de uma janela a minimiza e restaura.
+    /// até a área à direita; LIQUIDGLASS_GENIE_DEMO com o título de uma janela a minimiza e restaura;
+    /// LIQUIDGLASS_PREVIEW_DEMO com o nome de um app aberto mostra as miniaturas dele e as fotografa;
+    /// LIQUIDGLASS_MENU_DEMO com o nome de um app abre o menu do botão direito dele e o fotografa.
     /// </summary>
     [System.Diagnostics.Conditional("DEBUG")]
     private void StartDemos()
@@ -350,6 +352,39 @@ public partial class App : Application
                 if (step >= 4)
                 {
                     timer.Stop();
+                }
+
+                return;
+            }
+
+            if (Environment.GetEnvironmentVariable("LIQUIDGLASS_MENU_DEMO") is { Length: > 0 } menuApp)
+            {
+                // O menu é fotografado ao fechar, um passo depois de aberto.
+                _dockWindow?.DemoMenu(step == 1 ? menuApp : null);
+                if (step >= 2)
+                {
+                    timer.Stop();
+                }
+
+                return;
+            }
+
+            if (Environment.GetEnvironmentVariable("LIQUIDGLASS_PREVIEW_DEMO") is { Length: > 0 } app)
+            {
+                switch (step)
+                {
+                    case 1:
+                        _dockWindow?.DemoPreview(app);
+                        break;
+                    case 2:
+                        // Solta o painel: com o mouse longe, ele recolhe sozinho para dentro do ícone.
+                        _dockWindow?.SaveDemoPreview("preview-open");
+                        _dockWindow?.DemoReleasePreview();
+                        break;
+                    case 3:
+                        _dockWindow?.DemoPreview(null);
+                        timer.Stop();
+                        break;
                 }
 
                 return;

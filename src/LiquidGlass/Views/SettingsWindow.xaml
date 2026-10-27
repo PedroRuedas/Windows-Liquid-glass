@@ -155,6 +155,10 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowRunningIndicators}" />
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE8A9;" Header="Miniaturas das janelas" Description="Ao parar o mouse sobre um app aberto, mostra as janelas dele para alternar entre elas.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowWindowPreviews}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xE782;" Header="Botão Iniciar">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowStartButton}" />
                     </controls:SettingCard>

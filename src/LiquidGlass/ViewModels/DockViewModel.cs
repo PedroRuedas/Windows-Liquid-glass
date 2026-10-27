@@ -184,6 +184,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         _animator.Activate(window.Handle);
     }
 
+    public void CloseWindow(AppWindow window) => _animator.Close(window.Handle);
+
     /// <summary>Item da dock que mostra a janela (o app dono dela), se houver.</summary>
     public DockItemViewModel? FindItem(nint hwnd) => Items.FirstOrDefault(item => item.Windows.Any(window => window.Handle == hwnd));
 
@@ -242,7 +244,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
 
     private async void Launch(DockItemViewModel item)
     {
-        var target = item.Pin?.Target ?? (item.IsRunning ? item.Windows[0].ExecutablePath : null);
+        // Apps da Store não fixados abrem pelo AUMID: o executável deles é só o host (ApplicationFrameHost).
+        var target = item.Pin?.Target ?? (item.IsRunning ? PinnedAppFactory.FromWindow(item.Windows[0], item.Name).Target : null);
         if (target is null || !AppLauncher.Launch(target) || !Settings.BounceOnLaunch || item.IsRunning)
         {
             return;

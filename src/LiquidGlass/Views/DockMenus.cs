@@ -38,7 +38,15 @@ internal static class DockMenus
             }
 
             menu.Items.Add(new Separator());
-            menu.Items.Add(Command(item.IsRunning ? "Nova janela" : "Abrir", item.OpenNewCommand));
+            var jumpList = JumpListService.Load(item.IsRunning ? item.Windows[0] : null, item.Pin);
+            AddJumpList(menu, jumpList);
+
+            // A maioria dos apps com tarefas já oferece "Nova janela" do jeito deles (com perfil, por exemplo).
+            if (!item.IsRunning || !jumpList.Any(category => category.IsTasks && category.Entries.Any(IsNewWindowTask)))
+            {
+                menu.Items.Add(Command(item.IsRunning ? "Nova janela" : "Abrir", item.OpenNewCommand));
+            }
+
             menu.Items.Add(Command(item.IsPinned ? "Remover da Dock" : "Manter na Dock", item.TogglePinCommand));
 
             if (item.IsRunning)
@@ -56,6 +64,45 @@ internal static class DockMenus
 
         menu.Items.Add(Command("Personalizar a Dock…", dock.OpenSettingsCommand));
         menu.Items.Add(Command("Sair do Liquid Glass", dock.QuitCommand));
+    }
+
+    /// <summary>
+    /// Grupos ("Pastas recentes") e tarefas ("Nova guia", "Nova janela InPrivate") que o app
+    /// registrou para a barra de tarefas do Windows, na mesma ordem que ela mostra.
+    /// </summary>
+    private static void AddJumpList(ContextMenu menu, IReadOnlyList<JumpListCategory> jumpList)
+    {
+        var hasGroups = jumpList.Any(category => !category.IsTasks);
+        foreach (var category in jumpList.OrderBy(category => category.IsTasks))
+        {
+            var title = category.IsTasks ? (hasGroups ? "Tarefas" : null) : category.Name;
+            if (title is { Length: > 0 })
+            {
+                menu.Items.Add(new MenuItem { Header = title, IsEnabled = false });
+            }
+
+            foreach (var entry in category.Entries)
+            {
+                if (entry.IsSeparator)
+                {
+                    menu.Items.Add(new Separator());
+                    continue;
+                }
+
+                var menuItem = new MenuItem { Header = Shorten(entry.Title) };
+                menuItem.Click += (_, _) => JumpListService.Launch(entry);
+                menu.Items.Add(menuItem);
+            }
+
+            menu.Items.Add(new Separator());
+        }
+    }
+
+    /// <summary>"Nova janela", "Abrir nova janela"; não "Nova janela anônima", que é outra coisa.</summary>
+    private static bool IsNewWindowTask(JumpListEntry entry)
+    {
+        return entry.Title.EndsWith("nova janela", StringComparison.CurrentCultureIgnoreCase)
+            || entry.Title.EndsWith("new window", StringComparison.CurrentCultureIgnoreCase);
     }
 
     /// <summary>Instala a versão nova já encontrada ou procura uma; durante o trabalho, mostra o andamento.</summary>
