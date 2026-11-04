@@ -136,6 +136,15 @@ public partial class App : Application
         _input = new GlobalInputHook();
         _overview = new WorkspaceOverview(CreateOverviewContext, _input, _efficiency, keep => _dockWindow.KeepVisible = keep);
         _input.OverviewKeyPressed += (_, _) => _overview.Toggle();
+
+        // Sem a dock na tela, a tecla Windows abre o menu do próprio Windows.
+        _input.StartKeyPressed += (_, _) =>
+        {
+            if (!_dockWindow.ToggleStartMenu())
+            {
+                AppLauncher.OpenStartMenu();
+            }
+        };
         _input.SwitchKeyPressed += (_, direction) => _overview.Switch(direction);
         _input.OverviewNavigation += (_, key) => _overview.HandleKey(key);
         _input.CaptionButtonPressed += (_, pressed) => _animator.OnCaptionButtonPressed(pressed.Window, pressed.Button);
@@ -259,6 +268,7 @@ public partial class App : Application
             case nameof(DockSettings.AnimateWindows):
             case nameof(DockSettings.AnimateWorkspaceSwitch):
             case nameof(DockSettings.WinTabOpensOverview):
+            case nameof(DockSettings.UseGlassStartMenu):
                 ApplyWindowFeatures();
                 break;
         }
@@ -275,6 +285,7 @@ public partial class App : Application
         _animator.IsEnabled = Settings.AnimateWindows;
         _input.WatchCaptionButtons = Settings.AnimateWindows;
         _input.InterceptWinTab = Settings.WinTabOpensOverview;
+        _input.InterceptStartKey = Settings.UseGlassStartMenu;
 
         // Sem a troca de áreas desta versão do Windows, Ctrl+Win+setas ficam com o próprio Windows.
         _input.InterceptDesktopSwitch = Settings.AnimateWorkspaceSwitch && _desktops.IsAvailable;
@@ -288,7 +299,8 @@ public partial class App : Application
     /// LIQUIDGLASS_PREVIEW_DEMO com o nome de um app aberto mostra as miniaturas dele e as fotografa;
     /// LIQUIDGLASS_MENU_DEMO com o nome de um app abre o menu do botão direito dele e o fotografa;
     /// LIQUIDGLASS_REORDER_DEMO com o nome de um app o arrasta LIQUIDGLASS_REORDER_SLOTS vagas (2,2 se
-    /// ausente; negativo para trás), fotografa e desfaz.
+    /// ausente; negativo para trás), fotografa e desfaz; LIQUIDGLASS_START_DEMO com um termo de arquivo
+    /// abre o menu Iniciar de vidro, pesquisa um app, uma configuração e esse termo e fotografa cada passo.
     /// </summary>
     private void StartDemos()
     {
@@ -360,6 +372,40 @@ public partial class App : Application
                 if (step >= 4)
                 {
                     timer.Stop();
+                }
+
+                return;
+            }
+
+            if (Environment.GetEnvironmentVariable("LIQUIDGLASS_START_DEMO") is { Length: > 0 } fileQuery && _dockWindow is { } dock)
+            {
+                var menu = dock.DemoStartMenu;
+                switch (step)
+                {
+                    case 1:
+                        dock.ToggleStartMenu();
+                        break;
+                    case 2:
+                        menu.SaveDemo("start-home");
+                        menu.DemoSearch("calc");
+                        break;
+                    case 3:
+                        menu.SaveDemo("start-search-app");
+                        menu.DemoSearch("wifi");
+                        break;
+                    case 4:
+                        menu.SaveDemo("start-search-setting");
+                        menu.DemoSearch(fileQuery);
+                        break;
+                    case 6:
+                        // Os arquivos vêm do índice do Windows: um passo a mais de espera.
+                        menu.SaveDemo("start-search-files");
+                        dock.ToggleStartMenu();
+                        break;
+                    case 7:
+                        menu.SaveDemo("start-closed");
+                        timer.Stop();
+                        break;
                 }
 
                 return;

@@ -27,6 +27,7 @@ public enum CaptionButton
 /// interface.
 /// <list type="bullet">
 /// <item>Win+Tab abre a visão das áreas de trabalho; Ctrl+Win+setas trocam de área com animação.</item>
+/// <item>A tecla Windows sozinha abre o menu Iniciar de vidro no lugar do menu do Windows.</item>
 /// <item>Com a visão aberta, Esc, setas e Enter vão para ela.</item>
 /// <item>Com as miniaturas abertas, Esc as fecha sem tirar a tecla do app em foco.</item>
 /// <item>Clique em minimizar ou fechar de qualquer janela avisa antes de a janela reagir, a tempo
@@ -42,15 +43,17 @@ public sealed class GlobalInputHook : IDisposable
     private const uint VkRightControl = 0xA3;
     private const uint VkLeftAlt = 0xA4;
     private const uint VkRightAlt = 0xA5;
+    private const int VkShift = 0x10;
 
     /// <summary>Marca as teclas que a própria dock injeta, para o gancho não reagir a elas.</summary>
-    private const nint OwnInputMarker = 0x4C47_4443;
+    internal const nint OwnInputMarker = 0x4C47_4443;
 
     private readonly Dispatcher _dispatcher;
     private readonly Thread _thread;
     private readonly User32.LowLevelHookProc _keyboardProc;
     private readonly User32.LowLevelHookProc _mouseProc;
     private readonly HashSet<uint> _swallowedKeys = [];
+    private readonly StartKeyDetector _startKey = new();
     private readonly ManualResetEventSlim _started = new();
     private nint _keyboardHook;
     private nint _mouseHook;
@@ -61,6 +64,7 @@ public sealed class GlobalInputHook : IDisposable
     private bool _altDown;
 
     private volatile bool _interceptWinTab;
+    private volatile bool _interceptStartKey;
     private volatile bool _interceptDesktopSwitch;
     private volatile bool _captureOverviewKeys;
     private volatile bool _watchCaptionButtons;
@@ -77,6 +81,9 @@ public sealed class GlobalInputHook : IDisposable
     }
 
     public event EventHandler? OverviewKeyPressed;
+
+    /// <summary>A tecla Windows foi apertada e solta sozinha, com <see cref="InterceptStartKey"/> ligado.</summary>
+    public event EventHandler? StartKeyPressed;
 
     /// <summary>Ctrl+Win+seta: -1 para a área da esquerda, +1 para a da direita.</summary>
     public event EventHandler<int>? SwitchKeyPressed;
@@ -96,6 +103,20 @@ public sealed class GlobalInputHook : IDisposable
             if (_interceptWinTab != value)
             {
                 _interceptWinTab = value;
+                RequestHookUpdate();
+            }
+        }
+    }
+
+    /// <summary>A tecla Windows sozinha avisa <see cref="StartKeyPressed"/> e não abre o menu do Windows.</summary>
+    public bool InterceptStartKey
+    {
+        get => _interceptStartKey;
+        set
+        {
+            if (_interceptStartKey != value)
+            {
+                _interceptStartKey = value;
                 RequestHookUpdate();
             }
         }
@@ -228,7 +249,7 @@ public sealed class GlobalInputHook : IDisposable
     private void UpdateHooks()
     {
         var module = Kernel32.GetModuleHandle(null);
-        var wantsKeyboard = _interceptWinTab || _interceptDesktopSwitch || _captureOverviewKeys || _watchEscape;
+        var wantsKeyboard = _interceptWinTab || _interceptStartKey || _interceptDesktopSwitch || _captureOverviewKeys || _watchEscape;
         if (wantsKeyboard && _keyboardHook == 0)
         {
             _keyboardHook = User32.SetWindowsHookEx(User32.WhKeyboardLl, _keyboardProc, module, 0);
@@ -305,6 +326,18 @@ public sealed class GlobalInputHook : IDisposable
 
         var isDown = message is User32.WmKeyDown or User32.WmSysKeyDown;
         TrackModifier(key.VirtualKey, isDown);
+
+        // O detector vê todas as teclas, inclusive as consumidas abaixo (Win+Tab não é Win sozinha).
+        var otherModifiers = _controlDown || _altDown || User32.IsKeyDown(User32.VkControl) || User32.IsKeyDown(User32.VkMenu) || User32.IsKeyDown(VkShift);
+        if (_startKey.OnKey(key.VirtualKey, isDown, otherModifiers) && _interceptStartKey)
+        {
+            // A tecla sem função no meio faz o Windows entender que a Windows fez parte de um
+            // atalho e não abrir o menu dele; a soltura segue normalmente.
+            User32.keybd_event(User32.VkDummy, 0, 0, OwnInputMarker);
+            User32.keybd_event(User32.VkDummy, 0, User32.KeyEventKeyUp, OwnInputMarker);
+            Post(() => StartKeyPressed?.Invoke(this, EventArgs.Empty));
+        }
+
         if (!isDown)
         {
             if (IsWindowsKey(key.VirtualKey) && _swallowedWithWindowsKey)

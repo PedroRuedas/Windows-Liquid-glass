@@ -77,6 +77,9 @@ public sealed partial class ScreenBackdrop : ObservableObject
         Capture(Rect.Inflate(new Rect(cursor.X, cursor.Y, 1, 1), CursorReach.Width, CursorReach.Height));
     }
 
+    /// <summary>Captura exatamente a região (em pixels físicos) onde um painel maior vai abrir.</summary>
+    public void CaptureRegion(Rect region) => Capture(region);
+
     private static Rect ScreenBounds(FrameworkElement element)
     {
         var topLeft = element.PointToScreen(new Point(0, 0));

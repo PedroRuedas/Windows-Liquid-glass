@@ -31,6 +31,7 @@ public sealed class SettingsService : IDisposable
 
         Settings.PropertyChanged += OnSettingsChanged;
         Settings.PinnedApps.CollectionChanged += OnPinnedAppsChanged;
+        Settings.StartPins.CollectionChanged += OnPinnedAppsChanged;
     }
 
     public DockSettings Settings { get; }
@@ -55,6 +56,7 @@ public sealed class SettingsService : IDisposable
 
         Settings.PropertyChanged -= OnSettingsChanged;
         Settings.PinnedApps.CollectionChanged -= OnPinnedAppsChanged;
+        Settings.StartPins.CollectionChanged -= OnPinnedAppsChanged;
     }
 
     private static DockSettings Load()

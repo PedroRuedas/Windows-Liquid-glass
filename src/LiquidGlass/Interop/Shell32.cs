@@ -25,6 +25,8 @@ internal static class Shell32
 
     public const uint SigdnNormalDisplay = 0;
     public const uint SigdnDesktopAbsoluteParsing = 0x80028000;
+    public const uint SigdnParentRelativeParsing = 0x80018001;
+    public const uint SigdnFileSystemPath = 0x80058000;
 
     public const int SiigbfResizeToFit = 0x00;
     public const int SiigbfIconOnly = 0x04;
@@ -39,6 +41,8 @@ internal static class Shell32
     private static readonly Guid ShellItemId = typeof(IShellItem).GUID;
     private static readonly Guid ImageFactoryId = typeof(IShellItemImageFactory).GUID;
     private static readonly Guid PropertyStoreId = typeof(IPropertyStore).GUID;
+    private static readonly Guid EnumItemsHandler = new("94f60519-2850-4924-aa5a-d15e84868039");
+    private static readonly Guid EnumShellItemsId = typeof(IEnumShellItems).GUID;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct AppBarData
@@ -160,6 +164,70 @@ internal static class Shell32
         }
         finally
         {
+            Marshal.ReleaseComObject(item);
+        }
+    }
+
+    /// <summary>
+    /// Percorre os itens da pasta (ou da pesquisa <c>search-ms:</c>) com esse nome, devolvendo o
+    /// nome exibido e o nome pedido em <paramref name="nameType"/> de cada um. Para quando
+    /// <paramref name="keepGoing"/> devolver <c>false</c>.
+    /// </summary>
+    public static void EnumerateItems(string folder, uint nameType, Func<string, string, bool> keepGoing)
+    {
+        var item = CreateShellItem(folder);
+        if (item is null)
+        {
+            return;
+        }
+
+        nint pointer = 0;
+        try
+        {
+            var handler = EnumItemsHandler;
+            var interfaceId = EnumShellItemsId;
+            item.BindToHandler(0, ref handler, ref interfaceId, out pointer);
+            if (pointer == 0 || Marshal.GetObjectForIUnknown(pointer) is not IEnumShellItems items)
+            {
+                return;
+            }
+
+            var batch = new IShellItem[1];
+            while (items.Next(1, batch, out var fetched) == 0 && fetched == 1)
+            {
+                var child = batch[0];
+                try
+                {
+                    child.GetDisplayName(SigdnNormalDisplay, out var display);
+                    child.GetDisplayName(nameType, out var name);
+                    if (!keepGoing(display, name))
+                    {
+                        break;
+                    }
+                }
+                catch (COMException)
+                {
+                    // Um item sem caminho (ou sem nome) não impede os outros.
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(child);
+                }
+            }
+
+            Marshal.ReleaseComObject(items);
+        }
+        catch (Exception exception) when (exception is COMException or InvalidCastException or ArgumentException)
+        {
+            // Pasta que não se deixa percorrer: sem itens.
+        }
+        finally
+        {
+            if (pointer != 0)
+            {
+                Marshal.Release(pointer);
+            }
+
             Marshal.ReleaseComObject(item);
         }
     }

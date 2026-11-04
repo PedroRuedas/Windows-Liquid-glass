@@ -44,6 +44,10 @@ animações de abertura e uma tela de personalização completa.
 - Arraste atalhos ou programas para a dock para fixá-los.
 - **Reordenar ícones:** segure um app e arraste-o para outra posição. Os fixados trocam de lugar
   entre si (a ordem fica salva) e os abertos não fixados, entre si.
+- **Menu Iniciar de vidro:** o botão Iniciar e a tecla Windows abrem um menu da dock com pesquisa
+  (apps, páginas das Configurações e arquivos do índice do Windows), os apps fixados (trazidos do
+  menu Iniciar do Windows na primeira vez) e os arquivos recentes. Dá para desligar e voltar ao
+  menu do Windows nas preferências.
 - Botão Iniciar e Lixeira.
 - **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
   esquerdo e direito são repassados ao app, como na bandeja do Windows.
@@ -104,6 +108,9 @@ Todas as mudanças aparecem na dock na hora:
 | Miniatura | X ou clique do meio | fecha a janela |
 | Miniaturas abertas | Esc | fecha as miniaturas |
 | Qualquer parte da dock | botão direito | atualizar, personalizar, sair |
+| Teclado | Win | abre e fecha o menu Iniciar de vidro |
+| Menu Iniciar | digitar, ↑ ↓, Enter, Esc | pesquisa, escolhe, abre e fecha |
+| App no menu Iniciar | botão direito | fixar ou desafixar do Iniciar, mover para o início |
 | Teclado | Win+Tab | abre e fecha o cubo das áreas de trabalho |
 | Teclado | Ctrl+Win+← / → | vai para a área de trabalho vizinha |
 | Cubo | arrastar, setas, roda do mouse | gira o cubo |

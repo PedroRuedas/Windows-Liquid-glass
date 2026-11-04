@@ -96,6 +96,16 @@ internal interface IShellItem
     void GetDisplayName(uint nameType, [MarshalAs(UnmanagedType.LPWStr)] out string name);
 }
 
+/// <summary>Itens de uma pasta do shell, um a um (a pasta de apps ou o resultado de uma pesquisa).</summary>
+[ComImport]
+[Guid("70629033-e363-4a28-a567-0db78006e6d7")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IEnumShellItems
+{
+    [PreserveSig]
+    int Next(uint count, [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)] IShellItem[] items, out uint fetched);
+}
+
 [ComImport]
 [Guid("bcc18b79-ba16-442f-80c4-8a59c30c463b")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

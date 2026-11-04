@@ -127,6 +127,8 @@ public partial class DockWindow
         }
     }
 
+    internal StartMenu DemoStartMenu => _startMenu;
+
     internal void SaveDemoDock(string name) => Graphics.DemoCapture.Save(name, Glass);
 
     private Point ToPanelPoint(double along)

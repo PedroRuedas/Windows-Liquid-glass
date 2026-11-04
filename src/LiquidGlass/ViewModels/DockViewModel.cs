@@ -93,6 +93,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     /// <summary>Pedido para abrir ou fechar a visão das áreas de trabalho.</summary>
     public event EventHandler? WorkspacesRequested;
 
+    /// <summary>O botão Iniciar pede o menu de vidro (com ele ligado nas preferências).</summary>
+    public event EventHandler? StartMenuRequested;
+
     /// <summary>Um ícone foi clicado; a visão das áreas de trabalho fecha para o app aparecer.</summary>
     public event EventHandler<DockItemViewModel>? ItemActivating;
 
@@ -111,6 +114,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         ItemActivating?.Invoke(this, item);
         switch (item.Kind)
         {
+            case DockItemKind.StartButton when Settings.UseGlassStartMenu && StartMenuRequested is not null:
+                StartMenuRequested.Invoke(this, EventArgs.Empty);
+                break;
             case DockItemKind.StartButton:
                 AppLauncher.OpenStartMenu();
                 break;

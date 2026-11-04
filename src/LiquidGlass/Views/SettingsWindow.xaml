@@ -360,6 +360,10 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.LaunchAtStartup}" />
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE782;" Header="Menu Iniciar de vidro" Description="O botão Iniciar e a tecla Windows abrem o menu da dock, com pesquisa, fixados e recentes. Desligado, abrem o menu do Windows.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.UseGlassStartMenu}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xE7C4;" Header="Win+Tab abre o cubo das áreas de trabalho" Description="Usa o cubo da dock no lugar da Visão de Tarefas do Windows.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.WinTabOpensOverview}" />
                     </controls:SettingCard>

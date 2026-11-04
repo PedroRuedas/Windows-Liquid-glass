@@ -40,6 +40,7 @@ public partial class DockWindow : Window
     private readonly WallpaperService _wallpaper;
     private readonly TrayIconService _tray;
     private readonly TrayFlyout _trayFlyout = new();
+    private readonly StartMenu _startMenu;
     private readonly WindowPreview _preview;
     private readonly DispatcherTimer _previewDelay = new() { Interval = PreviewDelay };
     private readonly EfficiencyMode _efficiency;
@@ -70,6 +71,7 @@ public partial class DockWindow : Window
         _trayFlyout.Opened += (_, _) => _efficiency.SetActive(_trayFlyout, active: true);
         _trayFlyout.Closed += (_, _) => _efficiency.SetActive(_trayFlyout, active: false);
         _preview = new WindowPreview(viewModel);
+        _startMenu = new StartMenu(viewModel.Settings, efficiency);
         _preview.Opened += (_, _) =>
         {
             _efficiency.SetActive(_preview, active: true);
@@ -92,6 +94,7 @@ public partial class DockWindow : Window
         Settings.PropertyChanged += OnSettingsChanged;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.TrayToggleRequested += OnTrayToggleRequested;
+        _viewModel.StartMenuRequested += OnStartMenuRequested;
         _viewModel.ItemActivating += OnItemActivating;
         _wallpaper.Changed += OnWallpaperChanged;
     }
@@ -132,6 +135,8 @@ public partial class DockWindow : Window
         _viewModel.ItemActivating -= OnItemActivating;
         _wallpaper.Changed -= OnWallpaperChanged;
         _trayFlyout.IsOpen = false;
+        _viewModel.StartMenuRequested -= OnStartMenuRequested;
+        _startMenu.Close();
         CancelPreview();
         _source?.RemoveHook(WndProc);
         _autoHide?.Stop();
@@ -601,6 +606,35 @@ public partial class DockWindow : Window
 
     /// <summary>Um clique no ícone já decide a janela; as miniaturas saem da frente.</summary>
     private void OnItemActivating(object? sender, DockItemViewModel item) => CancelPreview();
+
+    private void OnStartMenuRequested(object? sender, EventArgs e) => ToggleStartMenu();
+
+    /// <summary>
+    /// Abre ou fecha o menu Iniciar de vidro junto ao botão Iniciar (ou ao meio da dock, sem ele).
+    /// Devolve <c>false</c> quando a dock não está na tela (jogo em tela cheia, por exemplo).
+    /// </summary>
+    public bool ToggleStartMenu()
+    {
+        if (_startMenu.IsMenuOpen)
+        {
+            _startMenu.CloseAnimated();
+            return true;
+        }
+
+        var start = _viewModel.Items.FirstOrDefault(item => item.Kind == DockItemKind.StartButton);
+        FrameworkElement anchor = start is not null && DockItems.ItemContainerGenerator.ContainerFromItem(start) is FrameworkElement view && view.IsVisible
+            ? view
+            : Glass;
+        if (!IsVisible || !anchor.IsVisible || PresentationSource.FromVisual(anchor) is null)
+        {
+            return false;
+        }
+
+        CancelPreview();
+        _trayFlyout.CloseAnimated();
+        _startMenu.Open(anchor, Settings.Edge);
+        return true;
+    }
 
     private void OnTrayToggleRequested(object? sender, DockItemViewModel item)
     {

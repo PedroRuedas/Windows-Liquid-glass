@@ -49,7 +49,10 @@ public sealed class IconService
         return source;
     }
 
-    private static BitmapSource? LoadShellIcon(string parsingName)
+    /// <summary>Ícone no tamanho pedido, congelado: pode ser carregado numa thread de fundo (STA).</summary>
+    public static BitmapSource? LoadIcon(string parsingName, int size) => LoadShellIcon(parsingName, size);
+
+    private static BitmapSource? LoadShellIcon(string parsingName, int resolution = IconResolution)
     {
         var factory = Shell32.CreateImageFactory(parsingName);
         if (factory is null)
@@ -59,7 +62,7 @@ public sealed class IconService
 
         try
         {
-            var size = new NativeSize { Width = IconResolution, Height = IconResolution };
+            var size = new NativeSize { Width = resolution, Height = resolution };
             var result = factory.GetImage(size, Shell32.SiigbfResizeToFit | Shell32.SiigbfIconOnly, out var bitmap);
             if (result != 0 || bitmap == 0)
             {

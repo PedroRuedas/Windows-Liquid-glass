@@ -31,11 +31,14 @@ public static class AppLauncher
         }
     }
 
-    /// <summary>Abre o menu Iniciar simulando a tecla Windows.</summary>
+    /// <summary>
+    /// Abre o menu Iniciar do Windows simulando a tecla Windows. A marca da dock faz o gancho de
+    /// teclado deixá-la passar, em vez de abrir o menu de vidro no lugar.
+    /// </summary>
     public static void OpenStartMenu()
     {
-        User32.keybd_event(User32.VkLeftWin, 0, 0, 0);
-        User32.keybd_event(User32.VkLeftWin, 0, User32.KeyEventKeyUp, 0);
+        User32.keybd_event(User32.VkLeftWin, 0, 0, GlobalInputHook.OwnInputMarker);
+        User32.keybd_event(User32.VkLeftWin, 0, User32.KeyEventKeyUp, GlobalInputHook.OwnInputMarker);
     }
 
     public static void Activate(nint hwnd)

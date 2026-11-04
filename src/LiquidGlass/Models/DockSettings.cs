@@ -124,11 +124,22 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _winTabOpensOverview = true;
 
+    /// <summary>O botão Iniciar e a tecla Windows abrem o menu Iniciar de vidro no lugar do menu do Windows.</summary>
+    [ObservableProperty]
+    private bool _useGlassStartMenu = true;
+
+    /// <summary>Os fixados do menu Iniciar de vidro já foram trazidos do menu do Windows (só na primeira vez).</summary>
+    [ObservableProperty]
+    private bool _startPinsImported;
+
     /// <summary>Procura versões novas ao abrir a dock e a cada poucas horas.</summary>
     [ObservableProperty]
     private bool _checkForUpdates = true;
 
     public ObservableCollection<PinnedApp> PinnedApps { get; set; } = [];
+
+    /// <summary>Apps fixados no menu Iniciar de vidro, na ordem da grade.</summary>
+    public ObservableCollection<PinnedApp> StartPins { get; set; } = [];
 
     /// <summary>Copia todos os valores visuais e de comportamento (não os apps fixados).</summary>
     public void CopyPreferencesFrom(DockSettings other)
@@ -168,6 +179,7 @@ public sealed partial class DockSettings : ObservableObject
         TaskbarMode = other.TaskbarMode;
         LaunchAtStartup = other.LaunchAtStartup;
         WinTabOpensOverview = other.WinTabOpensOverview;
+        UseGlassStartMenu = other.UseGlassStartMenu;
         CheckForUpdates = other.CheckForUpdates;
     }
 }
