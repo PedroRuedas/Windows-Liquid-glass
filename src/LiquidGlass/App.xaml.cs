@@ -286,7 +286,9 @@ public partial class App : Application
     /// arrasto e salva quadros; LIQUIDGLASS_DRAG_DEMO com o título de uma janela abre o cubo e a arrasta
     /// até a área à direita; LIQUIDGLASS_GENIE_DEMO com o título de uma janela a minimiza e restaura;
     /// LIQUIDGLASS_PREVIEW_DEMO com o nome de um app aberto mostra as miniaturas dele e as fotografa;
-    /// LIQUIDGLASS_MENU_DEMO com o nome de um app abre o menu do botão direito dele e o fotografa.
+    /// LIQUIDGLASS_MENU_DEMO com o nome de um app abre o menu do botão direito dele e o fotografa;
+    /// LIQUIDGLASS_REORDER_DEMO com o nome de um app o arrasta LIQUIDGLASS_REORDER_SLOTS vagas (2,2 se
+    /// ausente; negativo para trás), fotografa e desfaz.
     /// </summary>
     private void StartDemos()
     {
@@ -294,6 +296,7 @@ public partial class App : Application
         var step = 0;
         var cubeDemo = Environment.GetEnvironmentVariable("LIQUIDGLASS_CUBE_DEMO") == "1";
         var dragTitle = Environment.GetEnvironmentVariable("LIQUIDGLASS_DRAG_DEMO");
+        var reorderOriginal = -1;
         timer.Tick += (_, _) =>
         {
             step++;
@@ -357,6 +360,33 @@ public partial class App : Application
                 if (step >= 4)
                 {
                     timer.Stop();
+                }
+
+                return;
+            }
+
+            if (Environment.GetEnvironmentVariable("LIQUIDGLASS_REORDER_DEMO") is { Length: > 0 } reorderApp)
+            {
+                switch (step)
+                {
+                    case 1:
+                        _dockWindow?.SaveDemoDock("reorder-before");
+                        var slots = double.TryParse(Environment.GetEnvironmentVariable("LIQUIDGLASS_REORDER_SLOTS"), System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : 2.2;
+                        reorderOriginal = _dockWindow?.DemoReorder(reorderApp, slots) ?? -1;
+                        break;
+                    case 2:
+                        _dockWindow?.SaveDemoDock("reorder-drag");
+                        _dockWindow?.DemoDrop(reorderApp, restoreTo: -1);
+                        break;
+                    case 3:
+                        // A ordem nova vale; depois o demo a desfaz para não mexer nos fixados do usuário.
+                        _dockWindow?.SaveDemoDock("reorder-dropped");
+                        _dockWindow?.DemoDrop(reorderApp, reorderOriginal);
+                        break;
+                    case 4:
+                        _dockWindow?.SaveDemoDock("reorder-restored");
+                        timer.Stop();
+                        break;
                 }
 
                 return;

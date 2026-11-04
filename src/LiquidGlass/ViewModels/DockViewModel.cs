@@ -170,6 +170,41 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Apps com que o item pode trocar de lugar, na ordem da dock: os fixados entre si (a ordem
+    /// fica salva) e os abertos não fixados entre si. Vazio para os botões fixos da dock.
+    /// </summary>
+    public List<DockItemViewModel> ReorderGroup(DockItemViewModel item)
+    {
+        return item.IsApplication && !item.IsRemoving
+            ? Items.Where(candidate => candidate.IsApplication && !candidate.IsRemoving && candidate.IsPinned == item.IsPinned).ToList()
+            : [];
+    }
+
+    /// <summary>Leva o item para a posição <paramref name="index"/> dentro do <see cref="ReorderGroup"/> dele.</summary>
+    public void MoveWithinGroup(DockItemViewModel item, int index)
+    {
+        var group = ReorderGroup(item);
+        var from = group.IndexOf(item);
+        index = Math.Clamp(index, 0, group.Count - 1);
+        if (from < 0 || from == index)
+        {
+            return;
+        }
+
+        var target = group[index];
+        if (item.Pin is { } pin && target.Pin is { } targetPin)
+        {
+            // A dock se refaz a partir da lista de fixados (Rebuild), e a nova ordem é salva.
+            Settings.PinnedApps.Move(Settings.PinnedApps.IndexOf(pin), Settings.PinnedApps.IndexOf(targetPin));
+        }
+        else
+        {
+            // Os abertos mantêm a ordem em que estão na dock (Rebuild a preserva).
+            Items.Move(Items.IndexOf(item), Items.IndexOf(target));
+        }
+    }
+
     public void CloseAll(DockItemViewModel item)
     {
         foreach (var window in item.Windows)
@@ -384,7 +419,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             running.Add(item);
         }
 
-        // Apps em execução mantêm a ordem em que apareceram; os novos entram no final.
+        // Apps em execução mantêm a ordem que têm na dock (a de abertura ou a arrastada); os novos entram no final.
         desired.AddRange(running.OrderBy(item => Items.IndexOf(item) is var index and >= 0 ? index : int.MaxValue));
 
         var showBattery = Settings.ShowBattery && _battery.IsPresent;

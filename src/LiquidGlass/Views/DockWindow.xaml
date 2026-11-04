@@ -19,8 +19,9 @@
 
     <Grid x:Name="Root"
           controls:MagnifyingPanel.ContentBoundsChanged="OnContentBoundsChanged"
-          MouseMove="OnRootMouseMove"
-          MouseLeave="OnRootMouseLeave">
+          MouseLeave="OnRootMouseLeave"
+          PreviewMouseLeftButtonUp="OnRootPreviewMouseLeftButtonUp"
+          LostMouseCapture="OnRootLostMouseCapture">
 
         <Canvas x:Name="GlassLayer">
             <!-- Área quase transparente que mantém o mouse "dentro" da dock entre ícones ampliados. -->
@@ -54,6 +55,7 @@
                     <EventSetter Event="ContextMenuOpening" Handler="OnItemContextMenuOpening" />
                     <EventSetter Event="MouseEnter" Handler="OnItemMouseEnter" />
                     <EventSetter Event="MouseLeave" Handler="OnItemMouseLeave" />
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnItemPreviewMouseLeftButtonDown" />
                     <Setter Property="ContextMenu">
                         <Setter.Value>
                             <ContextMenu />

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -27,6 +28,9 @@ public partial class DockWindow : Window
     private const int SpiSetDesktopWallpaper = 0x0014;
     private const int SpiSetWorkArea = 0x002F;
 
+    /// <summary>Quanto o mouse precisa andar com o botão apertado para o clique virar arrasto.</summary>
+    private const double ReorderThreshold = 6;
+
     private static readonly TimeSpan WallpaperSettleDelay = TimeSpan.FromMilliseconds(600);
 
     /// <summary>Quanto o mouse precisa parar sobre um app aberto para as miniaturas aparecerem.</summary>
@@ -48,6 +52,13 @@ public partial class DockWindow : Window
     private Rect _contentBounds = Rect.Empty;
     private bool _isPointerInside;
     private DockItemView? _previewCandidate;
+    private DockItemView? _pressedView;
+    private Point _pressPoint;
+    private DockItemView? _reorderView;
+    private double _grabOffset;
+
+    /// <summary>Falso só na demonstração do Debug, que não pode tomar o mouse de verdade.</summary>
+    private bool _captureOnReorder = true;
 
     public DockWindow(DockViewModel viewModel, WallpaperService wallpaper, TrayIconService tray, EfficiencyMode efficiency)
     {
@@ -76,6 +87,7 @@ public partial class DockWindow : Window
         SourceInitialized += OnSourceInitialized;
         Closed += OnClosed;
         DragOver += OnDragOver;
+        Root.AddHandler(MouseMoveEvent, new MouseEventHandler(OnRootMouseMove), handledEventsToo: true);
         Drop += OnDrop;
         Settings.PropertyChanged += OnSettingsChanged;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -324,15 +336,45 @@ public partial class DockWindow : Window
         LayoutGlass();
     }
 
+    /// <summary>
+    /// Recebe o movimento mesmo já tratado: com o botão apertado, o ícone (um ButtonBase) captura o
+    /// mouse e marca cada movimento como tratado, e sem isso o arrasto nunca começaria.
+    /// </summary>
     private void OnRootMouseMove(object sender, MouseEventArgs e)
+    {
+#if DEBUG
+        DemoCountHandledMove(e);
+#endif
+        if (_panel is not null)
+        {
+            OnPointerMoved(e.GetPosition(_panel), e.GetPosition(Root), e.LeftButton == MouseButtonState.Pressed);
+        }
+    }
+
+    private void OnPointerMoved(Point panelPoint, Point rootPoint, bool leftPressed)
     {
         if (_panel is null)
         {
             return;
         }
 
-        var position = e.GetPosition(_panel);
-        _panel.CursorPosition = Settings.Edge == DockEdge.Bottom ? position.X : position.Y;
+        _panel.CursorPosition = Along(panelPoint);
+
+        if (_reorderView is not null)
+        {
+            UpdateReorder(panelPoint);
+        }
+        else if (_pressedView is not null)
+        {
+            if (!leftPressed)
+            {
+                _pressedView = null;
+            }
+            else if ((rootPoint - _pressPoint).Length >= ReorderThreshold)
+            {
+                BeginReorder(_pressedView, panelPoint, captureMouse: _captureOnReorder);
+            }
+        }
 
         if (!_isPointerInside)
         {
@@ -352,6 +394,129 @@ public partial class DockWindow : Window
         _isPointerInside = false;
         _efficiency.SetActive(Root, active: false);
         LayoutGlass();
+    }
+
+    /// <summary>Apertar um app pode virar arrasto para mudar a ordem; até o mouse andar, é só um clique.</summary>
+    private void OnItemPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is DockItemView view)
+        {
+            Press(view, e.GetPosition(Root));
+        }
+    }
+
+    private void Press(DockItemView view, Point rootPoint)
+    {
+        if (view.DataContext is DockItemViewModel { IsApplication: true })
+        {
+            _pressedView = view;
+            _pressPoint = rootPoint;
+        }
+    }
+
+    private void OnRootPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) => Release();
+
+    private void Release()
+    {
+        _pressedView = null;
+        EndReorder();
+    }
+
+    private void OnRootLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        // O evento sobe dos ícones também (o botão perde a captura quando o arrasto começa).
+        if (e.OriginalSource == Root)
+        {
+            EndReorder();
+        }
+    }
+
+    /// <summary>
+    /// Começa a mudar o ícone de lugar. Com a captura do mouse na dock, o botão perde a dele, e
+    /// soltar não conta como clique.
+    /// </summary>
+    private void BeginReorder(DockItemView view, Point panelPoint, bool captureMouse)
+    {
+        _pressedView = null;
+        if (_panel is null || view.DataContext is not DockItemViewModel item || _viewModel.ReorderGroup(item).Count < 2)
+        {
+            return;
+        }
+
+        CancelPreview();
+        _reorderView = view;
+        _grabOffset = Along(panelPoint) - SlotCenter(view);
+        Panel.SetZIndex(view, 1);
+        _panel.DraggedItem = view;
+        _panel.DragPosition = Along(panelPoint) - _grabOffset;
+        if (captureMouse)
+        {
+            Root.CaptureMouse();
+        }
+    }
+
+    /// <summary>O ícone segue o cursor, e os vizinhos abrem espaço conforme ele passa do centro deles.</summary>
+    private void UpdateReorder(Point panelPoint)
+    {
+        if (_panel is null || _reorderView is not { DataContext: DockItemViewModel item })
+        {
+            return;
+        }
+
+        var center = Along(panelPoint) - _grabOffset;
+        _panel.DragPosition = center;
+
+        var index = 0;
+        foreach (var other in _viewModel.ReorderGroup(item))
+        {
+            if (other != item
+                && DockItems.ItemContainerGenerator.ContainerFromItem(other) is DockItemView container
+                && SlotCenter(container) < center)
+            {
+                index++;
+            }
+        }
+
+        _viewModel.MoveWithinGroup(item, index);
+
+        // Se a troca gerou outro contêiner para o item, o arrasto passa para ele.
+        if (DockItems.ItemContainerGenerator.ContainerFromItem(item) is DockItemView moved && moved != _reorderView)
+        {
+            _reorderView.ClearValue(Panel.ZIndexProperty);
+            Panel.SetZIndex(moved, 1);
+            _reorderView = moved;
+            _panel.DraggedItem = moved;
+        }
+    }
+
+    private void EndReorder()
+    {
+        if (_reorderView is not { } view)
+        {
+            return;
+        }
+
+        _reorderView = null;
+        view.ClearValue(Panel.ZIndexProperty);
+        if (_panel is not null)
+        {
+            _panel.DraggedItem = null;
+            _panel.DragPosition = double.NaN;
+        }
+
+        if (Root.IsMouseCaptured)
+        {
+            Root.ReleaseMouseCapture();
+        }
+    }
+
+    private double Along(Point point) => Settings.Edge == DockEdge.Bottom ? point.X : point.Y;
+
+    /// <summary>Centro da vaga do ícone no painel, sem o deslocamento de quem está sendo arrastado.</summary>
+    private double SlotCenter(FrameworkElement container)
+    {
+        var slot = LayoutInformation.GetLayoutSlot(container);
+        return Settings.Edge == DockEdge.Bottom ? slot.X + (slot.Width / 2) : slot.Y + (slot.Height / 2);
     }
 
     private void OnItemContextMenuOpening(object sender, ContextMenuEventArgs e)

@@ -40,6 +40,20 @@ public sealed class MagnifyingPanel : Panel
         typeof(MagnifyingPanel),
         new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsParentMeasure));
 
+    /// <summary>Item sendo arrastado para mudar de lugar: segue o cursor em vez de ficar na própria vaga.</summary>
+    public static readonly DependencyProperty DraggedItemProperty = DependencyProperty.Register(
+        nameof(DraggedItem),
+        typeof(UIElement),
+        typeof(MagnifyingPanel),
+        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsArrange));
+
+    /// <summary>Centro do item arrastado ao longo da dock, em coordenadas do painel.</summary>
+    public static readonly DependencyProperty DragPositionProperty = DependencyProperty.Register(
+        nameof(DragPosition),
+        typeof(double),
+        typeof(MagnifyingPanel),
+        new FrameworkPropertyMetadata(double.NaN, FrameworkPropertyMetadataOptions.AffectsArrange));
+
     public static readonly RoutedEvent ContentBoundsChangedEvent = EventManager.RegisterRoutedEvent(
         "ContentBoundsChanged",
         RoutingStrategy.Bubble,
@@ -104,6 +118,18 @@ public sealed class MagnifyingPanel : Panel
         set => SetValue(CursorPositionProperty, value);
     }
 
+    public UIElement? DraggedItem
+    {
+        get => (UIElement?)GetValue(DraggedItemProperty);
+        set => SetValue(DraggedItemProperty, value);
+    }
+
+    public double DragPosition
+    {
+        get => (double)GetValue(DragPositionProperty);
+        set => SetValue(DragPositionProperty, value);
+    }
+
     private bool IsVertical => Edge != DockEdge.Bottom;
 
     public static double GetPresence(DependencyObject element) => (double)element.GetValue(PresenceProperty);
@@ -160,7 +186,14 @@ public sealed class MagnifyingPanel : Panel
             var thickness = layout.Thicknesses[index];
             var crossPosition = Edge == DockEdge.Left ? 0 : panelCross - thickness;
 
-            child.Arrange(ToRect(position, crossPosition, length, thickness));
+            // A vaga do item arrastado continua reservada; ele mesmo flutua sob o cursor, dentro da dock.
+            var along = position;
+            if (child == DraggedItem && !double.IsNaN(DragPosition))
+            {
+                along = Math.Clamp(DragPosition - (length / 2), layout.Start, Math.Max(layout.Start + layout.Length - length, layout.Start));
+            }
+
+            child.Arrange(ToRect(along, crossPosition, length, thickness));
             position += length + layout.Gaps[index];
         }
 
@@ -174,7 +207,15 @@ public sealed class MagnifyingPanel : Panel
         base.OnVisualChildrenChanged(visualAdded, visualRemoved);
         if (visualRemoved is UIElement removed)
         {
-            _scales.Remove(removed);
+            // Mudar um item de lugar o tira e o devolve na mesma hora: a escala só é esquecida se ele
+            // não voltou, para o ícone arrastado não encolher de repente a cada troca.
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (VisualTreeHelper.GetParent(removed) != this)
+                {
+                    _scales.Remove(removed);
+                }
+            });
         }
     }
 

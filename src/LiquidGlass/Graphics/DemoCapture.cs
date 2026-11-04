@@ -13,6 +13,11 @@ internal static class DemoCapture
 {
     private const double Margin = 20;
 
+    /// <summary>Anota uma linha em %AppData%\LiquidGlass\demo.log, para conferir o que a foto não mostra.</summary>
+    [Conditional("DEBUG")]
+    public static void Log(string line) =>
+        File.AppendAllText(Path.Combine(AppDataPaths.Root, "demo.log"), $"{DateTime.Now:HH:mm:ss} {line}{Environment.NewLine}");
+
     [Conditional("DEBUG")]
     public static void Save(string name, params FrameworkElement?[] elements)
     {

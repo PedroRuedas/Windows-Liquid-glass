@@ -42,6 +42,8 @@ animações de abertura e uma tela de personalização completa.
   janela dele (dois VS Codes, por exemplo). Clique numa para trazê-la; o X ou o botão do meio a fecha.
   Com muitas janelas, as miniaturas quebram em linhas e diminuem até todas caberem na tela.
 - Arraste atalhos ou programas para a dock para fixá-los.
+- **Reordenar ícones:** segure um app e arraste-o para outra posição. Os fixados trocam de lugar
+  entre si (a ordem fica salva) e os abertos não fixados, entre si.
 - Botão Iniciar e Lixeira.
 - **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
   esquerdo e direito são repassados ao app, como na bandeja do Windows.
@@ -96,6 +98,7 @@ Todas as mudanças aparecem na dock na hora:
 | --- | --- | --- |
 | Ícone de um app | clique | abre o app, traz a janela, minimiza ou alterna entre as janelas dele |
 | Ícone de um app | clique do meio | abre uma nova janela |
+| Ícone de um app | segurar e arrastar | muda o app de posição na dock |
 | Ícone de um app | botão direito | janelas abertas, lista de atalhos do app, fixar, fechar |
 | Ícone de um app aberto | parar o mouse | miniaturas das janelas; clique numa para trazê-la |
 | Miniatura | X ou clique do meio | fecha a janela |
