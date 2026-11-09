@@ -112,7 +112,7 @@
 
                     <controls:SettingCard Glyph="&#xE91B;" Header="Tamanho dos ícones">
                         <StackPanel Orientation="Horizontal">
-                            <Slider Width="220" IsMoveToPointEnabled="True" Minimum="32" Maximum="96" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.IconSize}" />
+                            <Slider Width="220" IsMoveToPointEnabled="True" Minimum="16" Maximum="96" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.IconSize}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.IconSize, StringFormat={}{0:0} px}" />
                         </StackPanel>
                     </controls:SettingCard>

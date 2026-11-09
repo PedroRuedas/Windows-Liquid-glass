@@ -300,7 +300,8 @@ public partial class App : Application
     /// LIQUIDGLASS_MENU_DEMO com o nome de um app abre o menu do botão direito dele e o fotografa;
     /// LIQUIDGLASS_REORDER_DEMO com o nome de um app o arrasta LIQUIDGLASS_REORDER_SLOTS vagas (2,2 se
     /// ausente; negativo para trás), fotografa e desfaz; LIQUIDGLASS_START_DEMO com um termo de arquivo
-    /// abre o menu Iniciar de vidro, pesquisa um app, uma configuração e esse termo e fotografa cada passo.
+    /// abre o menu Iniciar de vidro, pesquisa um app, uma configuração e esse termo e fotografa cada passo;
+    /// LIQUIDGLASS_SIZE_DEMO com tamanhos de ícone ("16,24,32") fotografa a dock em cada um e volta ao original.
     /// </summary>
     private void StartDemos()
     {
@@ -309,6 +310,7 @@ public partial class App : Application
         var cubeDemo = Environment.GetEnvironmentVariable("LIQUIDGLASS_CUBE_DEMO") == "1";
         var dragTitle = Environment.GetEnvironmentVariable("LIQUIDGLASS_DRAG_DEMO");
         var reorderOriginal = -1;
+        var sizeOriginal = 0.0;
         timer.Tick += (_, _) =>
         {
             step++;
@@ -433,6 +435,36 @@ public partial class App : Application
                         _dockWindow?.SaveDemoDock("reorder-restored");
                         timer.Stop();
                         break;
+                }
+
+                return;
+            }
+
+            if (Environment.GetEnvironmentVariable("LIQUIDGLASS_SIZE_DEMO") is { Length: > 0 } sizeList && _dockWindow is { } sizedDock)
+            {
+                var sizes = sizeList.Split(',').Select(s => double.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                if (step == 1)
+                {
+                    sizeOriginal = Settings.IconSize;
+                }
+
+                // Um passo para aplicar cada tamanho e o seguinte para fotografar; no fim volta ao original.
+                var index = (step - 1) / 2;
+                if (index < sizes.Length)
+                {
+                    if ((step - 1) % 2 == 0)
+                    {
+                        Settings.IconSize = sizes[index];
+                    }
+                    else
+                    {
+                        sizedDock.SaveDemoDock($"size-{sizes[index]:0}");
+                    }
+                }
+                else
+                {
+                    Settings.IconSize = sizeOriginal;
+                    timer.Stop();
                 }
 
                 return;

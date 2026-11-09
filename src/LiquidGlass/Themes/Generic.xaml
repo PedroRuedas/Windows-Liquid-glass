@@ -126,8 +126,8 @@
                 </MultiTrigger.ExitActions>
             </MultiTrigger>
 
+            <!-- O tamanho e a margem do ponto acompanham o tamanho dos ícones (DockItemView.ApplyMetrics). -->
             <Trigger Property="Edge" Value="Left">
-                <Setter TargetName="Indicator" Property="Margin" Value="-7,0,0,0" />
                 <Setter TargetName="Indicator" Property="HorizontalAlignment" Value="Left" />
                 <Setter TargetName="Indicator" Property="VerticalAlignment" Value="Center" />
                 <Setter TargetName="LabelHost" Property="Width" Value="300" />
@@ -138,7 +138,6 @@
             </Trigger>
 
             <Trigger Property="Edge" Value="Right">
-                <Setter TargetName="Indicator" Property="Margin" Value="0,0,-7,0" />
                 <Setter TargetName="Indicator" Property="HorizontalAlignment" Value="Right" />
                 <Setter TargetName="Indicator" Property="VerticalAlignment" Value="Center" />
                 <Setter TargetName="LabelHost" Property="Width" Value="300" />
@@ -150,7 +149,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <!-- Separador entre os apps e a Lixeira -->
+    <!-- Separador entre os apps e a Lixeira (a margem acompanha o tamanho dos ícones: DockItemView.ApplyMetrics) -->
     <ControlTemplate x:Key="DockSeparatorTemplate" TargetType="controls:DockItemView">
         <Rectangle x:Name="Line"
                    Width="1"
@@ -160,12 +159,10 @@
             <Trigger Property="Edge" Value="Left">
                 <Setter TargetName="Line" Property="Width" Value="NaN" />
                 <Setter TargetName="Line" Property="Height" Value="1" />
-                <Setter TargetName="Line" Property="Margin" Value="6,5" />
             </Trigger>
             <Trigger Property="Edge" Value="Right">
                 <Setter TargetName="Line" Property="Width" Value="NaN" />
                 <Setter TargetName="Line" Property="Height" Value="1" />
-                <Setter TargetName="Line" Property="Margin" Value="6,5" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

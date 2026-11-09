@@ -104,7 +104,7 @@ public partial class DockWindow : Window
 
     private DockSettings Settings => _viewModel.Settings;
 
-    private double GlassPadding => Math.Max(7, Settings.IconSize * 0.16);
+    private double GlassPadding => DockSettings.GlassPaddingFor(Settings.IconSize);
 
     /// <summary>Espessura do vidro somada à margem da borda: o espaço que a dock reserva na tela.</summary>
     private double DockThickness => Settings.EdgeMargin + Settings.IconSize + (GlassPadding * 2);

@@ -51,6 +51,7 @@
                     <Setter Property="Edge" Value="{Binding DataContext.Settings.Edge, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     <Setter Property="ShowLabel" Value="{Binding DataContext.Settings.ShowLabels, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     <Setter Property="ShowIndicator" Value="{Binding DataContext.Settings.ShowRunningIndicators, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    <Setter Property="BaseSize" Value="{Binding DataContext.Settings.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     <Setter Property="AnimationSpeed" Value="{Binding DataContext.Settings.AnimationSpeed, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     <EventSetter Event="ContextMenuOpening" Handler="OnItemContextMenuOpening" />
                     <EventSetter Event="MouseEnter" Handler="OnItemMouseEnter" />

@@ -141,6 +141,12 @@ public sealed partial class DockSettings : ObservableObject
     /// <summary>Apps fixados no menu Iniciar de vidro, na ordem da grade.</summary>
     public ObservableCollection<PinnedApp> StartPins { get; set; } = [];
 
+    /// <summary>
+    /// Folga do vidro em volta dos ícones, em DIPs. Fica em 7 a partir de 32 px e cresce com ícones
+    /// grandes; com ícones menores encolhe junto, para a dock poder ficar bem fina.
+    /// </summary>
+    public static double GlassPaddingFor(double iconSize) => Math.Max(Math.Min(7, iconSize * 0.22), iconSize * 0.16);
+
     /// <summary>Copia todos os valores visuais e de comportamento (não os apps fixados).</summary>
     public void CopyPreferencesFrom(DockSettings other)
     {

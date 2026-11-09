@@ -21,7 +21,19 @@ public sealed class DockItemView : ButtonBase
         nameof(Edge),
         typeof(DockEdge),
         typeof(DockItemView),
-        new PropertyMetadata(DockEdge.Bottom, (d, _) => ((DockItemView)d).ApplyLift()));
+        new PropertyMetadata(DockEdge.Bottom, (d, _) =>
+        {
+            var view = (DockItemView)d;
+            view.ApplyLift();
+            view.ApplyMetrics();
+        }));
+
+    /// <summary>Tamanho dos ícones sem ampliação: o ponto de app aberto e o separador acompanham.</summary>
+    public static readonly DependencyProperty BaseSizeProperty = DependencyProperty.Register(
+        nameof(BaseSize),
+        typeof(double),
+        typeof(DockItemView),
+        new PropertyMetadata(44.0, (d, _) => ((DockItemView)d).ApplyMetrics()));
 
     public static readonly DependencyProperty AnimationSpeedProperty = DependencyProperty.Register(
         nameof(AnimationSpeed),
@@ -56,6 +68,8 @@ public sealed class DockItemView : ButtonBase
         new PropertyMetadata(0.0, (d, _) => ((DockItemView)d).ApplyLift()));
 
     private const string IconPartName = "PART_Icon";
+    private const string IndicatorPartName = "Indicator";
+    private const string SeparatorPartName = "Line";
 
     private readonly TranslateTransform _liftTransform = new();
     private DockItemViewModel? _item;
@@ -84,6 +98,12 @@ public sealed class DockItemView : ButtonBase
     {
         get => (DockEdge)GetValue(EdgeProperty);
         set => SetValue(EdgeProperty, value);
+    }
+
+    public double BaseSize
+    {
+        get => (double)GetValue(BaseSizeProperty);
+        set => SetValue(BaseSizeProperty, value);
     }
 
     public double AnimationSpeed
@@ -123,6 +143,8 @@ public sealed class DockItemView : ButtonBase
         {
             icon.RenderTransform = _liftTransform;
         }
+
+        ApplyMetrics();
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -235,10 +257,36 @@ public sealed class DockItemView : ButtonBase
             return;
         }
 
-        var height = Math.Max(ActualHeight, 32) * (kind == BounceKind.Attention ? 0.75 : 0.5);
+        var height = Math.Max(ActualHeight, 16) * (kind == BounceKind.Attention ? 0.75 : 0.5);
         var bounce = CreateBounce(kind, height);
         bounce.SpeedRatio = Math.Max(AnimationSpeed, 0.1);
         BeginAnimation(LiftProperty, bounce);
+    }
+
+    /// <summary>
+    /// Encolhe o ponto de app aberto e o separador junto com os ícones, para caberem na folga do
+    /// vidro de uma dock fina. De 32 px para cima ficam no tamanho de sempre.
+    /// </summary>
+    private void ApplyMetrics()
+    {
+        var padding = DockSettings.GlassPaddingFor(BaseSize);
+
+        if (GetTemplateChild(IndicatorPartName) is FrameworkElement indicator)
+        {
+            indicator.Width = indicator.Height = Math.Clamp(padding * 0.72, 2.5, 5);
+            indicator.Margin = Edge switch
+            {
+                DockEdge.Left => new Thickness(-padding, 0, 0, 0),
+                DockEdge.Right => new Thickness(0, 0, -padding, 0),
+                _ => new Thickness(0, 0, 0, -padding),
+            };
+        }
+
+        if (GetTemplateChild(SeparatorPartName) is FrameworkElement line)
+        {
+            var inset = Math.Min(6, BaseSize * 0.19);
+            line.Margin = Edge == DockEdge.Bottom ? new Thickness(5, inset, 5, inset) : new Thickness(inset, 5, inset, 5);
+        }
     }
 
     private void ApplyLift()
