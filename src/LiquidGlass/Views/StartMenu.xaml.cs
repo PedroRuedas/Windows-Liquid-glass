@@ -87,6 +87,7 @@ public partial class StartMenu : Window, IDisposable
         };
 
         // Prepara em segundo plano o que a primeira abertura vai mostrar.
+        _ = LoadUserNameAsync();
         _importing = ImportPinsOnceAsync();
         RefreshPins();
         EnsureApps();
@@ -515,6 +516,67 @@ public partial class StartMenu : Window, IDisposable
         e.Handled = true;
     }
 
+    /// <summary>Numa conta de domínio o nome pode demorar a vir: sai da thread da interface.</summary>
+    private async Task LoadUserNameAsync()
+    {
+        UserName.Text = Environment.UserName;
+        UserName.Text = await _worker.Run(PowerActions.UserDisplayName);
+    }
+
+    private void OnPowerClick(object sender, MouseButtonEventArgs e)
+    {
+        OpenPowerMenu(atMouse: true);
+        e.Handled = true;
+    }
+
+    /// <summary>Menu do botão de energia: a sessão primeiro (bloquear, sair), depois a energia.</summary>
+    private ContextMenu OpenPowerMenu(bool atMouse)
+    {
+        var menu = new ContextMenu
+        {
+            PlacementTarget = PowerButton,
+            Placement = atMouse ? System.Windows.Controls.Primitives.PlacementMode.MousePoint : System.Windows.Controls.Primitives.PlacementMode.Top,
+        };
+        menu.Items.Add(PowerItem("", "Bloquear", PowerActions.Lock));
+        menu.Items.Add(PowerItem("", "Sair", PowerActions.SignOut));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(PowerItem("", "Suspender", PowerActions.Sleep));
+        if (PowerActions.CanHibernate)
+        {
+            menu.Items.Add(PowerItem("", "Hibernar", PowerActions.Hibernate));
+        }
+
+        menu.Items.Add(PowerItem("", "Desligar", PowerActions.Shutdown));
+        menu.Items.Add(PowerItem("", "Reiniciar", PowerActions.Restart));
+
+        ScreenBackdrop.Shared.CaptureAroundCursor();
+        menu.IsOpen = true;
+        return menu;
+    }
+
+    private MenuItem PowerItem(string glyph, string text, Func<bool> action)
+    {
+        var header = new StackPanel { Orientation = Orientation.Horizontal };
+        header.Children.Add(new TextBlock
+        {
+            Width = 26,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontFamily = (FontFamily)FindResource("IconFont"),
+            FontSize = 14,
+            Text = glyph,
+        });
+        header.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+
+        return MenuItem(header, () =>
+        {
+            CloseAnimated();
+            if (!action())
+            {
+                MessageBox.Show($"O Windows não deixou \"{text}\" agora.", "Liquid Glass Dock", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        });
+    }
+
     private int IndexOfPin(StartEntry entry)
     {
         for (var index = 0; index < _settings.StartPins.Count; index++)
@@ -528,7 +590,7 @@ public partial class StartMenu : Window, IDisposable
         return -1;
     }
 
-    private static MenuItem MenuItem(string header, Action action)
+    private static MenuItem MenuItem(object header, Action action)
     {
         var item = new MenuItem { Header = header };
         item.Click += (_, _) => action();

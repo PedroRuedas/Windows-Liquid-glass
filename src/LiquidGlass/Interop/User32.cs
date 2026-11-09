@@ -401,6 +401,17 @@ internal static class User32
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool UnregisterPowerSettingNotification(nint handle);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool LockWorkStation();
+
+    /// <summary>Com <c>EwxLogoff</c> encerra a sessão sem precisar de privilégio extra.</summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ExitWindowsEx(uint flags, uint reason);
+
+    public const uint EwxLogoff = 0x00000000;
+
     public static string GetWindowTitle(nint hwnd)
     {
         var length = GetWindowTextLength(hwnd);

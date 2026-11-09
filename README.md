@@ -46,8 +46,9 @@ animações de abertura e uma tela de personalização completa.
   entre si (a ordem fica salva) e os abertos não fixados, entre si.
 - **Menu Iniciar de vidro:** o botão Iniciar e a tecla Windows abrem um menu da dock com pesquisa
   (apps, páginas das Configurações e arquivos do índice do Windows), os apps fixados (trazidos do
-  menu Iniciar do Windows na primeira vez) e os arquivos recentes. Dá para desligar e voltar ao
-  menu do Windows nas preferências.
+  menu Iniciar do Windows na primeira vez) e os arquivos recentes. No rodapé ficam o nome da conta e
+  o botão de energia: bloquear, sair, suspender, hibernar (quando ligada no Windows), desligar e
+  reiniciar. Dá para trocar de volta para o menu do Windows nas preferências.
 - Botão Iniciar e Lixeira.
 - **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
   esquerdo e direito são repassados ao app, como na bandeja do Windows.
@@ -111,6 +112,7 @@ Todas as mudanças aparecem na dock na hora:
 | Teclado | Win | abre e fecha o menu Iniciar de vidro |
 | Menu Iniciar | digitar, ↑ ↓, Enter, Esc | pesquisa, escolhe, abre e fecha |
 | App no menu Iniciar | botão direito | fixar ou desafixar do Iniciar, mover para o início |
+| Botão de energia do menu Iniciar | clique | bloquear, sair, suspender, hibernar, desligar, reiniciar |
 | Teclado | Win+Tab | abre e fecha o cubo das áreas de trabalho |
 | Teclado | Ctrl+Win+← / → | vai para a área de trabalho vizinha |
 | Cubo | arrastar, setas, roda do mouse | gira o cubo |

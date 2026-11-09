@@ -389,22 +389,28 @@ public partial class App : Application
                         break;
                     case 2:
                         menu.SaveDemo("start-home");
-                        menu.DemoSearch("calc");
+                        menu.DemoPowerMenu(open: true);
                         break;
                     case 3:
+                        // Só fotografa o menu de energia; nenhum item é clicado.
+                        menu.SaveDemo("start-power");
+                        menu.DemoPowerMenu(open: false);
+                        menu.DemoSearch("calc");
+                        break;
+                    case 4:
                         menu.SaveDemo("start-search-app");
                         menu.DemoSearch("wifi");
                         break;
-                    case 4:
+                    case 5:
                         menu.SaveDemo("start-search-setting");
                         menu.DemoSearch(fileQuery);
                         break;
-                    case 6:
+                    case 7:
                         // Os arquivos vêm do índice do Windows: um passo a mais de espera.
                         menu.SaveDemo("start-search-files");
                         dock.ToggleStartMenu();
                         break;
-                    case 7:
+                    case 8:
                         menu.SaveDemo("start-closed");
                         timer.Stop();
                         break;
