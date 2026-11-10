@@ -21,8 +21,8 @@ taskbar.**
 
 </div>
 
-> The app's interface is in Brazilian Portuguese. This page is an English summary; the
-> [Portuguese README](README.md) is the full reference.
+> The dock speaks English and Brazilian Portuguese: it follows the Windows display language, and
+> you can pick one under Customize → Behavior → Language.
 
 Liquid Glass Dock replaces the taskbar with glass that genuinely refracts your wallpaper, macOS-style
 icon magnification, launch animations, its own Start menu, virtual desktops on a 3D cube and a full
@@ -43,7 +43,7 @@ live customization window. Free, open source, and no administrator rights needed
 - Real refraction: an HLSL pixel shader bends the wallpaper at the edges, like a lens.
 - Chromatic aberration, specular rim highlight, tint, saturation and shadow.
 - Smooth edges at any corner radius, from square corners to a pill shape.
-- Presets: *Cristalino* (crystal), *Fosco* (frosted), *Escuro* (dark) and *Prisma* (prism).
+- Presets: *Crystal*, *Frosted*, *Dark* and *Prism*.
 
 ![Refraction](docs/refraction.png)
 
@@ -111,8 +111,8 @@ available from Windows 11 24H2; on earlier versions that shortcut stays with Win
    the release.
 
 The installer is per-user (no administrator prompt), bundles everything it needs (no .NET install
-required), enables "Iniciar com o Windows" (start with Windows) by default and adds "Liquid Glass Dock"
-and "Encerrar Liquid Glass Dock" (quit) shortcuts to the Start menu.
+required), enables "Start with Windows" by default and adds "Liquid Glass Dock" and "Quit Liquid Glass Dock"
+shortcuts to the Start menu.
 
 **Updates:** the dock checks GitHub releases on launch and every 6 hours. When a new version is out,
 right-click anywhere on the dock and choose the update: it downloads the installer, verifies the
@@ -157,14 +157,14 @@ soon as the cursor reaches it. Measured idle: 0.00 s of CPU time over 20 s, ~115
 ## FAQ
 
 **The Windows taskbar is gone and the dock isn't running. What now?**
-Open "Encerrar Liquid Glass Dock" from the Start menu (or run `LiquidGlass.exe --quit`). The original
+Open "Quit Liquid Glass Dock" from the Start menu (or run `LiquidGlass.exe --quit`). The original
 taskbar state is saved before hiding it and is restored on exit, on errors and after a forced
 shutdown.
 
 **Does it work on Windows 10?** No, the installer requires Windows 11.
 
 **Can I go back to the Windows Start menu or taskbar?** Yes, both are options under
-Personalizar → Comportamento (Customize → Behavior), and everything goes back to normal when the dock quits.
+Customize → Behavior, and everything goes back to normal when the dock quits.
 
 ## Contributing
 

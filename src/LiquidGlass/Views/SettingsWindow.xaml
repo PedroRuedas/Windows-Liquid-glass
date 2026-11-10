@@ -7,9 +7,10 @@
         xmlns:converters="clr-namespace:LiquidGlass.Converters"
         xmlns:models="clr-namespace:LiquidGlass.Models"
         xmlns:viewModels="clr-namespace:LiquidGlass.ViewModels"
+        xmlns:res="clr-namespace:LiquidGlass.Resources"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewModels:SettingsViewModel}"
-        Title="Personalizar a Dock"
+        Title="{x:Static res:Strings.SettingsTitle}"
         Width="940"
         Height="680"
         MinWidth="780"
@@ -44,14 +45,14 @@
                     <TextBlock FontSize="15" FontWeight="SemiBold" Text="Liquid Glass" />
                     <TextBlock FontSize="12"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="{Binding Version, StringFormat=Versão {0}}" />
+                               Text="{Binding VersionText}" />
                 </StackPanel>
             </StackPanel>
 
             <Button DockPanel.Dock="Bottom"
                     HorizontalAlignment="Stretch"
                     Command="{Binding ResetDefaultsCommand}"
-                    Content="Restaurar padrões" />
+                    Content="{x:Static res:Strings.RestoreDefaults}" />
 
             <ListBox x:Name="Navigation" SelectedIndex="0" BorderThickness="0" Background="Transparent">
                 <ListBox.Resources>
@@ -65,31 +66,31 @@
                 <ListBoxItem>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE771;" />
-                        <TextBlock Text="Aparência" />
+                        <TextBlock Text="{x:Static res:Strings.PageAppearance}" />
                     </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE790;" />
-                        <TextBlock Text="Vidro" />
+                        <TextBlock Text="{x:Static res:Strings.PageGlass}" />
                     </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE945;" />
-                        <TextBlock Text="Animações" />
+                        <TextBlock Text="{x:Static res:Strings.PageAnimations}" />
                     </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE713;" />
-                        <TextBlock Text="Comportamento" />
+                        <TextBlock Text="{x:Static res:Strings.PageBehavior}" />
                     </StackPanel>
                 </ListBoxItem>
                 <ListBoxItem>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource NavGlyph}" Text="&#xE718;" />
-                        <TextBlock Text="Apps fixados" />
+                        <TextBlock Text="{x:Static res:Strings.PagePinnedApps}" />
                     </StackPanel>
                 </ListBoxItem>
             </ListBox>
@@ -100,86 +101,86 @@
             <!-- Aparência -->
             <ScrollViewer Visibility="{Binding SelectedIndex, ElementName=Navigation, Converter={StaticResource IndexToVisibility}, ConverterParameter=0}">
                 <StackPanel Margin="16,0,28,28">
-                    <TextBlock Style="{StaticResource PageTitle}" Text="Aparência" />
+                    <TextBlock Style="{StaticResource PageTitle}" Text="{x:Static res:Strings.PageAppearance}" />
 
-                    <controls:SettingCard Glyph="&#xE7C4;" Header="Posição na tela" Description="Borda onde a dock fica ancorada.">
+                    <controls:SettingCard Glyph="&#xE7C4;" Header="{x:Static res:Strings.Position}" Description="{x:Static res:Strings.PositionDescription}">
                         <ComboBox Width="180" SelectedValue="{Binding Settings.Edge}" SelectedValuePath="Tag">
-                            <ComboBoxItem Content="Embaixo" Tag="{x:Static models:DockEdge.Bottom}" />
-                            <ComboBoxItem Content="À esquerda" Tag="{x:Static models:DockEdge.Left}" />
-                            <ComboBoxItem Content="À direita" Tag="{x:Static models:DockEdge.Right}" />
+                            <ComboBoxItem Content="{x:Static res:Strings.EdgeBottom}" Tag="{x:Static models:DockEdge.Bottom}" />
+                            <ComboBoxItem Content="{x:Static res:Strings.EdgeLeft}" Tag="{x:Static models:DockEdge.Left}" />
+                            <ComboBoxItem Content="{x:Static res:Strings.EdgeRight}" Tag="{x:Static models:DockEdge.Right}" />
                         </ComboBox>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE91B;" Header="Tamanho dos ícones">
+                    <controls:SettingCard Glyph="&#xE91B;" Header="{x:Static res:Strings.IconSize}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="16" Maximum="96" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.IconSize}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.IconSize, StringFormat={}{0:0} px}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE8A9;" Header="Espaçamento entre ícones">
+                    <controls:SettingCard Glyph="&#xE8A9;" Header="{x:Static res:Strings.IconSpacing}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.IconSpacing}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.IconSpacing, StringFormat={}{0:0} px}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE799;" Header="Comprimento da dock" Description="Estende o vidro ao longo da tela. Em 0% ele só envolve os ícones.">
+                    <controls:SettingCard Glyph="&#xE799;" Header="{x:Static res:Strings.DockLength}" Description="{x:Static res:Strings.DockLengthDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.DockLength}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.DockLength, StringFormat={}{0:P0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE73F;" Header="Distância da borda" Description="Espaço entre a dock e a borda da tela.">
+                    <controls:SettingCard Glyph="&#xE73F;" Header="{x:Static res:Strings.EdgeMargin}" Description="{x:Static res:Strings.EdgeMarginDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="40" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.EdgeMargin}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.EdgeMargin, StringFormat={}{0:0} px}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE91F;" Header="Arredondamento" Description="De cantos retos até o formato de pílula.">
+                    <controls:SettingCard Glyph="&#xE91F;" Header="{x:Static res:Strings.Roundness}" Description="{x:Static res:Strings.RoundnessDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.Roundness}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.Roundness, StringFormat={}{0:P0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Elementos" />
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.SectionElements}" />
 
-                    <controls:SettingCard Glyph="&#xE8EC;" Header="Nome do app ao passar o mouse">
+                    <controls:SettingCard Glyph="&#xE8EC;" Header="{x:Static res:Strings.ShowLabels}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowLabels}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE915;" Header="Indicador de app aberto" Description="Ponto abaixo dos apps em execução.">
+                    <controls:SettingCard Glyph="&#xE915;" Header="{x:Static res:Strings.RunningIndicator}" Description="{x:Static res:Strings.RunningIndicatorDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowRunningIndicators}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE8A9;" Header="Miniaturas das janelas" Description="Ao parar o mouse sobre um app aberto, mostra as janelas dele para alternar entre elas.">
+                    <controls:SettingCard Glyph="&#xE8A9;" Header="{x:Static res:Strings.WindowPreviews}" Description="{x:Static res:Strings.WindowPreviewsDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowWindowPreviews}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE782;" Header="Botão Iniciar">
+                    <controls:SettingCard Glyph="&#xE782;" Header="{x:Static res:Strings.StartButton}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowStartButton}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE7C4;" Header="Botão das áreas de trabalho" Description="Abre o cubo das áreas de trabalho, como no Fedora.">
+                    <controls:SettingCard Glyph="&#xE7C4;" Header="{x:Static res:Strings.DesktopsButton}" Description="{x:Static res:Strings.DesktopsButtonDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowWorkspacesButton}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE70E;" Header="Apps em segundo plano" Description="Botão que mostra os ícones da bandeja do sistema.">
+                    <controls:SettingCard Glyph="&#xE70E;" Header="{x:Static res:Strings.BackgroundApps}" Description="{x:Static res:Strings.BackgroundAppsDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowTray}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE701;" Header="Rede" Description="Wi-Fi com a força do sinal, ou rede cabeada. O clique abre a lista de redes.">
+                    <controls:SettingCard Glyph="&#xE701;" Header="{x:Static res:Strings.Network}" Description="{x:Static res:Strings.NetworkDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowNetwork}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE83F;" Header="Bateria" Description="Carga e tempo restante. Só aparece em computadores com bateria.">
+                    <controls:SettingCard Glyph="&#xE83F;" Header="{x:Static res:Strings.Battery}" Description="{x:Static res:Strings.BatteryDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowBattery}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE74D;" Header="Lixeira no final da dock">
+                    <controls:SettingCard Glyph="&#xE74D;" Header="{x:Static res:Strings.RecycleBinAtEnd}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowRecycleBin}" />
                     </controls:SettingCard>
                 </StackPanel>
@@ -188,9 +189,9 @@
             <!-- Vidro -->
             <ScrollViewer Visibility="{Binding SelectedIndex, ElementName=Navigation, Converter={StaticResource IndexToVisibility}, ConverterParameter=1}">
                 <StackPanel Margin="16,0,28,28">
-                    <TextBlock Style="{StaticResource PageTitle}" Text="Vidro" />
+                    <TextBlock Style="{StaticResource PageTitle}" Text="{x:Static res:Strings.PageGlass}" />
 
-                    <controls:SettingCard Glyph="&#xE8F1;" Header="Estilos prontos">
+                    <controls:SettingCard Glyph="&#xE8F1;" Header="{x:Static res:Strings.Presets}">
                         <ItemsControl ItemsSource="{Binding Presets}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -209,53 +210,53 @@
                         </ItemsControl>
                     </controls:SettingCard>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Óptica" />
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.SectionOptics}" />
 
-                    <controls:SettingCard Glyph="&#xE81E;" Header="Refração" Description="Quanto a borda curva distorce o que está atrás.">
+                    <controls:SettingCard Glyph="&#xE81E;" Header="{x:Static res:Strings.Refraction}" Description="{x:Static res:Strings.RefractionDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.Refraction}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.Refraction, StringFormat={}{0:P0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xEB42;" Header="Desfoque" Description="Deixa o fundo mais fosco.">
+                    <controls:SettingCard Glyph="&#xEB42;" Header="{x:Static res:Strings.Blur}" Description="{x:Static res:Strings.BlurDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="40" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.Blur}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.Blur, StringFormat={}{0:0} px}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xF157;" Header="Dispersão de cores" Description="Franja de arco-íris nas bordas, como em um prisma.">
+                    <controls:SettingCard Glyph="&#xF157;" Header="{x:Static res:Strings.ChromaticAberration}" Description="{x:Static res:Strings.ChromaticAberrationDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.ChromaticAberration}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.ChromaticAberration, StringFormat={}{0:P0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE706;" Header="Brilho da borda" Description="Reflexo de luz no contorno do vidro.">
+                    <controls:SettingCard Glyph="&#xE706;" Header="{x:Static res:Strings.Highlight}" Description="{x:Static res:Strings.HighlightDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.Highlight}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.Highlight, StringFormat={}{0:P0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE7B3;" Header="Saturação" Description="Intensidade das cores vistas através do vidro.">
+                    <controls:SettingCard Glyph="&#xE7B3;" Header="{x:Static res:Strings.Saturation}" Description="{x:Static res:Strings.SaturationDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="2" Value="{Binding Settings.Saturation}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.Saturation, StringFormat={}{0:P0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE793;" Header="Sombra">
+                    <controls:SettingCard Glyph="&#xE793;" Header="{x:Static res:Strings.Shadow}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.Shadow}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.Shadow, StringFormat={}{0:P0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Cor" />
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.SectionColor}" />
 
-                    <controls:SettingCard Glyph="&#xE790;" Header="Tom do vidro">
+                    <controls:SettingCard Glyph="&#xE790;" Header="{x:Static res:Strings.Tint}">
                         <ItemsControl x:Name="Swatches" ItemsSource="{Binding TintSwatches}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -280,7 +281,7 @@
                         </ItemsControl>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE9E9;" Header="Intensidade do tom">
+                    <controls:SettingCard Glyph="&#xE9E9;" Header="{x:Static res:Strings.TintStrength}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="0.8" Value="{Binding Settings.TintStrength}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.TintStrength, StringFormat={}{0:P0}}" />
@@ -292,45 +293,45 @@
             <!-- Animações -->
             <ScrollViewer Visibility="{Binding SelectedIndex, ElementName=Navigation, Converter={StaticResource IndexToVisibility}, ConverterParameter=2}">
                 <StackPanel Margin="16,0,28,28">
-                    <TextBlock Style="{StaticResource PageTitle}" Text="Animações" />
+                    <TextBlock Style="{StaticResource PageTitle}" Text="{x:Static res:Strings.PageAnimations}" />
 
-                    <controls:SettingCard Glyph="&#xE8A3;" Header="Ampliação" Description="Os ícones crescem quando o mouse passa por cima.">
+                    <controls:SettingCard Glyph="&#xE8A3;" Header="{x:Static res:Strings.Magnification}" Description="{x:Static res:Strings.MagnificationDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.MagnificationEnabled}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE740;" Header="Tamanho máximo" IsEnabled="{Binding Settings.MagnificationEnabled}">
+                    <controls:SettingCard Glyph="&#xE740;" Header="{x:Static res:Strings.MaximumSize}" IsEnabled="{Binding Settings.MagnificationEnabled}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="1.1" Maximum="3" Value="{Binding Settings.Magnification}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.Magnification, StringFormat={}{0:0.0}×}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xF0E2;" Header="Alcance" Description="Quantos ícones vizinhos também crescem." IsEnabled="{Binding Settings.MagnificationEnabled}">
+                    <controls:SettingCard Glyph="&#xF0E2;" Header="{x:Static res:Strings.MagnificationRange}" Description="{x:Static res:Strings.MagnificationRangeDescription}" IsEnabled="{Binding Settings.MagnificationEnabled}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="1" Maximum="6" Value="{Binding Settings.MagnificationRange}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.MagnificationRange, StringFormat={}{0:0.0}}" />
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Movimento" />
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.SectionMotion}" />
 
-                    <controls:SettingCard Glyph="&#xE768;" Header="Quicar ao abrir um app">
+                    <controls:SettingCard Glyph="&#xE768;" Header="{x:Static res:Strings.BounceOnLaunch}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.BounceOnLaunch}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xEA8F;" Header="Quicar quando um app pede atenção" Description="Por exemplo, uma mensagem nova em segundo plano.">
+                    <controls:SettingCard Glyph="&#xEA8F;" Header="{x:Static res:Strings.BounceOnAttention}" Description="{x:Static res:Strings.BounceOnAttentionDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.BounceOnAttention}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE73F;" Header="Fechar e minimizar no estilo do GNOME" Description="A janela encolhe ao fechar e voa até o ícone dela na dock ao minimizar.">
+                    <controls:SettingCard Glyph="&#xE73F;" Header="{x:Static res:Strings.AnimateWindows}" Description="{x:Static res:Strings.AnimateWindowsDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AnimateWindows}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE8AB;" Header="Cubo ao trocar de área de trabalho" Description="Ctrl+Win+setas giram o cubo das áreas de trabalho, como no Fedora.">
+                    <controls:SettingCard Glyph="&#xE8AB;" Header="{x:Static res:Strings.AnimateDesktopSwitch}" Description="{x:Static res:Strings.AnimateDesktopSwitchDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AnimateWorkspaceSwitch}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xEC4A;" Header="Velocidade das animações">
+                    <controls:SettingCard Glyph="&#xEC4A;" Header="{x:Static res:Strings.AnimationSpeed}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0.5" Maximum="2" Value="{Binding Settings.AnimationSpeed}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.AnimationSpeed, StringFormat={}{0:0.0}×}" />
@@ -342,33 +343,48 @@
             <!-- Comportamento -->
             <ScrollViewer Visibility="{Binding SelectedIndex, ElementName=Navigation, Converter={StaticResource IndexToVisibility}, ConverterParameter=3}">
                 <StackPanel Margin="16,0,28,28">
-                    <TextBlock Style="{StaticResource PageTitle}" Text="Comportamento" />
+                    <TextBlock Style="{StaticResource PageTitle}" Text="{x:Static res:Strings.PageBehavior}" />
 
-                    <controls:SettingCard Glyph="&#xE890;" Header="Ocultar a dock automaticamente" Description="A dock aparece quando o mouse encosta na borda.">
+                    <controls:SettingCard Glyph="&#xE890;" Header="{x:Static res:Strings.AutoHide}" Description="{x:Static res:Strings.AutoHideDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AutoHide}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE75B;" Header="Barra de tarefas do Windows" Description="Ela volta ao normal sempre que a dock é fechada.">
+                    <controls:SettingCard Glyph="&#xE75B;" Header="{x:Static res:Strings.WindowsTaskbar}" Description="{x:Static res:Strings.WindowsTaskbarDescription}">
                         <ComboBox Width="200" SelectedValue="{Binding Settings.TaskbarMode}" SelectedValuePath="Tag">
-                            <ComboBoxItem Content="Oculta" Tag="{x:Static models:TaskbarMode.Hidden}" />
-                            <ComboBoxItem Content="Ocultar automaticamente" Tag="{x:Static models:TaskbarMode.AutoHide}" />
-                            <ComboBoxItem Content="Visível" Tag="{x:Static models:TaskbarMode.Visible}" />
+                            <ComboBoxItem Content="{x:Static res:Strings.TaskbarHidden}" Tag="{x:Static models:TaskbarMode.Hidden}" />
+                            <ComboBoxItem Content="{x:Static res:Strings.TaskbarAutoHide}" Tag="{x:Static models:TaskbarMode.AutoHide}" />
+                            <ComboBoxItem Content="{x:Static res:Strings.TaskbarVisible}" Tag="{x:Static models:TaskbarMode.Visible}" />
                         </ComboBox>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE7E8;" Header="Iniciar com o Windows">
+                    <controls:SettingCard Glyph="&#xE7E8;" Header="{x:Static res:Strings.LaunchAtStartup}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.LaunchAtStartup}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE782;" Header="Menu Iniciar de vidro" Description="O botão Iniciar e a tecla Windows abrem o menu da dock, com pesquisa, fixados e recentes. Desligado, abrem o menu do Windows.">
+                    <controls:SettingCard Glyph="&#xE782;" Header="{x:Static res:Strings.GlassStartMenu}" Description="{x:Static res:Strings.GlassStartMenuDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.UseGlassStartMenu}" />
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE7C4;" Header="Win+Tab abre o cubo das áreas de trabalho" Description="Usa o cubo da dock no lugar da Visão de Tarefas do Windows.">
+                    <controls:SettingCard Glyph="&#xE7C4;" Header="{x:Static res:Strings.WinTabOpensCube}" Description="{x:Static res:Strings.WinTabOpensCubeDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.WinTabOpensOverview}" />
                     </controls:SettingCard>
 
-                    <TextBlock x:Name="UpdatesSection" Style="{StaticResource SectionTitle}" Text="Atualizações" />
+                    <!-- O idioma vale ao abrir a dock: depois de trocar, a descrição avisa e aparece o botão de reiniciar. -->
+                    <controls:SettingCard Glyph="&#xE774;" Header="{x:Static res:Strings.Language}" Description="{Binding LanguageDescription}">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Margin="0,0,12,0"
+                                    Command="{Binding RestartCommand}"
+                                    Content="{x:Static res:Strings.RestartDock}"
+                                    Visibility="{Binding LanguageNeedsRestart, Converter={StaticResource BoolToVisibility}}" />
+                            <ComboBox Width="200"
+                                      DisplayMemberPath="Name"
+                                      ItemsSource="{Binding Languages}"
+                                      SelectedValue="{Binding Settings.Language}"
+                                      SelectedValuePath="Value" />
+                        </StackPanel>
+                    </controls:SettingCard>
+
+                    <TextBlock x:Name="UpdatesSection" Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.SectionUpdates}" />
 
                     <controls:SettingCard Glyph="&#xE895;" Header="Liquid Glass Dock" Description="{Binding UpdateStatus}">
                         <StackPanel Orientation="Horizontal">
@@ -382,7 +398,7 @@
                         </StackPanel>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE823;" Header="Procurar atualizações automaticamente" Description="Ao abrir a dock e a cada 6 horas. A versão nova só é instalada quando você pedir.">
+                    <controls:SettingCard Glyph="&#xE823;" Header="{x:Static res:Strings.CheckForUpdatesAutomatically}" Description="{x:Static res:Strings.CheckForUpdatesAutomaticallyDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.CheckForUpdates}" />
                     </controls:SettingCard>
                 </StackPanel>
@@ -390,23 +406,23 @@
 
             <!-- Apps fixados -->
             <DockPanel Margin="16,0,28,28" Visibility="{Binding SelectedIndex, ElementName=Navigation, Converter={StaticResource IndexToVisibility}, ConverterParameter=4}">
-                <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Apps fixados" />
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="{x:Static res:Strings.PagePinnedApps}" />
                 <TextBlock DockPanel.Dock="Top"
                            Margin="0,-8,0,14"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Text="Dica: arraste atalhos ou programas para a dock para fixá-los."
+                           Text="{x:Static res:Strings.PinnedAppsTip}"
                            TextWrapping="Wrap" />
 
                 <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12" Orientation="Horizontal">
-                    <Button Command="{Binding AddAppCommand}" Content="Adicionar app…" />
-                    <Button Margin="8,0,0,0" Command="{Binding ImportTaskbarPinsCommand}" Content="Importar da barra de tarefas" />
-                    <Button Margin="24,0,0,0" Command="{Binding MovePinUpCommand}" ToolTip="Mover para cima">
+                    <Button Command="{Binding AddAppCommand}" Content="{x:Static res:Strings.AddApp}" />
+                    <Button Margin="8,0,0,0" Command="{Binding ImportTaskbarPinsCommand}" Content="{x:Static res:Strings.ImportFromTaskbar}" />
+                    <Button Margin="24,0,0,0" Command="{Binding MovePinUpCommand}" ToolTip="{x:Static res:Strings.MoveUp}">
                         <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE70E;" />
                     </Button>
-                    <Button Margin="4,0,0,0" Command="{Binding MovePinDownCommand}" ToolTip="Mover para baixo">
+                    <Button Margin="4,0,0,0" Command="{Binding MovePinDownCommand}" ToolTip="{x:Static res:Strings.MoveDown}">
                         <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE70D;" />
                     </Button>
-                    <Button Margin="4,0,0,0" Command="{Binding RemovePinCommand}" ToolTip="Remover da dock">
+                    <Button Margin="4,0,0,0" Command="{Binding RemovePinCommand}" ToolTip="{x:Static res:Strings.RemoveFromDockTooltip}">
                         <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE74D;" />
                     </Button>
                 </StackPanel>

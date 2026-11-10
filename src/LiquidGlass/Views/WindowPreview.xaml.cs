@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using LiquidGlass.Controls;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 using LiquidGlass.ViewModels;
 
@@ -317,7 +318,7 @@ public partial class WindowPreview : Popup
         }
 
         var hidden = ordered.Count - count;
-        MoreWindows.Text = hidden == 1 ? "Mais 1 janela no menu do botão direito" : $"Mais {hidden} janelas no menu do botão direito";
+        MoreWindows.Text = hidden == 1 ? Strings.MoreWindowsOne : Strings.MoreWindows(hidden);
         MoreWindows.Visibility = hidden > 0 && count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

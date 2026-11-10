@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:LiquidGlass.Controls"
-        Title="Iniciar"
+        xmlns:res="clr-namespace:LiquidGlass.Resources"
+        Title="{x:Static res:Strings.StartTitle}"
         Width="668"
         Height="694"
         WindowStyle="None"
@@ -195,7 +196,7 @@
                                    FontSize="14"
                                    Foreground="{StaticResource PopupSecondaryText}"
                                    IsHitTestVisible="False"
-                                   Text="Pesquisar aplicativos, configurações e documentos" />
+                                   Text="{x:Static res:Strings.StartSearchPlaceholder}" />
                         <TextBox x:Name="SearchBox"
                                  Margin="42,0,16,0"
                                  VerticalContentAlignment="Center"
@@ -211,7 +212,7 @@
 
                 <Grid Grid.Row="1" Margin="0,22,0,0">
                     <StackPanel x:Name="HomePanel">
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="Fixado" />
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.StartPinned}" />
                         <ScrollViewer Height="258">
                             <StackPanel>
                                 <ItemsControl x:Name="Pins" HorizontalAlignment="Center" ItemTemplate="{StaticResource PinTile}">
@@ -223,12 +224,12 @@
                                 </ItemsControl>
                                 <TextBlock x:Name="PinsEmpty"
                                            Style="{StaticResource Hint}"
-                                           Text="Pesquise um app e escolha &quot;Fixar no Iniciar&quot; no botão direito para ele aparecer aqui."
+                                           Text="{x:Static res:Strings.StartPinnedEmpty}"
                                            Visibility="Collapsed" />
                             </StackPanel>
                         </ScrollViewer>
 
-                        <TextBlock Margin="10,18,0,8" Style="{StaticResource SectionTitle}" Text="Recente" />
+                        <TextBlock Margin="10,18,0,8" Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.StartRecent}" />
                         <ItemsControl x:Name="Recent" ItemTemplate="{StaticResource RecentRow}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -238,7 +239,7 @@
                         </ItemsControl>
                         <TextBlock x:Name="RecentEmpty"
                                    Style="{StaticResource Hint}"
-                                   Text="Os arquivos que você abrir aparecem aqui."
+                                   Text="{x:Static res:Strings.StartRecentEmpty}"
                                    Visibility="Collapsed" />
                     </StackPanel>
 
@@ -293,7 +294,7 @@
                                 Height="38"
                                 HorizontalAlignment="Right"
                                 CornerRadius="10"
-                                ToolTip="Energia"
+                                ToolTip="{x:Static res:Strings.StartPower}"
                                 MouseLeftButtonUp="OnPowerClick">
                             <Border.Style>
                                 <Style TargetType="Border">

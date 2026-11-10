@@ -3,6 +3,7 @@ using LiquidGlass.Services;
 
 namespace LiquidGlass.Tests;
 
+[Collection(LanguageCollection.Name)]
 public sealed class StartMenuCatalogTests
 {
     [Theory]
@@ -33,16 +34,28 @@ public sealed class StartMenuCatalogTests
     [Fact]
     public void SettingsAreFoundByRelatedWords()
     {
-        var results = StartMenuCatalog.SearchSettings("papel de parede", 3);
+        using (Language.Portuguese())
+        {
+            var results = StartMenuCatalog.SearchSettings("papel de parede", 3);
 
-        Assert.Equal("Plano de fundo", results[0].Name);
-        Assert.Equal("ms-settings:personalization-background", results[0].Target);
+            Assert.Equal("Plano de fundo", results[0].Name);
+            Assert.Equal("ms-settings:personalization-background", results[0].Target);
+        }
+
+        using (Language.English())
+        {
+            var results = StartMenuCatalog.SearchSettings("wallpaper", 3);
+
+            Assert.Equal("Background", results[0].Name);
+            Assert.Equal("ms-settings:personalization-background", results[0].Target);
+        }
     }
 
     [Fact]
     public void RelativeTimeReadsLikeTheWindowsStartMenu()
     {
         var now = new DateTime(2026, 11, 4, 10, 0, 0);
+        using var language = Language.Portuguese();
 
         Assert.Equal("Agora", StartMenuCatalog.RelativeTime(now.AddSeconds(-20), now));
         Assert.Equal("Há 5 min", StartMenuCatalog.RelativeTime(now.AddMinutes(-5), now));
@@ -50,6 +63,20 @@ public sealed class StartMenuCatalogTests
         Assert.Equal("Ontem", StartMenuCatalog.RelativeTime(new DateTime(2026, 11, 3, 8, 0, 0), now));
         Assert.Equal("27 de out", StartMenuCatalog.RelativeTime(new DateTime(2026, 10, 27, 15, 0, 0), now));
         Assert.Equal("2 de jan de 2025", StartMenuCatalog.RelativeTime(new DateTime(2025, 1, 2), now));
+    }
+
+    [Fact]
+    public void RelativeTimeInEnglish()
+    {
+        var now = new DateTime(2026, 11, 4, 10, 0, 0);
+        using var language = Language.English();
+
+        Assert.Equal("Now", StartMenuCatalog.RelativeTime(now.AddSeconds(-20), now));
+        Assert.Equal("5 min ago", StartMenuCatalog.RelativeTime(now.AddMinutes(-5), now));
+        Assert.Equal("20 h ago", StartMenuCatalog.RelativeTime(now.AddHours(-20), now));
+        Assert.Equal("Yesterday", StartMenuCatalog.RelativeTime(new DateTime(2026, 11, 3, 8, 0, 0), now));
+        Assert.Equal("Oct 27", StartMenuCatalog.RelativeTime(new DateTime(2026, 10, 27, 15, 0, 0), now));
+        Assert.Equal("Jan 2, 2025", StartMenuCatalog.RelativeTime(new DateTime(2025, 1, 2), now));
     }
 
     [Theory]

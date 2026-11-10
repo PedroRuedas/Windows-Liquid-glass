@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="StartTitle" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Desktops" xml:space="preserve">
+    <value>Desktops</value>
+  </data>
+  <data name="RecycleBin" xml:space="preserve">
+    <value>Recycle Bin</value>
+  </data>
+  <data name="BackgroundApps" xml:space="preserve">
+    <value>Background apps</value>
+  </data>
+  <data name="FileExplorer" xml:space="preserve">
+    <value>File Explorer</value>
+  </data>
+  <data name="SettingsApp" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="NewWindow" xml:space="preserve">
+    <value>New window</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="RemoveFromDock" xml:space="preserve">
+    <value>Remove from Dock</value>
+  </data>
+  <data name="KeepInDock" xml:space="preserve">
+    <value>Keep in Dock</value>
+  </data>
+  <data name="CloseAllWindows" xml:space="preserve">
+    <value>Close all windows</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="CustomizeDockMenu" xml:space="preserve">
+    <value>Customize the Dock…</value>
+  </data>
+  <data name="QuitDock" xml:space="preserve">
+    <value>Quit Liquid Glass</value>
+  </data>
+  <data name="JumpListTasks" xml:space="preserve">
+    <value>Tasks</value>
+  </data>
+  <data name="JumpListOpenFailed" xml:space="preserve">
+    <value>Couldn't open “{0}”. The file or program may have been moved or deleted.</value>
+  </data>
+  <data name="MenuCheckingForUpdates" xml:space="preserve">
+    <value>Checking for updates…</value>
+  </data>
+  <data name="MenuDownloadingUpdate" xml:space="preserve">
+    <value>Downloading update… {0:0%}</value>
+  </data>
+  <data name="MenuInstallingUpdate" xml:space="preserve">
+    <value>Installing update…</value>
+  </data>
+  <data name="MenuUpdateTo" xml:space="preserve">
+    <value>Update to version {0}</value>
+  </data>
+  <data name="MenuCheckForUpdates" xml:space="preserve">
+    <value>Check for updates…</value>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Version {0} is available.</value>
+  </data>
+  <data name="UpdateUpToDate" xml:space="preserve">
+    <value>You already have the latest version ({0}).</value>
+  </data>
+  <data name="UpdateCheckFailed" xml:space="preserve">
+    <value>Couldn't check for updates. Check your connection and try again.</value>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Downloading version {0}…</value>
+  </data>
+  <data name="UpdateInstalling" xml:space="preserve">
+    <value>Installing… the dock will come back on its own in a few seconds.</value>
+  </data>
+  <data name="UpdateHashMismatch" xml:space="preserve">
+    <value>The downloaded file doesn't match the published one. The update was canceled.</value>
+  </data>
+  <data name="UpdateDownloadFailed" xml:space="preserve">
+    <value>Couldn't download or start the update. Try again later.</value>
+  </data>
+  <data name="BatteryPercent" xml:space="preserve">
+    <value>Battery: {0}%</value>
+  </data>
+  <data name="BatterySaver" xml:space="preserve">
+    <value>battery saver</value>
+  </data>
+  <data name="BatteryCharging" xml:space="preserve">
+    <value>charging</value>
+  </data>
+  <data name="BatteryCharged" xml:space="preserve">
+    <value>fully charged</value>
+  </data>
+  <data name="BatteryPluggedIn" xml:space="preserve">
+    <value>plugged in</value>
+  </data>
+  <data name="BatteryHoursLeft" xml:space="preserve">
+    <value>{0} h {1:00} min remaining</value>
+  </data>
+  <data name="BatteryMinutesLeft" xml:space="preserve">
+    <value>{0} min remaining</value>
+  </data>
+  <data name="NetworkWifi" xml:space="preserve">
+    <value>Wi-Fi: {0} · signal {1}%</value>
+  </data>
+  <data name="NetworkConnected" xml:space="preserve">
+    <value>connected</value>
+  </data>
+  <data name="NetworkWired" xml:space="preserve">
+    <value>Wired network: connected</value>
+  </data>
+  <data name="NetworkWifiDisconnected" xml:space="preserve">
+    <value>Wi-Fi: disconnected</value>
+  </data>
+  <data name="NetworkNone" xml:space="preserve">
+    <value>No network connection</value>
+  </data>
+  <data name="TrayTitle" xml:space="preserve">
+    <value>Background</value>
+  </data>
+  <data name="TrayEmpty" xml:space="preserve">
+    <value>No apps in the tray right now.</value>
+  </data>
+  <data name="TrayHint" xml:space="preserve">
+    <value>Click to open · right-click for more options</value>
+  </data>
+  <data name="TrayOneApp" xml:space="preserve">
+    <value>1 app</value>
+  </data>
+  <data name="TrayAppCount" xml:space="preserve">
+    <value>{0} apps</value>
+  </data>
+  <data name="CloseWindow" xml:space="preserve">
+    <value>Close window</value>
+  </data>
+  <data name="MoreWindowsOne" xml:space="preserve">
+    <value>1 more window in the right-click menu</value>
+  </data>
+  <data name="MoreWindows" xml:space="preserve">
+    <value>{0} more windows in the right-click menu</value>
+  </data>
+  <data name="NewDesktop" xml:space="preserve">
+    <value>New desktop</value>
+  </data>
+  <data name="CubeDropOnOther" xml:space="preserve">
+    <value>Drop the window on another desktop</value>
+  </data>
+  <data name="CubeDropCreates" xml:space="preserve">
+    <value>Drop here to create a desktop with this window</value>
+  </data>
+  <data name="CubeMoveTo" xml:space="preserve">
+    <value>Move to desktop {0}</value>
+  </data>
+  <data name="CubeNewHint" xml:space="preserve">
+    <value>New desktop · click or press Enter to create</value>
+  </data>
+  <data name="CubeDesktop" xml:space="preserve">
+    <value>Desktop {0}</value>
+  </data>
+  <data name="StartSearchPlaceholder" xml:space="preserve">
+    <value>Search apps, settings and documents</value>
+  </data>
+  <data name="StartPinned" xml:space="preserve">
+    <value>Pinned</value>
+  </data>
+  <data name="StartPinnedEmpty" xml:space="preserve">
+    <value>Search for an app and choose "Pin to Start" from its right-click menu to see it here.</value>
+  </data>
+  <data name="StartRecent" xml:space="preserve">
+    <value>Recent</value>
+  </data>
+  <data name="StartRecentEmpty" xml:space="preserve">
+    <value>Files you open show up here.</value>
+  </data>
+  <data name="StartPower" xml:space="preserve">
+    <value>Power</value>
+  </data>
+  <data name="StartSearching" xml:space="preserve">
+    <value>Searching…</value>
+  </data>
+  <data name="StartNoResults" xml:space="preserve">
+    <value>No results for "{0}".</value>
+  </data>
+  <data name="StartOpenFailed" xml:space="preserve">
+    <value>Couldn't open "{0}".</value>
+  </data>
+  <data name="MoveToTop" xml:space="preserve">
+    <value>Move to top</value>
+  </data>
+  <data name="UnpinFromStart" xml:space="preserve">
+    <value>Unpin from Start</value>
+  </data>
+  <data name="PinToStart" xml:space="preserve">
+    <value>Pin to Start</value>
+  </data>
+  <data name="OpenFileLocation" xml:space="preserve">
+    <value>Open file location</value>
+  </data>
+  <data name="PowerLock" xml:space="preserve">
+    <value>Lock</value>
+  </data>
+  <data name="PowerSignOut" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="PowerSleep" xml:space="preserve">
+    <value>Sleep</value>
+  </data>
+  <data name="PowerHibernate" xml:space="preserve">
+    <value>Hibernate</value>
+  </data>
+  <data name="PowerShutDown" xml:space="preserve">
+    <value>Shut down</value>
+  </data>
+  <data name="PowerRestart" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="PowerFailed" xml:space="preserve">
+    <value>Windows didn't allow "{0}" right now.</value>
+  </data>
+  <data name="GroupApps" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="GroupSettings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="GroupDocuments" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="TimeNow" xml:space="preserve">
+    <value>Now</value>
+  </data>
+  <data name="TimeMinutesAgo" xml:space="preserve">
+    <value>{0} min ago</value>
+  </data>
+  <data name="TimeHoursAgo" xml:space="preserve">
+    <value>{0} h ago</value>
+  </data>
+  <data name="TimeYesterday" xml:space="preserve">
+    <value>Yesterday</value>
+  </data>
+  <data name="DateFormatThisYear" xml:space="preserve">
+    <value>MMM d</value>
+  </data>
+  <data name="DateFormatOtherYear" xml:space="preserve">
+    <value>MMM d, yyyy</value>
+  </data>
+  <data name="PresetCrystal" xml:space="preserve">
+    <value>Crystal</value>
+  </data>
+  <data name="PresetFrosted" xml:space="preserve">
+    <value>Frosted</value>
+  </data>
+  <data name="PresetDark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="PresetPrism" xml:space="preserve">
+    <value>Prism</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Customize the Dock</value>
+  </data>
+  <data name="SettingsVersion" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="RestoreDefaults" xml:space="preserve">
+    <value>Restore defaults</value>
+  </data>
+  <data name="PageAppearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="PageGlass" xml:space="preserve">
+    <value>Glass</value>
+  </data>
+  <data name="PageAnimations" xml:space="preserve">
+    <value>Animations</value>
+  </data>
+  <data name="PageBehavior" xml:space="preserve">
+    <value>Behavior</value>
+  </data>
+  <data name="PagePinnedApps" xml:space="preserve">
+    <value>Pinned apps</value>
+  </data>
+  <data name="Position" xml:space="preserve">
+    <value>Position on screen</value>
+  </data>
+  <data name="PositionDescription" xml:space="preserve">
+    <value>Screen edge the dock is anchored to.</value>
+  </data>
+  <data name="EdgeBottom" xml:space="preserve">
+    <value>Bottom</value>
+  </data>
+  <data name="EdgeLeft" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="EdgeRight" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="IconSize" xml:space="preserve">
+    <value>Icon size</value>
+  </data>
+  <data name="IconSpacing" xml:space="preserve">
+    <value>Icon spacing</value>
+  </data>
+  <data name="DockLength" xml:space="preserve">
+    <value>Dock length</value>
+  </data>
+  <data name="DockLengthDescription" xml:space="preserve">
+    <value>Stretches the glass along the screen. At 0% it just wraps the icons.</value>
+  </data>
+  <data name="EdgeMargin" xml:space="preserve">
+    <value>Distance from edge</value>
+  </data>
+  <data name="EdgeMarginDescription" xml:space="preserve">
+    <value>Space between the dock and the screen edge.</value>
+  </data>
+  <data name="Roundness" xml:space="preserve">
+    <value>Corner roundness</value>
+  </data>
+  <data name="RoundnessDescription" xml:space="preserve">
+    <value>From square corners to a pill shape.</value>
+  </data>
+  <data name="SectionElements" xml:space="preserve">
+    <value>Elements</value>
+  </data>
+  <data name="ShowLabels" xml:space="preserve">
+    <value>App name on hover</value>
+  </data>
+  <data name="RunningIndicator" xml:space="preserve">
+    <value>Open app indicator</value>
+  </data>
+  <data name="RunningIndicatorDescription" xml:space="preserve">
+    <value>A dot under running apps.</value>
+  </data>
+  <data name="WindowPreviews" xml:space="preserve">
+    <value>Window thumbnails</value>
+  </data>
+  <data name="WindowPreviewsDescription" xml:space="preserve">
+    <value>Hover over an open app to see its windows and switch between them.</value>
+  </data>
+  <data name="StartButton" xml:space="preserve">
+    <value>Start button</value>
+  </data>
+  <data name="DesktopsButton" xml:space="preserve">
+    <value>Desktops button</value>
+  </data>
+  <data name="DesktopsButtonDescription" xml:space="preserve">
+    <value>Opens the virtual desktop cube, like in Fedora.</value>
+  </data>
+  <data name="BackgroundAppsDescription" xml:space="preserve">
+    <value>A button that shows the system tray icons.</value>
+  </data>
+  <data name="Network" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="NetworkDescription" xml:space="preserve">
+    <value>Wi-Fi with signal strength, or wired network. Click to open the network list.</value>
+  </data>
+  <data name="Battery" xml:space="preserve">
+    <value>Battery</value>
+  </data>
+  <data name="BatteryDescription" xml:space="preserve">
+    <value>Charge and time remaining. Only shown on devices with a battery.</value>
+  </data>
+  <data name="RecycleBinAtEnd" xml:space="preserve">
+    <value>Recycle Bin at the end of the dock</value>
+  </data>
+  <data name="Presets" xml:space="preserve">
+    <value>Presets</value>
+  </data>
+  <data name="SectionOptics" xml:space="preserve">
+    <value>Optics</value>
+  </data>
+  <data name="Refraction" xml:space="preserve">
+    <value>Refraction</value>
+  </data>
+  <data name="RefractionDescription" xml:space="preserve">
+    <value>How much the curved edge bends what's behind it.</value>
+  </data>
+  <data name="Blur" xml:space="preserve">
+    <value>Blur</value>
+  </data>
+  <data name="BlurDescription" xml:space="preserve">
+    <value>Makes the background more frosted.</value>
+  </data>
+  <data name="ChromaticAberration" xml:space="preserve">
+    <value>Color dispersion</value>
+  </data>
+  <data name="ChromaticAberrationDescription" xml:space="preserve">
+    <value>A rainbow fringe at the edges, like a prism.</value>
+  </data>
+  <data name="Highlight" xml:space="preserve">
+    <value>Edge highlight</value>
+  </data>
+  <data name="HighlightDescription" xml:space="preserve">
+    <value>Light reflecting along the glass outline.</value>
+  </data>
+  <data name="Saturation" xml:space="preserve">
+    <value>Saturation</value>
+  </data>
+  <data name="SaturationDescription" xml:space="preserve">
+    <value>Intensity of the colors seen through the glass.</value>
+  </data>
+  <data name="Shadow" xml:space="preserve">
+    <value>Shadow</value>
+  </data>
+  <data name="SectionColor" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="Tint" xml:space="preserve">
+    <value>Glass tint</value>
+  </data>
+  <data name="TintStrength" xml:space="preserve">
+    <value>Tint strength</value>
+  </data>
+  <data name="Magnification" xml:space="preserve">
+    <value>Magnification</value>
+  </data>
+  <data name="MagnificationDescription" xml:space="preserve">
+    <value>Icons grow when the mouse passes over them.</value>
+  </data>
+  <data name="MaximumSize" xml:space="preserve">
+    <value>Maximum size</value>
+  </data>
+  <data name="MagnificationRange" xml:space="preserve">
+    <value>Range</value>
+  </data>
+  <data name="MagnificationRangeDescription" xml:space="preserve">
+    <value>How many neighboring icons also grow.</value>
+  </data>
+  <data name="SectionMotion" xml:space="preserve">
+    <value>Motion</value>
+  </data>
+  <data name="BounceOnLaunch" xml:space="preserve">
+    <value>Bounce when opening an app</value>
+  </data>
+  <data name="BounceOnAttention" xml:space="preserve">
+    <value>Bounce when an app needs attention</value>
+  </data>
+  <data name="BounceOnAttentionDescription" xml:space="preserve">
+    <value>For example, a new message in the background.</value>
+  </data>
+  <data name="AnimateWindows" xml:space="preserve">
+    <value>GNOME-style close and minimize</value>
+  </data>
+  <data name="AnimateWindowsDescription" xml:space="preserve">
+    <value>Windows shrink when closed and fly into their dock icon when minimized.</value>
+  </data>
+  <data name="AnimateDesktopSwitch" xml:space="preserve">
+    <value>Cube when switching desktops</value>
+  </data>
+  <data name="AnimateDesktopSwitchDescription" xml:space="preserve">
+    <value>Ctrl+Win+arrow keys spin the desktop cube, like in Fedora.</value>
+  </data>
+  <data name="AnimationSpeed" xml:space="preserve">
+    <value>Animation speed</value>
+  </data>
+  <data name="AutoHide" xml:space="preserve">
+    <value>Automatically hide the dock</value>
+  </data>
+  <data name="AutoHideDescription" xml:space="preserve">
+    <value>The dock appears when the mouse touches the screen edge.</value>
+  </data>
+  <data name="WindowsTaskbar" xml:space="preserve">
+    <value>Windows taskbar</value>
+  </data>
+  <data name="WindowsTaskbarDescription" xml:space="preserve">
+    <value>It goes back to normal whenever the dock is closed.</value>
+  </data>
+  <data name="TaskbarHidden" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="TaskbarAutoHide" xml:space="preserve">
+    <value>Auto-hide</value>
+  </data>
+  <data name="TaskbarVisible" xml:space="preserve">
+    <value>Visible</value>
+  </data>
+  <data name="LaunchAtStartup" xml:space="preserve">
+    <value>Start with Windows</value>
+  </data>
+  <data name="GlassStartMenu" xml:space="preserve">
+    <value>Glass Start menu</value>
+  </data>
+  <data name="GlassStartMenuDescription" xml:space="preserve">
+    <value>The Start button and the Windows key open the dock's menu, with search, pinned apps and recent files. When off, they open the Windows menu.</value>
+  </data>
+  <data name="WinTabOpensCube" xml:space="preserve">
+    <value>Win+Tab opens the desktop cube</value>
+  </data>
+  <data name="WinTabOpensCubeDescription" xml:space="preserve">
+    <value>Uses the dock's cube instead of Windows Task View.</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="LanguageDescription" xml:space="preserve">
+    <value>Automatic follows the Windows display language.</value>
+  </data>
+  <data name="LanguageAutomatic" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="LanguagePortuguese" xml:space="preserve">
+    <value>Português (Brasil)</value>
+  </data>
+  <data name="LanguageEnglish" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="LanguageRestartHint" xml:space="preserve">
+    <value>The new language applies after the dock restarts.</value>
+  </data>
+  <data name="RestartDock" xml:space="preserve">
+    <value>Restart the dock</value>
+  </data>
+  <data name="SectionUpdates" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="CheckForUpdatesAutomatically" xml:space="preserve">
+    <value>Check for updates automatically</value>
+  </data>
+  <data name="CheckForUpdatesAutomaticallyDescription" xml:space="preserve">
+    <value>When the dock opens and every 6 hours. A new version is only installed when you ask.</value>
+  </data>
+  <data name="UpdateNow" xml:space="preserve">
+    <value>Update now</value>
+  </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="CurrentVersion" xml:space="preserve">
+    <value>Current version: {0}.</value>
+  </data>
+  <data name="PinnedAppsTip" xml:space="preserve">
+    <value>Tip: drag shortcuts or programs onto the dock to pin them.</value>
+  </data>
+  <data name="AddApp" xml:space="preserve">
+    <value>Add app…</value>
+  </data>
+  <data name="ImportFromTaskbar" xml:space="preserve">
+    <value>Import from taskbar</value>
+  </data>
+  <data name="MoveUp" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="MoveDown" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="RemoveFromDockTooltip" xml:space="preserve">
+    <value>Remove from dock</value>
+  </data>
+  <data name="ChooseAppTitle" xml:space="preserve">
+    <value>Choose an app or shortcut</value>
+  </data>
+  <data name="ChooseAppFilter" xml:space="preserve">
+    <value>Apps and shortcuts (*.exe;*.lnk)|*.exe;*.lnk|All files (*.*)|*.*</value>
+  </data>
+  <data name="SettingsPage_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsPageKeywords_Settings" xml:space="preserve">
+    <value>options preferences control</value>
+  </data>
+  <data name="SettingsPage_WiFi" xml:space="preserve">
+    <value>Wi-Fi</value>
+  </data>
+  <data name="SettingsPageKeywords_WiFi" xml:space="preserve">
+    <value>wifi network internet wireless</value>
+  </data>
+  <data name="SettingsPage_NetworkStatus" xml:space="preserve">
+    <value>Network &amp; internet</value>
+  </data>
+  <data name="SettingsPageKeywords_NetworkStatus" xml:space="preserve">
+    <value>ethernet cable connection</value>
+  </data>
+  <data name="SettingsPage_Bluetooth" xml:space="preserve">
+    <value>Bluetooth &amp; devices</value>
+  </data>
+  <data name="SettingsPageKeywords_Bluetooth" xml:space="preserve">
+    <value>headphones mouse keyboard pair</value>
+  </data>
+  <data name="SettingsPage_Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="SettingsPageKeywords_Display" xml:space="preserve">
+    <value>monitor resolution brightness scale screen</value>
+  </data>
+  <data name="SettingsPage_Sound" xml:space="preserve">
+    <value>Sound</value>
+  </data>
+  <data name="SettingsPageKeywords_Sound" xml:space="preserve">
+    <value>audio volume speaker microphone</value>
+  </data>
+  <data name="SettingsPage_Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="SettingsPageKeywords_Notifications" xml:space="preserve">
+    <value>alerts do not disturb focus</value>
+  </data>
+  <data name="SettingsPage_Power" xml:space="preserve">
+    <value>Power &amp; battery</value>
+  </data>
+  <data name="SettingsPageKeywords_Power" xml:space="preserve">
+    <value>sleep shut down screen saver battery</value>
+  </data>
+  <data name="SettingsPage_Storage" xml:space="preserve">
+    <value>Storage</value>
+  </data>
+  <data name="SettingsPageKeywords_Storage" xml:space="preserve">
+    <value>disk space cleanup</value>
+  </data>
+  <data name="SettingsPage_Background" xml:space="preserve">
+    <value>Background</value>
+  </data>
+  <data name="SettingsPageKeywords_Background" xml:space="preserve">
+    <value>wallpaper personalization picture</value>
+  </data>
+  <data name="SettingsPage_Colors" xml:space="preserve">
+    <value>Colors</value>
+  </data>
+  <data name="SettingsPageKeywords_Colors" xml:space="preserve">
+    <value>dark light mode theme accent personalization</value>
+  </data>
+  <data name="SettingsPage_Themes" xml:space="preserve">
+    <value>Themes</value>
+  </data>
+  <data name="SettingsPageKeywords_Themes" xml:space="preserve">
+    <value>personalization appearance</value>
+  </data>
+  <data name="SettingsPage_LockScreen" xml:space="preserve">
+    <value>Lock screen</value>
+  </data>
+  <data name="SettingsPageKeywords_LockScreen" xml:space="preserve">
+    <value>lock personalization</value>
+  </data>
+  <data name="SettingsPage_InstalledApps" xml:space="preserve">
+    <value>Installed apps</value>
+  </data>
+  <data name="SettingsPageKeywords_InstalledApps" xml:space="preserve">
+    <value>programs uninstall remove apps</value>
+  </data>
+  <data name="SettingsPage_DefaultApps" xml:space="preserve">
+    <value>Default apps</value>
+  </data>
+  <data name="SettingsPageKeywords_DefaultApps" xml:space="preserve">
+    <value>default browser open with</value>
+  </data>
+  <data name="SettingsPage_StartupApps" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="SettingsPageKeywords_StartupApps" xml:space="preserve">
+    <value>start with windows startup apps</value>
+  </data>
+  <data name="SettingsPage_YourInfo" xml:space="preserve">
+    <value>Your info</value>
+  </data>
+  <data name="SettingsPageKeywords_YourInfo" xml:space="preserve">
+    <value>account user profile picture</value>
+  </data>
+  <data name="SettingsPage_SignInOptions" xml:space="preserve">
+    <value>Sign-in options</value>
+  </data>
+  <data name="SettingsPageKeywords_SignInOptions" xml:space="preserve">
+    <value>password pin windows hello login</value>
+  </data>
+  <data name="SettingsPage_DateTime" xml:space="preserve">
+    <value>Date &amp; time</value>
+  </data>
+  <data name="SettingsPageKeywords_DateTime" xml:space="preserve">
+    <value>clock time zone</value>
+  </data>
+  <data name="SettingsPage_Region" xml:space="preserve">
+    <value>Language &amp; region</value>
+  </data>
+  <data name="SettingsPageKeywords_Region" xml:space="preserve">
+    <value>language format country</value>
+  </data>
+  <data name="SettingsPage_Typing" xml:space="preserve">
+    <value>Typing</value>
+  </data>
+  <data name="SettingsPageKeywords_Typing" xml:space="preserve">
+    <value>keyboard autocorrect suggestions</value>
+  </data>
+  <data name="SettingsPage_Mouse" xml:space="preserve">
+    <value>Mouse</value>
+  </data>
+  <data name="SettingsPageKeywords_Mouse" xml:space="preserve">
+    <value>cursor pointer scrolling touchpad</value>
+  </data>
+  <data name="SettingsPage_Printers" xml:space="preserve">
+    <value>Printers &amp; scanners</value>
+  </data>
+  <data name="SettingsPageKeywords_Printers" xml:space="preserve">
+    <value>print printer</value>
+  </data>
+  <data name="SettingsPage_WindowsUpdate" xml:space="preserve">
+    <value>Windows Update</value>
+  </data>
+  <data name="SettingsPageKeywords_WindowsUpdate" xml:space="preserve">
+    <value>updates update</value>
+  </data>
+  <data name="SettingsPage_Privacy" xml:space="preserve">
+    <value>Privacy &amp; security</value>
+  </data>
+  <data name="SettingsPageKeywords_Privacy" xml:space="preserve">
+    <value>permissions camera location</value>
+  </data>
+  <data name="SettingsPage_WindowsSecurity" xml:space="preserve">
+    <value>Windows Security</value>
+  </data>
+  <data name="SettingsPageKeywords_WindowsSecurity" xml:space="preserve">
+    <value>antivirus defender firewall virus</value>
+  </data>
+  <data name="SettingsPage_About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="SettingsPageKeywords_About" xml:space="preserve">
+    <value>system specs device name version</value>
+  </data>
+  <data name="SettingsPage_Vpn" xml:space="preserve">
+    <value>VPN</value>
+  </data>
+  <data name="SettingsPageKeywords_Vpn" xml:space="preserve">
+    <value>private network</value>
+  </data>
+  <data name="SettingsPage_Proxy" xml:space="preserve">
+    <value>Proxy</value>
+  </data>
+  <data name="SettingsPageKeywords_Proxy" xml:space="preserve">
+    <value>network</value>
+  </data>
+  <data name="SettingsPage_AirplaneMode" xml:space="preserve">
+    <value>Airplane mode</value>
+  </data>
+  <data name="SettingsPageKeywords_AirplaneMode" xml:space="preserve">
+    <value>airplane offline flight</value>
+  </data>
+  <data name="SettingsPage_Clipboard" xml:space="preserve">
+    <value>Clipboard</value>
+  </data>
+  <data name="SettingsPageKeywords_Clipboard" xml:space="preserve">
+    <value>copy paste history</value>
+  </data>
+  <data name="SettingsPage_Multitasking" xml:space="preserve">
+    <value>Multitasking</value>
+  </data>
+  <data name="SettingsPageKeywords_Multitasking" xml:space="preserve">
+    <value>windows snap layouts</value>
+  </data>
+  <data name="SettingsPage_Gaming" xml:space="preserve">
+    <value>Gaming</value>
+  </data>
+  <data name="SettingsPageKeywords_Gaming" xml:space="preserve">
+    <value>game bar xbox capture</value>
+  </data>
+  <data name="SettingsPage_Accessibility" xml:space="preserve">
+    <value>Accessibility</value>
+  </data>
+  <data name="SettingsPageKeywords_Accessibility" xml:space="preserve">
+    <value>magnifier narrator contrast captions</value>
+  </data>
+  <data name="SettingsPage_ControlPanel" xml:space="preserve">
+    <value>Control Panel</value>
+  </data>
+  <data name="SettingsPageKeywords_ControlPanel" xml:space="preserve">
+    <value>control panel</value>
+  </data>
+</root>

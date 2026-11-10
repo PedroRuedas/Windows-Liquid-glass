@@ -1,5 +1,6 @@
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using LiquidGlass.Resources;
 
 namespace LiquidGlass.Models;
 
@@ -34,8 +35,8 @@ public sealed partial class StartEntry(string name, string target, StartEntryKin
     /// <summary>Título do grupo nos resultados da pesquisa.</summary>
     public string Group => Kind switch
     {
-        StartEntryKind.App => "Aplicativos",
-        StartEntryKind.Setting => "Configurações",
-        _ => "Documentos",
+        StartEntryKind.App => Strings.GroupApps,
+        StartEntryKind.Setting => Strings.GroupSettings,
+        _ => Strings.GroupDocuments,
     };
 }

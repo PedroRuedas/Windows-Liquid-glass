@@ -43,13 +43,33 @@ UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
 ; A dock é encerrada pelo próprio instalador (veja [Code]); o Gerenciador de Reinicialização não é necessário.
 CloseApplications=no
+; Sem perguntar o idioma: vem do Windows (veja [Languages]).
+ShowLanguageDialog=no
 
 [Languages]
+; O idioma do Windows decide; fora do português, o inglês (o primeiro da lista) é o padrão.
+Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
+[CustomMessages]
+english.StartupTask=Start with Windows (the dock stays in the background)
+english.DesktopIconTask=Create a desktop shortcut
+english.OptionsGroup=Options:
+english.OpenComment=Opens the dock (or its settings, if it's already running)
+english.QuitShortcut=Quit {#AppName}
+english.QuitComment=Closes the dock and brings back the Windows taskbar
+english.LaunchNow=Open {#AppName} now
+brazilianportuguese.StartupTask=Iniciar com o Windows (a dock fica em segundo plano)
+brazilianportuguese.DesktopIconTask=Criar atalho na área de trabalho
+brazilianportuguese.OptionsGroup=Opções:
+brazilianportuguese.OpenComment=Abre a dock (ou a personalização, se ela já estiver aberta)
+brazilianportuguese.QuitShortcut=Encerrar {#AppName}
+brazilianportuguese.QuitComment=Fecha a dock e devolve a barra de tarefas do Windows
+brazilianportuguese.LaunchNow=Abrir o {#AppName} agora
+
 [Tasks]
-Name: "startup"; Description: "Iniciar com o Windows (a dock fica em segundo plano)"; GroupDescription: "Opções:"
-Name: "desktopicon"; Description: "Criar atalho na área de trabalho"; GroupDescription: "Opções:"; Flags: unchecked
+Name: "startup"; Description: "{cm:StartupTask}"; GroupDescription: "{cm:OptionsGroup}"
+Name: "desktopicon"; Description: "{cm:DesktopIconTask}"; GroupDescription: "{cm:OptionsGroup}"; Flags: unchecked
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -59,8 +79,8 @@ Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 Type: filesandordirs; Name: "{app}\*"
 
 [Icons]
-Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; Comment: "Abre a dock (ou a personalização, se ela já estiver aberta)"
-Name: "{autoprograms}\Encerrar {#AppName}"; Filename: "{app}\{#AppExe}"; Parameters: "--quit"; Comment: "Fecha a dock e devolve a barra de tarefas do Windows"
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; Comment: "{cm:OpenComment}"
+Name: "{autoprograms}\{cm:QuitShortcut}"; Filename: "{app}\{#AppExe}"; Parameters: "--quit"; Comment: "{cm:QuitComment}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Registry]
@@ -69,7 +89,7 @@ Root: HKCU; Subkey: "{#RunKey}"; ValueType: string; ValueName: "{#RunValue}"; Va
 Root: HKCU; Subkey: "{#RunKey}"; ValueName: "{#RunValue}"; Flags: deletevalue; Tasks: not startup
 
 [Run]
-Filename: "{app}\{#AppExe}"; Description: "Abrir o {#AppName} agora"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchNow}"; Flags: nowait postinstall skipifsilent
 ; Atualização pela própria dock (silenciosa, com /RELAUNCH=1): a dock volta sozinha no fim.
 Filename: "{app}\{#AppExe}"; Flags: nowait; Check: RelaunchRequested
 
