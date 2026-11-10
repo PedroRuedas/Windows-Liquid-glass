@@ -63,10 +63,12 @@ administrador para instalar.
   Com muitas janelas, as miniaturas quebram em linhas e diminuem até todas caberem na tela.
 - Arraste atalhos ou programas para a dock para fixá-los.
 - **Reordenar ícones:** segure um app e arraste-o para outra posição. Os fixados trocam de lugar
-  entre si (a ordem fica salva) e os abertos não fixados, entre si.
+  entre si e os abertos, entre si; as duas ordens ficam salvas, inclusive depois de reiniciar a
+  dock. Arraste um app aberto para o meio dos fixados para fixá-lo ali.
 - **Menu Iniciar de vidro:** o botão Iniciar e a tecla Windows abrem um menu da dock com pesquisa
   (apps, páginas das Configurações e arquivos do índice do Windows), os apps fixados (trazidos do
-  menu Iniciar do Windows na primeira vez) e os arquivos recentes. No rodapé ficam o nome da conta e
+  menu Iniciar do Windows na primeira vez), os arquivos recentes e a lista de **todos os apps**,
+  em ordem alfabética. No rodapé ficam o nome da conta e
   o botão de energia: bloquear, sair, suspender, hibernar (quando ligada no Windows), desligar e
   reiniciar. Dá para trocar de volta para o menu do Windows nas preferências.
 - Botão Iniciar e Lixeira.
@@ -315,17 +317,16 @@ de vidro" devolve o menu do Windows. Ao fechar a dock, tudo volta ao normal.
 
 ## Limitações conhecidas
 
-- O menu Iniciar de vidro não tem "Todos os apps" nem foto do usuário: use a pesquisa para apps
-  que não estão fixados.
+- O menu Iniciar de vidro não mostra a foto do usuário.
 - A ordem dos fixados do menu Iniciar muda pelo botão direito ("Mover para o início"), não
   arrastando.
-- Um app aberto não vira fixado na dock ao ser arrastado para o meio dos fixados, e a ordem dos
-  abertos não fixados não é guardada ao reiniciar a dock.
 - Os recentes automáticos do Windows (por exemplo, os do Explorador e do Bloco de Notas) não
   entram no menu do botão direito: só as listas que o próprio app registra.
 - Janelas fixadas em todas as áreas de trabalho não podem ser arrastadas no cubo.
 
 Encontrou outra? [Abra uma issue](https://github.com/PedroRuedas/Windows-Liquid-glass/issues/new/choose).
+Em Personalizar → Comportamento, "Relatar um problema" abre o formulário já com as informações de
+diagnóstico copiadas.
 
 ## Contribuir
 
@@ -334,6 +335,22 @@ como preparar o ambiente, rodar os testes e enviar mudanças. Falhas de seguran�
 [política de segurança](SECURITY.md), e todos seguem o [código de conduta](CODE_OF_CONDUCT.md).
 
 Se a dock te ajudou, deixe uma ⭐ no repositório: isso ajuda outras pessoas a encontrá-la.
+
+## Assinatura de código
+
+Assinatura de código gratuita fornecida pelo [SignPath.io](https://about.signpath.io), certificado
+pelo [SignPath Foundation](https://signpath.org) (pedido em andamento; até a aprovação, as releases
+saem sem assinatura).
+
+- **Quem pode alterar o código e aprovar releases:** [PedroRuedas](https://github.com/PedroRuedas),
+  mantenedor. Contribuições externas entram só por pull request revisado.
+- **Como o instalador é gerado:** só pelo [workflow de release](.github/workflows/release.yml), nas
+  máquinas do GitHub, a partir de uma tag do código público. Nenhum binário compilado em máquina
+  pessoal é assinado.
+- **Privacidade:** a dock só se comunica com outros sistemas para procurar versões novas nas
+  releases do GitHub (`api.github.com`), ao abrir e a cada 6 horas (dá para desligar em
+  Personalizar → Comportamento), e para baixar o instalador quando você pede a atualização. Nenhum
+  dado pessoal é enviado.
 
 ## Licença
 

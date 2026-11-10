@@ -143,6 +143,13 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private AppLanguage _language = AppLanguage.Automatic;
 
+    /// <summary>
+    /// Ordem dos apps abertos não fixados, arrastada pelo usuário (veja <see cref="Services.RunningOrder"/>).
+    /// Fora de <see cref="CopyPreferencesFrom"/>, como os fixados.
+    /// </summary>
+    [ObservableProperty]
+    private List<string> _runningOrder = [];
+
     public ObservableCollection<PinnedApp> PinnedApps { get; set; } = [];
 
     /// <summary>Apps fixados no menu Iniciar de vidro, na ordem da grade.</summary>

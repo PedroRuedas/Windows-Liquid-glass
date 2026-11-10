@@ -443,7 +443,10 @@ public partial class DockWindow : Window
     private void BeginReorder(DockItemView view, Point panelPoint, bool captureMouse)
     {
         _pressedView = null;
-        if (_panel is null || view.DataContext is not DockItemViewModel item || _viewModel.ReorderGroup(item).Count < 2)
+        // Um app aberto sozinho ainda pode ser arrastado para o meio dos fixados.
+        if (_panel is null
+            || view.DataContext is not DockItemViewModel item
+            || (_viewModel.ReorderGroup(item).Count < 2 && (item.IsPinned || _viewModel.PinnedItems().Count == 0)))
         {
             return;
         }
@@ -471,6 +474,18 @@ public partial class DockWindow : Window
         var center = Along(panelPoint) - _grabOffset;
         _panel.DragPosition = center;
 
+        // Um app aberto que passa do centro do último fixado vira fixado ali mesmo.
+        if (!item.IsPinned && _viewModel.PinnedItems() is { Count: > 0 } pinned
+            && DockItems.ItemContainerGenerator.ContainerFromItem(pinned[^1]) is DockItemView lastPinned
+            && center < SlotCenter(lastPinned))
+        {
+            var slot = pinned.Count(other =>
+                DockItems.ItemContainerGenerator.ContainerFromItem(other) is DockItemView container && SlotCenter(container) < center);
+            _viewModel.PinAt(item, slot);
+            FollowDraggedItem(item);
+            return;
+        }
+
         var index = 0;
         foreach (var other in _viewModel.ReorderGroup(item))
         {
@@ -483,9 +498,16 @@ public partial class DockWindow : Window
         }
 
         _viewModel.MoveWithinGroup(item, index);
+        FollowDraggedItem(item);
+    }
 
-        // Se a troca gerou outro contêiner para o item, o arrasto passa para ele.
-        if (DockItems.ItemContainerGenerator.ContainerFromItem(item) is DockItemView moved && moved != _reorderView)
+    /// <summary>Se a troca gerou outro contêiner para o item, o arrasto passa para ele.</summary>
+    private void FollowDraggedItem(DockItemViewModel item)
+    {
+        if (_panel is not null
+            && _reorderView is not null
+            && DockItems.ItemContainerGenerator.ContainerFromItem(item) is DockItemView moved
+            && moved != _reorderView)
         {
             _reorderView.ClearValue(Panel.ZIndexProperty);
             Panel.SetZIndex(moved, 1);

@@ -77,6 +77,15 @@ body:
       placeholder: "1 monitor, 2560×1440, escala 125%, 144 Hz"
 
   - type: textarea
+    id: diagnostico
+    attributes:
+      label: Informações de diagnóstico
+      description: |
+        Na dock: botão direito → Personalizar → Comportamento → Informações de diagnóstico → **Copiar**, e cole aqui com Ctrl+V.
+        Elas trazem a versão, o Windows, os monitores e os últimos erros, com a sua pasta de usuário escondida.
+      render: markdown
+
+  - type: textarea
     id: anexos
     attributes:
       label: Prints, vídeo ou logs

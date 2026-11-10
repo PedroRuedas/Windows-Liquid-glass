@@ -207,10 +207,36 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
         else
         {
-            // Os abertos mantêm a ordem em que estão na dock (Rebuild a preserva).
+            // Os abertos mantêm a ordem em que estão na dock (Rebuild a preserva), e ela é salva.
             Items.Move(Items.IndexOf(item), Items.IndexOf(target));
+            var keys = ReorderGroup(item).Select(other => RunningOrder.KeyOf(other.GroupKey)).OfType<string>().ToList();
+            Settings.RunningOrder = RunningOrder.Remember(Settings.RunningOrder, keys);
         }
     }
+
+    /// <summary>
+    /// Fixa um app aberto na posição <paramref name="index"/> entre os fixados, como ao arrastá-lo
+    /// para o meio deles. O mesmo ícone passa a ser o fixado (Rebuild o reaproveita pelas janelas).
+    /// </summary>
+    public void PinAt(DockItemViewModel item, int index)
+    {
+        if (item.Pin is not null || item.Windows.Count == 0)
+        {
+            return;
+        }
+
+        var pin = PinnedAppFactory.FromWindow(item.Windows[0], item.Name);
+        if (Settings.PinnedApps.Any(existing => existing.Target.Equals(pin.Target, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        Settings.PinnedApps.Insert(Math.Clamp(index, 0, Settings.PinnedApps.Count), pin);
+    }
+
+    /// <summary>Os fixados, na ordem da dock: o destino de um app aberto arrastado para o meio deles.</summary>
+    public List<DockItemViewModel> PinnedItems() =>
+        Items.Where(candidate => candidate.IsApplication && !candidate.IsRemoving && candidate.IsPinned).ToList();
 
     public void CloseAll(DockItemViewModel item)
     {
@@ -426,8 +452,11 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             running.Add(item);
         }
 
-        // Apps em execução mantêm a ordem que têm na dock (a de abertura ou a arrastada); os novos entram no final.
-        desired.AddRange(running.OrderBy(item => Items.IndexOf(item) is var index and >= 0 ? index : int.MaxValue));
+        // Os que já estão na dock mantêm o lugar; os que abriram entram na posição que tinham na
+        // ordem salva (a arrastada pelo usuário, inclusive antes de reiniciar a dock) ou no final.
+        var existing = running.Where(Items.Contains).OrderBy(Items.IndexOf);
+        var added = running.Where(item => !Items.Contains(item));
+        desired.AddRange(RunningOrder.Arrange(existing, added, item => RunningOrder.KeyOf(item.GroupKey), Settings.RunningOrder));
 
         var showBattery = Settings.ShowBattery && _battery.IsPresent;
         if (Settings.ShowTray || Settings.ShowNetwork || showBattery || Settings.ShowRecycleBin)

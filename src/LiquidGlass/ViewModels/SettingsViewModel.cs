@@ -82,6 +82,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public string LanguageDescription => LanguageNeedsRestart ? Strings.LanguageRestartHint : Strings.LanguageDescription;
 
+    /// <summary>Depois de copiar, a descrição confirma e diz o que fazer com o texto.</summary>
+    [ObservableProperty]
+    private string _diagnosticsDescription = Strings.DiagnosticsDescription;
+
     public void Dispose()
     {
         Settings.PinnedApps.CollectionChanged -= OnPinnedAppsChanged;
@@ -91,6 +95,30 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void Restart() => RestartRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void CopyDiagnostics()
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(Diagnostics.Build(Settings));
+            DiagnosticsDescription = Strings.DiagnosticsCopied;
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            // Outro app segurando a área de transferência: o clique seguinte tenta de novo.
+        }
+    }
+
+    /// <summary>Abre o formulário de bug do GitHub; as informações de diagnóstico já vão copiadas.</summary>
+    [RelayCommand]
+    private void ReportProblem()
+    {
+        CopyDiagnostics();
+        _ = AppLauncher.Launch(IssueUrl);
+    }
+
+    private const string IssueUrl = "https://github.com/PedroRuedas/Windows-Liquid-glass/issues/new?template=bug_report.yml";
 
     private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {

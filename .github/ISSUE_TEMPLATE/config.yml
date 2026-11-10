@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Perguntas, ideias e conversa
+    url: https://github.com/PedroRuedas/Windows-Liquid-glass/discussions
+    about: Dúvidas de uso, ideias ainda soltas e prints da sua dock vão para as Discussions.
   - name: Relatar uma falha de segurança
     url: https://github.com/PedroRuedas/Windows-Liquid-glass/security/advisories/new
     about: Falhas de segurança são relatadas em particular, nunca numa issue pública.

@@ -157,6 +157,24 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Item de "Todos os apps": como um resultado, mas o ícone só carrega quando a linha aparece. -->
+        <Style x:Key="AllAppsItem" TargetType="ListBoxItem" BasedOn="{StaticResource ResultItem}">
+            <EventSetter Event="Loaded" Handler="OnAllAppsItemLoaded" />
+        </Style>
+
+        <!-- Botão discreto em forma de pílula: "Todos os apps" e "Voltar". -->
+        <Style x:Key="PillButton" TargetType="Border">
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Background" Value="{StaticResource SearchFill}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource TileHover}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <!-- A margem é a área da sombra; dentro dela fica o único elemento animado. -->
@@ -212,7 +230,23 @@
 
                 <Grid Grid.Row="1" Margin="0,22,0,0">
                     <StackPanel x:Name="HomePanel">
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.StartPinned}" />
+                        <Grid>
+                            <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.StartPinned}" />
+                            <Border Margin="0,-3,4,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Style="{StaticResource PillButton}"
+                                    MouseLeftButtonUp="OnAllAppsClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontSize="12" Text="{x:Static res:Strings.StartAllApps}" />
+                                    <TextBlock Margin="8,1,0,0"
+                                               VerticalAlignment="Center"
+                                               FontFamily="{StaticResource IconFont}"
+                                               FontSize="10"
+                                               Text="&#xE76C;" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
                         <ScrollViewer Height="258">
                             <StackPanel>
                                 <ItemsControl x:Name="Pins" HorizontalAlignment="Center" ItemTemplate="{StaticResource PinTile}">
@@ -242,6 +276,47 @@
                                    Text="{x:Static res:Strings.StartRecentEmpty}"
                                    Visibility="Collapsed" />
                     </StackPanel>
+
+                    <!-- Todos os apps instalados, em ordem alfabética e agrupados pela inicial. -->
+                    <DockPanel x:Name="AllAppsPanel" Visibility="Collapsed">
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                            <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.StartAllApps}" />
+                            <Border Margin="0,-3,4,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Style="{StaticResource PillButton}"
+                                    MouseLeftButtonUp="OnAllAppsBackClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,1,8,0"
+                                               VerticalAlignment="Center"
+                                               FontFamily="{StaticResource IconFont}"
+                                               FontSize="10"
+                                               Text="&#xE76B;" />
+                                    <TextBlock FontSize="12" Text="{x:Static res:Strings.StartBack}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        <ListBox x:Name="AllAppsList"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Focusable="False"
+                                 ItemContainerStyle="{StaticResource AllAppsItem}"
+                                 ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                 VirtualizingPanel.ScrollUnit="Pixel">
+                            <ListBox.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Margin="10,10,0,6" Style="{StaticResource SectionTitle}" Text="{Binding Name}" />
+                                        </DataTemplate>
+                                    </GroupStyle.HeaderTemplate>
+                                </GroupStyle>
+                            </ListBox.GroupStyle>
+                        </ListBox>
+                    </DockPanel>
 
                     <Grid x:Name="ResultsPanel" Visibility="Collapsed">
                         <ListBox x:Name="Results"

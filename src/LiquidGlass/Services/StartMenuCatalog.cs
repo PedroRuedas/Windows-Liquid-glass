@@ -225,6 +225,16 @@ internal static class StartMenuCatalog
             || prefix.Equals("https", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Inicial do grupo em "Todos os apps": a primeira letra sem acento e em maiúscula ("Área" fica
+    /// em "A"), ou "#" para nomes que começam com número ou símbolo.
+    /// </summary>
+    public static string Initial(string? name)
+    {
+        var first = (name ?? string.Empty).TrimStart().Normalize(System.Text.NormalizationForm.FormD).FirstOrDefault();
+        return char.IsLetter(first) ? char.ToUpperInvariant(first).ToString() : "#";
+    }
+
     /// <summary>Quando, em palavras, no idioma da interface: "Agora", "Há 5 min", "Há 20 h", "Ontem", "27 de out".</summary>
     public static string RelativeTime(DateTime when, DateTime now)
     {

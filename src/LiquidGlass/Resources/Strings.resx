@@ -213,6 +213,12 @@
   <data name="OpenFileLocation" xml:space="preserve">
     <value>Abrir local do arquivo</value>
   </data>
+  <data name="StartAllApps" xml:space="preserve">
+    <value>Todos os apps</value>
+  </data>
+  <data name="StartBack" xml:space="preserve">
+    <value>Voltar</value>
+  </data>
   <data name="PowerLock" xml:space="preserve">
     <value>Bloquear</value>
   </data>
@@ -527,6 +533,21 @@
   </data>
   <data name="RestartDock" xml:space="preserve">
     <value>Reiniciar a dock</value>
+  </data>
+  <data name="Diagnostics" xml:space="preserve">
+    <value>Informações de diagnóstico</value>
+  </data>
+  <data name="DiagnosticsDescription" xml:space="preserve">
+    <value>Versão, Windows, monitores e erros recentes, para colar numa issue ao relatar um problema.</value>
+  </data>
+  <data name="DiagnosticsCopied" xml:space="preserve">
+    <value>Copiado. Cole na issue com Ctrl+V.</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copiar</value>
+  </data>
+  <data name="ReportProblem" xml:space="preserve">
+    <value>Relatar um problema</value>
   </data>
   <data name="SectionUpdates" xml:space="preserve">
     <value>Atualizações</value>

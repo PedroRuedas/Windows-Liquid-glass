@@ -62,10 +62,11 @@ live customization window. Free, open source, and no administrator rights needed
 - **Window thumbnails:** hover a running app to see a live thumbnail of each of its windows. Click
   one to bring it forward; the X or middle click closes it. With many windows, thumbnails wrap and
   shrink until they all fit on screen.
-- Drag shortcuts or programs onto the dock to pin them, and drag icons to reorder them.
+- Drag shortcuts or programs onto the dock to pin them, and drag icons to reorder them. Both
+  orders are remembered across restarts, and dragging an open app among the pinned ones pins it.
 - **Glass Start menu:** the Start button and the Windows key open a dock menu with search (apps,
   Settings pages and indexed files), pinned apps (imported from the Windows Start menu the first
-  time) and recent files. The footer shows your account name and a power button: lock, sign out,
+  time), recent files and an alphabetical **All apps** list. The footer shows your account name and a power button: lock, sign out,
   sleep, hibernate (when enabled in Windows), shut down and restart. You can switch back to the
   Windows Start menu in the settings.
 - **Background apps:** a button opens a panel with the system tray icons; left and right clicks
@@ -173,6 +174,22 @@ Bug reports, ideas and pull requests are welcome, in English or Portuguese. See 
 [code of conduct](CODE_OF_CONDUCT.md).
 
 If you like the dock, a ⭐ helps other people find it.
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
+[SignPath Foundation](https://signpath.org) (application in progress; until it is approved,
+releases are unsigned).
+
+- **Committers, reviewers and approvers:** [PedroRuedas](https://github.com/PedroRuedas),
+  maintainer. Outside contributions are accepted only through reviewed pull requests.
+- **Build:** installers are produced only by the [release workflow](.github/workflows/release.yml)
+  on GitHub-hosted runners, from a tag of the public source. No binary built on a personal machine
+  is signed.
+- **Privacy:** this program does not transfer any information to other networked systems, except
+  for checking GitHub releases (`api.github.com`) for a new version when it starts and every 6 hours
+  (this can be turned off under Customize → Behavior) and downloading the installer when you ask
+  for an update. No personal data is sent.
 
 ## License
 

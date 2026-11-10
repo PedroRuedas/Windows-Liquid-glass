@@ -5,6 +5,15 @@ todos bem-vindos.
 
 > **English speakers:** issues and pull requests in English are welcome too.
 
+## Perguntas e ideias
+
+Dúvidas de uso, ideias ainda soltas e prints da sua dock vão para as
+[Discussions](https://github.com/PedroRuedas/Windows-Liquid-glass/discussions). As issues ficam para
+bugs e propostas concretas.
+
+Quer começar a contribuir? Veja as issues marcadas como
+[good first issue](https://github.com/PedroRuedas/Windows-Liquid-glass/labels/good%20first%20issue).
+
 ## Relatar um bug
 
 Antes de abrir uma issue, veja se o problema já não foi relatado nas

@@ -252,6 +252,12 @@ public static class Strings
     /// <summary>Abrir local do arquivo</summary>
     public static string OpenFileLocation => Get();
 
+    /// <summary>Todos os apps</summary>
+    public static string StartAllApps => Get();
+
+    /// <summary>Voltar</summary>
+    public static string StartBack => Get();
+
     /// <summary>Bloquear</summary>
     public static string PowerLock => Get();
 
@@ -566,6 +572,21 @@ public static class Strings
 
     /// <summary>Reiniciar a dock</summary>
     public static string RestartDock => Get();
+
+    /// <summary>Informações de diagnóstico</summary>
+    public static string Diagnostics => Get();
+
+    /// <summary>Versão, Windows, monitores e erros recentes, para colar numa issue ao relatar um problema.</summary>
+    public static string DiagnosticsDescription => Get();
+
+    /// <summary>Copiado. Cole na issue com Ctrl+V.</summary>
+    public static string DiagnosticsCopied => Get();
+
+    /// <summary>Copiar</summary>
+    public static string Copy => Get();
+
+    /// <summary>Relatar um problema</summary>
+    public static string ReportProblem => Get();
 
     /// <summary>Atualizações</summary>
     public static string SectionUpdates => Get();

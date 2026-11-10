@@ -213,6 +213,12 @@
   <data name="OpenFileLocation" xml:space="preserve">
     <value>Open file location</value>
   </data>
+  <data name="StartAllApps" xml:space="preserve">
+    <value>All apps</value>
+  </data>
+  <data name="StartBack" xml:space="preserve">
+    <value>Back</value>
+  </data>
   <data name="PowerLock" xml:space="preserve">
     <value>Lock</value>
   </data>
@@ -527,6 +533,21 @@
   </data>
   <data name="RestartDock" xml:space="preserve">
     <value>Restart the dock</value>
+  </data>
+  <data name="Diagnostics" xml:space="preserve">
+    <value>Diagnostic info</value>
+  </data>
+  <data name="DiagnosticsDescription" xml:space="preserve">
+    <value>Version, Windows, monitors and recent errors, to paste into an issue when reporting a problem.</value>
+  </data>
+  <data name="DiagnosticsCopied" xml:space="preserve">
+    <value>Copied. Paste it into the issue with Ctrl+V.</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="ReportProblem" xml:space="preserve">
+    <value>Report a problem</value>
   </data>
   <data name="SectionUpdates" xml:space="preserve">
     <value>Updates</value>
