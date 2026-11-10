@@ -7,6 +7,8 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+## [0.10.0] - 2026-11-10
+
 ### Adicionado
 - **Todos os apps** no menu Iniciar de vidro: a lista de apps instalados em ordem alfabética,
   agrupada pela inicial, com "Fixar no Iniciar" no botão direito.
@@ -16,6 +18,14 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 - **Informações de diagnóstico** em Personalizar → Comportamento: "Copiar" põe na área de
   transferência a versão, o Windows, os monitores, as preferências principais e os últimos erros,
   com a pasta do usuário escondida. "Relatar um problema" copia e abre o formulário de bug.
+
+### Removido das limitações conhecidas
+- O menu Iniciar de vidro agora tem "Todos os apps".
+- Apps abertos podem ser fixados arrastando, e a ordem deles é guardada ao reiniciar a dock.
+
+*English: an "All apps" list in the glass Start menu, drag an open app among the pinned ones to pin
+it, the order of open apps is remembered across restarts, and a "Diagnostic info" button copies a
+report to paste into bug reports.*
 
 ## [0.9.0] - 2026-11-10
 
@@ -119,7 +129,8 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
   apps fixados e em execução, bandeja do sistema, personalização ao vivo, ocultar
   automaticamente e modo de eficiência quando a dock está parada.
 
-[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.9.0...HEAD
+[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.7.0...v0.7.1
