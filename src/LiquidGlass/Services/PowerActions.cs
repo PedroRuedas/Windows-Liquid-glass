@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
 using LiquidGlass.Interop;
+using Microsoft.Win32;
 
 namespace LiquidGlass.Services;
 

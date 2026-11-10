@@ -1,0 +1,83 @@
+name: Relatar um bug
+description: Algo não funciona como deveria na dock.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar! Antes de enviar, confira se o problema continua na
+        [última versão](https://github.com/PedroRuedas/Windows-Liquid-glass/releases/latest)
+        e se ainda não há uma [issue aberta](https://github.com/PedroRuedas/Windows-Liquid-glass/issues) sobre ele.
+
+        Se a barra de tarefas do Windows sumiu, abra o atalho **Encerrar Liquid Glass Dock** no menu
+        Iniciar (ou rode `LiquidGlass.exe --quit`) para devolvê-la.
+
+        *Issues in English are welcome too.*
+
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o problema e o que você esperava que acontecesse.
+    validations:
+      required: true
+
+  - type: textarea
+    id: passos
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. Abra o VS Code e o navegador
+        2. Pare o mouse sobre o ícone do VS Code
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: versao-dock
+    attributes:
+      label: Versão da dock
+      description: Aparece no canto superior esquerdo da janela Personalizar (botão direito na dock → Personalizar).
+      placeholder: "0.8.0"
+    validations:
+      required: true
+
+  - type: input
+    id: versao-windows
+    attributes:
+      label: Versão do Windows
+      description: Rode `winver` para ver.
+      placeholder: "Windows 11 24H2 (build 26100)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Parte da dock
+      options:
+        - Vidro e aparência
+        - Ícones e animações
+        - Miniaturas das janelas
+        - Listas de atalhos (botão direito)
+        - Menu Iniciar de vidro
+        - Áreas de trabalho (cubo)
+        - Bandeja, rede ou bateria
+        - Barra de tarefas do Windows
+        - Instalação e atualização
+        - Outra
+    validations:
+      required: true
+
+  - type: textarea
+    id: monitores
+    attributes:
+      label: Monitores
+      description: Quantos monitores, resolução, escala e taxa de atualização de cada um (útil para problemas de posição e tamanho).
+      placeholder: "1 monitor, 2560×1440, escala 125%, 144 Hz"
+
+  - type: textarea
+    id: anexos
+    attributes:
+      label: Prints, vídeo ou logs
+      description: Arraste imagens ou vídeos para cá. Para problemas visuais, um vídeo curto ajuda muito.
