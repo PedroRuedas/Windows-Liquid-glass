@@ -129,6 +129,31 @@ public partial class DockWindow
 
     internal StartMenu DemoStartMenu => _startMenu;
 
+    /// <summary>
+    /// Demonstração (Debug): leva o "mouse" da ampliação a uma fração do comprimento dos ícones
+    /// (0 = início, 1 = fim) pelo mesmo caminho do movimento real, sem mexer no mouse; null solta.
+    /// </summary>
+    internal void DemoHover(double? fraction)
+    {
+        if (_panel is null)
+        {
+            return;
+        }
+
+        if (fraction is not { } along)
+        {
+            OnRootMouseLeave(this, null!);
+            return;
+        }
+
+        _demoHoverLength ??= Settings.Edge == Models.DockEdge.Bottom ? _panel.ActualWidth : _panel.ActualHeight;
+        var panelPoint = ToPanelPoint(along * _demoHoverLength.Value);
+        OnPointerMoved(panelPoint, _panel.TranslatePoint(panelPoint, Root), leftPressed: false);
+    }
+
+    /// <summary>Comprimento dos ícones antes da ampliação, para a fração não andar junto com ela.</summary>
+    private double? _demoHoverLength;
+
     internal void SaveDemoDock(string name) => Graphics.DemoCapture.Save(name, Glass);
 
     private Point ToPanelPoint(double along)

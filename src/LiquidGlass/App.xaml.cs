@@ -344,6 +344,12 @@ public partial class App : Application
     /// </summary>
     private void StartDemos()
     {
+        if (Environment.GetEnvironmentVariable("LIQUIDGLASS_SHOWCASE_DEMO") is { Length: > 0 } showcaseTitle)
+        {
+            StartShowcase(showcaseTitle);
+            return;
+        }
+
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         var step = 0;
         var cubeDemo = Environment.GetEnvironmentVariable("LIQUIDGLASS_CUBE_DEMO") == "1";
@@ -567,6 +573,72 @@ public partial class App : Application
             }
         };
         timer.Start();
+    }
+
+    /// <summary>
+    /// Demonstração (Debug) para o GIF do README, com LIQUIDGLASS_SHOWCASE_DEMO = título de uma
+    /// janela: o "mouse" passa pela dock e volta (ampliação), sai, e a janela minimiza em lâmpada
+    /// mágica e volta. Tudo por código, sem mexer no mouse nem no teclado. Começa 6 s depois de
+    /// abrir e registra os marcos no demo.log. Usa ícones e ampliação maiores durante a gravação e
+    /// devolve os valores do usuário no fim.
+    /// </summary>
+    private void StartShowcase(string title)
+    {
+        const double Start = 6;
+        var (iconSize, magnification) = (Settings.IconSize, Settings.Magnification);
+        Settings.IconSize = 52;
+        Settings.Magnification = 1.8;
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var minimized = false;
+        var restored = false;
+        var timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(8) };
+        timer.Tick += (_, _) =>
+        {
+            var t = clock.Elapsed.TotalSeconds - Start;
+            if (t < 0)
+            {
+                return;
+            }
+
+            if (t < 3.2)
+            {
+                // Vai do começo ao fim da dock, devagar nas pontas.
+                _dockWindow?.DemoHover(0.04 + (0.92 * Ease(t / 3.2)));
+            }
+            else if (t < 4.8)
+            {
+                // Volta até um terço e para.
+                _dockWindow?.DemoHover(0.96 - (0.62 * Ease((t - 3.2) / 1.6)));
+            }
+            else if (t < 5.6)
+            {
+                _dockWindow?.DemoHover(0.34);
+            }
+            else if (!minimized)
+            {
+                _dockWindow?.DemoHover(null);
+                minimized = true;
+                Graphics.DemoCapture.Log("showcase: minimizar");
+                _animator?.Minimize(User32.FindWindow(null, title));
+            }
+            else if (t >= 8.2 && !restored)
+            {
+                restored = true;
+                Graphics.DemoCapture.Log("showcase: restaurar");
+                _animator?.Activate(User32.FindWindow(null, title));
+            }
+            else if (t >= 10.5)
+            {
+                Settings.IconSize = iconSize;
+                Settings.Magnification = magnification;
+                Graphics.DemoCapture.Log("showcase: fim");
+                timer.Stop();
+            }
+        };
+        Graphics.DemoCapture.Log("showcase: aberto");
+        timer.Start();
+
+        static double Ease(double x) => (1 - Math.Cos(Math.PI * Math.Clamp(x, 0, 1))) / 2;
     }
 #endif
 
