@@ -251,6 +251,12 @@ dotnet test
 O código segue o `.editorconfig` do repositório. O build trata avisos como erros, e o
 `dotnet format --verify-no-changes` precisa passar limpo.
 
+## Licença
+
+Este projeto é distribuído sob a [GNU General Public License v3.0](LICENSE). Você pode usar,
+estudar, modificar e redistribuir o código, desde que as versões distribuídas também fiquem
+sob a GPL-3.0 e com o código-fonte disponível.
+
 ## Licenças de terceiros
 
 - [ManagedShell](https://github.com/cairoshell/ManagedShell): Apache License 2.0
