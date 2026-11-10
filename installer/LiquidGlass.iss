@@ -12,6 +12,7 @@
 
 #define AppName "Liquid Glass Dock"
 #define AppExe "LiquidGlass.exe"
+#define AppUrl "https://github.com/PedroRuedas/Windows-Liquid-glass"
 #define RunKey "Software\Microsoft\Windows\CurrentVersion\Run"
 #define RunValue "LiquidGlassDock"
 
@@ -22,6 +23,12 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher=PedroRuedas
+AppPublisherURL={#AppUrl}
+AppSupportURL={#AppUrl}/issues
+AppUpdatesURL={#AppUrl}/releases
+AppCopyright=Copyright © 2026 PedroRuedas. Distribuído sob a GPL-3.0.
+; A licença aparece numa página do assistente; ao instalar, o usuário aceita a GPL-3.0.
+LicenseFile=..\LICENSE
 DefaultDirName={localappdata}\Programs\{#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest

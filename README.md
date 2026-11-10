@@ -1,10 +1,30 @@
+<div align="center">
+
 # Liquid Glass Dock
 
-Uma dock para Windows 11 no estilo *Liquid Glass* do macOS. Ela substitui a barra de tarefas
-com vidro que refrata de verdade o papel de parede, ampliação dos ícones ao passar o mouse,
-animações de abertura e uma tela de personalização completa.
+**A dock no estilo *Liquid Glass* do macOS, com vidro que refrata de verdade, no lugar da barra de
+tarefas do Windows 11.**
 
-![Dock](docs/dock.png)
+[![Última versão](https://img.shields.io/github/v/release/PedroRuedas/Windows-Liquid-glass?label=vers%C3%A3o&color=2ea44f)](https://github.com/PedroRuedas/Windows-Liquid-glass/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/PedroRuedas/Windows-Liquid-glass/total?label=downloads&color=blue)](https://github.com/PedroRuedas/Windows-Liquid-glass/releases)
+[![CI](https://github.com/PedroRuedas/Windows-Liquid-glass/actions/workflows/ci.yml/badge.svg)](https://github.com/PedroRuedas/Windows-Liquid-glass/actions/workflows/ci.yml)
+[![Licença GPL-3.0](https://img.shields.io/github/license/PedroRuedas/Windows-Liquid-glass?label=licen%C3%A7a)](LICENSE)
+![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows11&logoColor=white)
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+
+### [⬇️ Baixar para Windows 11](https://github.com/PedroRuedas/Windows-Liquid-glass/releases/latest)
+
+[Recursos](#recursos) · [Instalação](#instalação) · [Perguntas frequentes](#perguntas-frequentes) ·
+[Contribuir](#contribuir) · [Histórico de versões](CHANGELOG.md) · [🇺🇸 English](README.en.md)
+
+![A dock de vidro líquido sobre o papel de parede, com os ícones ampliados sob o cursor](docs/dock.png)
+
+</div>
+
+Ela substitui a barra de tarefas com vidro que refrata de verdade o papel de parede, ampliação dos
+ícones ao passar o mouse, animações de abertura, menu Iniciar próprio, áreas de trabalho num cubo
+3D e uma tela de personalização completa. Gratuita, de código aberto e sem precisar de
+administrador para instalar.
 
 **Destaques**
 - Vidro líquido de verdade: o papel de parede é curvado nas bordas por um shader, como uma lente.
@@ -122,7 +142,18 @@ Todas as mudanças aparecem na dock na hora:
 
 ## Instalação
 
-Rode `LiquidGlassDock-Setup-<versão>.exe`. O instalador:
+**Requisitos:** Windows 11, 64 bits. A troca animada entre áreas de trabalho (Ctrl+Win+← / →)
+usa uma interface do Windows 11 24H2 em diante; nas versões anteriores, esse atalho fica com o
+próprio Windows.
+
+1. Baixe `LiquidGlassDock-Setup-<versão>.exe` na
+   [última release](https://github.com/PedroRuedas/Windows-Liquid-glass/releases/latest).
+2. Execute. O instalador ainda não tem assinatura digital, então o Windows deve mostrar
+   "O Windows protegeu o computador": clique em **Mais informações → Executar assim mesmo**.
+   Se quiser conferir o arquivo, compare `Get-FileHash .\LiquidGlassDock-Setup-<versão>.exe`
+   no PowerShell com o SHA-256 publicado na release.
+
+O instalador:
 
 - instala só para o seu usuário, sem pedir permissão de administrador
   (em `%LocalAppData%\Programs\Liquid Glass Dock`);
@@ -249,7 +280,56 @@ dotnet test
 ```
 
 O código segue o `.editorconfig` do repositório. O build trata avisos como erros, e o
-`dotnet format --verify-no-changes` precisa passar limpo.
+`dotnet format --verify-no-changes` precisa passar limpo. A [integração contínua](.github/workflows/ci.yml)
+roda as três verificações em cada push e pull request.
+
+## Perguntas frequentes
+
+**A barra de tarefas do Windows sumiu e a dock não está aberta. E agora?**
+Abra "Encerrar Liquid Glass Dock" no menu Iniciar do Windows (ou rode `LiquidGlass.exe --quit`).
+A barra volta mesmo depois de um encerramento forçado. Veja
+[A barra de tarefas do Windows sempre volta](#a-barra-de-tarefas-do-windows-sempre-volta).
+
+**Funciona no Windows 10?**
+Não. O instalador exige o Windows 11.
+
+**Preciso instalar o .NET?**
+Não. O instalador já traz tudo o que a dock precisa.
+
+**A dock pesa no computador?**
+Parada, ela não gasta processador e entra no modo de eficiência do Windows. Veja os números em
+[Consumo em segundo plano](#consumo-em-segundo-plano).
+
+**Por que o Windows avisa que o instalador é desconhecido?**
+Porque ele ainda não tem assinatura digital, que é paga. O código e o processo de build são
+públicos, e cada release publica o SHA-256 do instalador, que a própria dock confere ao se
+atualizar.
+
+**Posso voltar ao menu Iniciar ou à barra de tarefas do Windows?**
+Sim. Em Personalizar → Comportamento dá para mostrar a barra do Windows, e a opção "Menu Iniciar
+de vidro" devolve o menu do Windows. Ao fechar a dock, tudo volta ao normal.
+
+## Limitações conhecidas
+
+- O menu Iniciar de vidro não tem "Todos os apps" nem foto do usuário: use a pesquisa para apps
+  que não estão fixados.
+- A ordem dos fixados do menu Iniciar muda pelo botão direito ("Mover para o início"), não
+  arrastando.
+- Um app aberto não vira fixado na dock ao ser arrastado para o meio dos fixados, e a ordem dos
+  abertos não fixados não é guardada ao reiniciar a dock.
+- Os recentes automáticos do Windows (por exemplo, os do Explorador e do Bloco de Notas) não
+  entram no menu do botão direito: só as listas que o próprio app registra.
+- Janelas fixadas em todas as áreas de trabalho não podem ser arrastadas no cubo.
+
+Encontrou outra? [Abra uma issue](https://github.com/PedroRuedas/Windows-Liquid-glass/issues/new/choose).
+
+## Contribuir
+
+Bugs, ideias e pull requests são bem-vindos. O [guia de contribuição](CONTRIBUTING.md) explica
+como preparar o ambiente, rodar os testes e enviar mudanças. Falhas de segurança seguem a
+[política de segurança](SECURITY.md), e todos seguem o [código de conduta](CODE_OF_CONDUCT.md).
+
+Se a dock te ajudou, deixe uma ⭐ no repositório: isso ajuda outras pessoas a encontrá-la.
 
 ## Licença
 

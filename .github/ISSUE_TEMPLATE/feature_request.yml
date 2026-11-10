@@ -1,0 +1,31 @@
+name: Sugerir um recurso
+description: Uma ideia para deixar a dock melhor.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Conte a sua ideia! Veja antes se ela já não foi sugerida nas
+        [issues](https://github.com/PedroRuedas/Windows-Liquid-glass/issues?q=label%3Aenhancement).
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema isso resolve?
+      description: O que você quer fazer e hoje não consegue, ou o que incomoda.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solucao
+    attributes:
+      label: Como você imagina?
+      description: Descreva o comportamento. Se for algo do macOS, do GNOME ou de outra dock, um vídeo, print ou link ajuda muito.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas
+      description: Outras formas de resolver que você considerou.

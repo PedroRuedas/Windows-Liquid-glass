@@ -17,6 +17,14 @@
         <RootNamespace>LiquidGlass</RootNamespace>
         <Product>Liquid Glass Dock</Product>
         <Version>0.8.0</Version>
+        <!-- Aparecem em Propriedades → Detalhes do LiquidGlass.exe; o título é o nome no Gerenciador de Tarefas. -->
+        <AssemblyTitle>Liquid Glass Dock</AssemblyTitle>
+        <Authors>PedroRuedas</Authors>
+        <Company>PedroRuedas</Company>
+        <Copyright>Copyright © 2026 PedroRuedas. Distribuído sob a GPL-3.0.</Copyright>
+        <Description>Dock estilo Liquid Glass para a barra de tarefas do Windows 11.</Description>
+        <RepositoryUrl>https://github.com/PedroRuedas/Windows-Liquid-glass</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
         <!--
             WPF0001: o tema Fluent do WPF ainda é marcado como experimental.
             WFO0003: regra de DPI para apps Windows Forms; este é um app WPF (o DPI vem do app.manifest).
