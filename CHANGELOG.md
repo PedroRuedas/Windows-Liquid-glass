@@ -11,6 +11,9 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 - Interface em inglês. A dock segue o idioma do Windows (português no Windows em português,
   inglês nos demais), e a opção Personalizar → Comportamento → Idioma permite escolher, com um
   botão para reiniciar a dock no idioma novo. O instalador também fala os dois idiomas.
+- Releases automáticas: uma tag `vX.Y.Z` gera o instalador nas máquinas do GitHub, calcula o
+  SHA-256 e publica a release com as notas do CHANGELOG (veja "Publicar uma versão" no
+  CONTRIBUTING). Com o segredo `WINGET_TOKEN`, a versão também é enviada ao winget.
 - Licença GPL-3.0, guia de contribuição, código de conduta, política de segurança, modelos de
   issue e de pull request e integração contínua (build, testes e formatação a cada push).
 - README em inglês (`README.en.md`).
