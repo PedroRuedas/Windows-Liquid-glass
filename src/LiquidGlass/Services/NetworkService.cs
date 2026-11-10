@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using LiquidGlass.Resources;
 
 namespace LiquidGlass.Services;
 
@@ -75,9 +76,9 @@ public sealed partial class NetworkService : ObservableObject, IDisposable
     /// <summary>Descrição curta para o rótulo do ícone.</summary>
     public string Describe() => Kind switch
     {
-        NetworkKind.Wifi => string.Create(CultureInfo.CurrentCulture, $"Wi-Fi: {NetworkName ?? "conectado"} · sinal {Signal}%"),
-        NetworkKind.Ethernet => "Rede cabeada: conectada",
-        _ => HasWifi ? "Wi-Fi: desconectado" : "Sem conexão de rede",
+        NetworkKind.Wifi => Strings.NetworkWifi(NetworkName ?? Strings.NetworkConnected, Signal),
+        NetworkKind.Ethernet => Strings.NetworkWired,
+        _ => HasWifi ? Strings.NetworkWifiDisconnected : Strings.NetworkNone,
     };
 
     public void Refresh()

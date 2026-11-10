@@ -70,6 +70,23 @@ O shader do vidro (`Effects/Shaders/LiquidGlass.fx`) só é recompilado quando o
   dock parada. Veja "Consumo em segundo plano" no README.
 - Chamadas Win32 ficam em `Interop/`; a lógica de cada recurso fica num serviço em `Services/`.
 
+### Textos e traduções
+
+Nenhum texto da interface fica escrito direto no código. Cada um tem uma chave em
+`src/LiquidGlass/Resources/`:
+
+1. Adicione a chave em `Strings.resx` (português) e em `Strings.en.resx` (inglês).
+2. Adicione uma linha com o mesmo nome em `Strings.cs`: uma propriedade
+   (`public static string Abrir => Get();`) ou, com valores, um método
+   (`public static string Bateria(int percent) => Format([percent]);`).
+3. Use `Strings.Chave` no C# ou `{x:Static res:Strings.Chave}` no XAML.
+
+Os testes falham se uma chave faltar num dos idiomas ou se os marcadores `{0}` não baterem.
+
+Quer traduzir a dock para outro idioma? Abra uma issue antes. Além de um `Strings.<idioma>.resx`
+(por exemplo, `Strings.es.resx`), o idioma precisa entrar em `AppLanguage`, em `Strings.Resolve` e
+na lista de Personalizar → Comportamento → Idioma.
+
 ### Testes
 
 Os testes ficam em `tests/LiquidGlass.Tests` e usam xUnit. Lógica que não depende de janela

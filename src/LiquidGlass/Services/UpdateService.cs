@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using LiquidGlass.Resources;
 
 namespace LiquidGlass.Services;
 
@@ -86,7 +87,7 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
 
         var previous = State;
         State = UpdateState.Checking;
-        Message = "Procurando atualizações…";
+        Message = Strings.MenuCheckingForUpdates;
         try
         {
             using var client = CreateClient();
@@ -99,20 +100,20 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
             {
                 Available = release;
                 State = UpdateState.Available;
-                Message = string.Create(CultureInfo.CurrentCulture, $"A versão {release.Version} está disponível.");
+                Message = Strings.UpdateAvailable(release.Version);
             }
             else
             {
                 Available = null;
                 State = userInitiated ? UpdateState.UpToDate : UpdateState.Idle;
-                Message = string.Create(CultureInfo.CurrentCulture, $"Você já tem a versão mais recente ({CurrentVersion}).");
+                Message = Strings.UpdateUpToDate(CurrentVersion);
             }
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException or IOException)
         {
             if (userInitiated)
             {
-                Fail("Não foi possível procurar atualizações. Verifique a conexão e tente de novo.");
+                Fail(Strings.UpdateCheckFailed);
             }
             else
             {
@@ -132,12 +133,12 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
         _work = new CancellationTokenSource();
         State = UpdateState.Downloading;
         Progress = 0;
-        Message = string.Create(CultureInfo.CurrentCulture, $"Baixando a versão {release.Version}…");
+        Message = Strings.UpdateDownloading(release.Version);
         try
         {
             var path = await DownloadAsync(release, _work.Token);
             State = UpdateState.Installing;
-            Message = "Instalando… a dock volta sozinha em alguns segundos.";
+            Message = Strings.UpdateInstalling;
 
             // O instalador pede à dock que encerre antes de copiar os arquivos e a abre de novo no fim.
             Process.Start(new ProcessStartInfo(path, InstallerArguments) { UseShellExecute = true });
@@ -145,13 +146,13 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
         catch (OperationCanceledException)
         {
             State = UpdateState.Available;
-            Message = string.Create(CultureInfo.CurrentCulture, $"A versão {release.Version} está disponível.");
+            Message = Strings.UpdateAvailable(release.Version);
         }
         catch (Exception exception) when (exception is HttpRequestException or IOException or InvalidDataException or System.ComponentModel.Win32Exception)
         {
             Fail(exception is InvalidDataException
-                ? "O arquivo baixado não confere com o publicado. A atualização foi cancelada."
-                : "Não foi possível baixar ou iniciar a atualização. Tente de novo mais tarde.");
+                ? Strings.UpdateHashMismatch
+                : Strings.UpdateDownloadFailed);
         }
         finally
         {

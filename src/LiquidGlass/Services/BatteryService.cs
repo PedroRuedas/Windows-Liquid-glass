@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows.Interop;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LiquidGlass.Interop;
+using LiquidGlass.Resources;
 
 namespace LiquidGlass.Services;
 
@@ -65,17 +66,17 @@ public sealed partial class BatteryService : ObservableObject, IDisposable
     {
         var state = this switch
         {
-            { IsCharging: true } => "carregando",
-            { IsPluggedIn: true, Percent: >= 99 } => "carregada",
-            { IsPluggedIn: true } => "na tomada",
+            { IsCharging: true } => Strings.BatteryCharging,
+            { IsPluggedIn: true, Percent: >= 99 } => Strings.BatteryCharged,
+            { IsPluggedIn: true } => Strings.BatteryPluggedIn,
             { Remaining: { } left } => FormatRemaining(left),
             _ => null,
         };
 
-        var text = string.Create(CultureInfo.CurrentCulture, $"Bateria: {Percent}%");
+        var text = Strings.BatteryPercent(Percent);
         if (IsSaverOn)
         {
-            text += " · economia de energia";
+            text += " · " + Strings.BatterySaver;
         }
 
         return state is null ? text : $"{text} · {state}";
@@ -131,8 +132,8 @@ public sealed partial class BatteryService : ObservableObject, IDisposable
     private static string FormatRemaining(TimeSpan left)
     {
         return left.TotalHours >= 1
-            ? string.Create(CultureInfo.CurrentCulture, $"{(int)left.TotalHours} h {left.Minutes:00} min restantes")
-            : string.Create(CultureInfo.CurrentCulture, $"{Math.Max(left.Minutes, 1)} min restantes");
+            ? Strings.BatteryHoursLeft((int)left.TotalHours, left.Minutes)
+            : Strings.BatteryMinutesLeft(Math.Max(left.Minutes, 1));
     }
 
     private nint WndProc(nint hwnd, int message, nint wParam, nint lParam, ref bool handled)

@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiquidGlass.Graphics;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 
 namespace LiquidGlass.ViewModels;
@@ -52,8 +53,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         _network = network;
         _animator = animator;
 
-        _startItem = new DockItemViewModel(this, DockItemKind.StartButton) { Name = "Iniciar", Icon = dockIcons.Start };
-        _workspacesItem = new DockItemViewModel(this, DockItemKind.WorkspacesButton) { Name = "Áreas de trabalho", Icon = dockIcons.Workspaces };
+        _startItem = new DockItemViewModel(this, DockItemKind.StartButton) { Name = Strings.StartTitle, Icon = dockIcons.Start };
+        _workspacesItem = new DockItemViewModel(this, DockItemKind.WorkspacesButton) { Name = Strings.Desktops, Icon = dockIcons.Workspaces };
         _batteryItem = new DockItemViewModel(this, DockItemKind.Battery);
         _networkItem = new DockItemViewModel(this, DockItemKind.Network);
         UpdateBatteryItem();
@@ -61,11 +62,11 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         _separatorItem = new DockItemViewModel(this, DockItemKind.Separator);
         _recycleBinItem = new DockItemViewModel(this, DockItemKind.RecycleBin)
         {
-            Name = "Lixeira",
+            Name = Strings.RecycleBin,
             Icon = icons.GetIcon(AppLauncher.RecycleBin),
         };
 
-        _trayItem = new DockItemViewModel(this, DockItemKind.TrayButton) { Name = "Apps em segundo plano", Icon = dockIcons.Tray };
+        _trayItem = new DockItemViewModel(this, DockItemKind.TrayButton) { Name = Strings.BackgroundApps, Icon = dockIcons.Tray };
 
         Settings.PropertyChanged += OnSettingsChanged;
         _battery.PropertyChanged += OnBatteryChanged;

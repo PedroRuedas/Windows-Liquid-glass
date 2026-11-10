@@ -103,6 +103,10 @@ administrador para instalar.
 - Minimizar é a "lâmpada mágica": a janela escorre em funil para dentro do ícone dela na dock (e se
   desenrola de lá ao restaurar pela dock). Fechar encolhe a janela enquanto ela some.
 
+**Idiomas**
+- Interface em português do Brasil e em inglês. A dock segue o idioma do Windows, e dá para
+  escolher em Personalizar → Comportamento → Idioma.
+
 **Personalização**
 
 ![Personalização](docs/settings.png)

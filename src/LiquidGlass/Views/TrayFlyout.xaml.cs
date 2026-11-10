@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 using ManagedShell.WindowsTray;
 using NativeRect = ManagedShell.Interop.NativeMethods.Rect;
@@ -21,7 +22,6 @@ namespace LiquidGlass.Views;
 /// </summary>
 public partial class TrayFlyout : Popup
 {
-    private const string Hint = "Clique para abrir · botão direito para mais opções";
 
     /// <summary>
     /// Enquanto o painel está aberto, um timer leve acompanha o cursor: ele fecha quando o mouse
@@ -66,7 +66,7 @@ public partial class TrayFlyout : Popup
         _edge = edge;
         PlacementTarget = anchor;
         SetIcons(icons);
-        Caption.Text = Hint;
+        Caption.Text = Strings.TrayHint;
 
         // O vidro precisa do que está atrás do painel antes de ele aparecer na tela.
         ScreenBackdrop.Shared.CaptureBeside(anchor, edge);
@@ -85,7 +85,7 @@ public partial class TrayFlyout : Popup
     private static string SingleLine(string? title)
     {
         var lines = (title ?? string.Empty).Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return lines.Length == 0 ? Hint : string.Join(" · ", lines);
+        return lines.Length == 0 ? Strings.TrayHint : string.Join(" · ", lines);
     }
 
     /// <summary>Fecha encolhendo o painel de volta para a dock.</summary>
@@ -143,8 +143,8 @@ public partial class TrayFlyout : Popup
         CountText.Text = count switch
         {
             0 => string.Empty,
-            1 => "1 app",
-            _ => string.Create(CultureInfo.CurrentCulture, $"{count} apps"),
+            1 => Strings.TrayOneApp,
+            _ => Strings.TrayAppCount(count),
         };
     }
 
@@ -166,7 +166,7 @@ public partial class TrayFlyout : Popup
 
     private void OnIconMouseLeave(object sender, MouseEventArgs e)
     {
-        Caption.Text = Hint;
+        Caption.Text = Strings.TrayHint;
         IconOf(sender)?.IconMouseLeave(CursorParameter());
     }
 

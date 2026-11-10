@@ -7,6 +7,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 using Microsoft.Win32;
 
@@ -27,19 +28,23 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _icons = icons;
         Updates = updates;
         Settings.PinnedApps.CollectionChanged += OnPinnedAppsChanged;
+        Settings.PropertyChanged += OnSettingsChanged;
         Updates.PropertyChanged += OnUpdatesChanged;
         RefreshPins();
     }
+
+    /// <summary>Pedido para fechar a dock e abri-la de novo (o idioma só vale ao abrir).</summary>
+    public event EventHandler? RestartRequested;
 
     public DockSettings Settings { get; }
 
     public UpdateService Updates { get; }
 
     /// <summary>Com uma versão nova encontrada, o botão instala; senão, procura.</summary>
-    public string UpdateActionText => Updates.Available is not null ? "Atualizar agora" : "Procurar atualizações";
+    public string UpdateActionText => Updates.Available is not null ? Strings.UpdateNow : Strings.CheckForUpdates;
 
     public string UpdateStatus => Updates.State == UpdateState.Idle
-        ? string.Create(CultureInfo.CurrentCulture, $"Versão atual: {Version}.")
+        ? Strings.CurrentVersion(Version)
         : Updates.Message;
 
     public bool IsDownloading => Updates.State == UpdateState.Downloading;
@@ -62,10 +67,38 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string Version { get; } =
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 
+    public string VersionText => Strings.SettingsVersion(Version);
+
+    /// <summary>Português e English aparecem sempre no próprio idioma, para quem precisa trocar achar.</summary>
+    public IReadOnlyList<LanguageOption> Languages { get; } =
+    [
+        new(AppLanguage.Automatic, Strings.LanguageAutomatic),
+        new(AppLanguage.Portuguese, Strings.LanguagePortuguese),
+        new(AppLanguage.English, Strings.LanguageEnglish),
+    ];
+
+    /// <summary>O idioma escolhido não é o que está na tela: só vale depois de reiniciar a dock.</summary>
+    public bool LanguageNeedsRestart => !Strings.IsInUse(Settings.Language);
+
+    public string LanguageDescription => LanguageNeedsRestart ? Strings.LanguageRestartHint : Strings.LanguageDescription;
+
     public void Dispose()
     {
         Settings.PinnedApps.CollectionChanged -= OnPinnedAppsChanged;
+        Settings.PropertyChanged -= OnSettingsChanged;
         Updates.PropertyChanged -= OnUpdatesChanged;
+    }
+
+    [RelayCommand]
+    private void Restart() => RestartRequested?.Invoke(this, EventArgs.Empty);
+
+    private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DockSettings.Language))
+        {
+            OnPropertyChanged(nameof(LanguageNeedsRestart));
+            OnPropertyChanged(nameof(LanguageDescription));
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunUpdateAction))]
@@ -95,8 +128,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Escolha um aplicativo ou atalho",
-            Filter = "Aplicativos e atalhos (*.exe;*.lnk)|*.exe;*.lnk|Todos os arquivos (*.*)|*.*",
+            Title = Strings.ChooseAppTitle,
+            Filter = Strings.ChooseAppFilter,
             Multiselect = true,
         };
 
@@ -180,3 +213,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
 /// <summary>App fixado com o ícone já carregado, para a lista da janela de personalização.</summary>
 public sealed record PinnedAppItem(PinnedApp Pin, ImageSource? Icon);
+
+/// <summary>Uma opção da lista de idiomas.</summary>
+public sealed record LanguageOption(AppLanguage Value, string Name);
