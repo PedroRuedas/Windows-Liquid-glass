@@ -1,0 +1,98 @@
+name: Release
+
+# Publica uma versão a partir de uma tag "vX.Y.Z": gera o instalador nas máquinas do GitHub,
+# calcula o SHA-256 e cria a release com as notas do CHANGELOG. Veja "Publicar uma versão" no
+# CONTRIBUTING.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  release:
+    name: Instalador e release
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Conferir a versão
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $version = $tag.TrimStart('v')
+          [xml]$project = Get-Content src/LiquidGlass/LiquidGlass.csproj
+          $projectVersion = @($project.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          if ($projectVersion -ne $version) {
+            throw "A tag $tag não bate com a <Version> do LiquidGlass.csproj ($projectVersion)."
+          }
+          if (-not (Select-String -Path CHANGELOG.md -Pattern "^## \[$([regex]::Escape($version))\]" -Quiet)) {
+            throw "O CHANGELOG.md não tem a seção ## [$version]."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Testes
+        run: dotnet test -c Release
+
+      - name: Gerar o instalador
+        run: dotnet publish src/LiquidGlass -p:PublishProfile=Installer
+
+      - name: Notas da release
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $installer = "artifacts/LiquidGlassDock-Setup-$version.exe"
+          if (-not (Test-Path $installer)) { throw "Instalador não encontrado: $installer" }
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+
+          # A seção da versão no CHANGELOG, sem o título, até a próxima seção ou os links do fim.
+          $lines = Get-Content CHANGELOG.md -Encoding utf8
+          $start = [array]::FindIndex($lines, [Predicate[string]] { param($l) $l -match "^## \[$([regex]::Escape($version))\]" })
+          $section = foreach ($line in $lines[($start + 1)..($lines.Count - 1)]) {
+            if ($line -match '^## \[' -or $line -match '^\[[^\]]+\]: ') { break }
+            $line
+          }
+          $changes = ($section -join "`n").Trim()
+
+          $notes = @"
+          ## Instalação
+
+          1. **Pela dock:** clique com o botão direito em qualquer parte da dock e escolha "Atualizar para a versão $version".
+          2. **Ou pelo instalador:** baixe ``LiquidGlassDock-Setup-$version.exe`` abaixo e execute. Ele atualiza versões anteriores (a dock aberta é encerrada antes).
+          3. O instalador não tem assinatura digital, então o Windows deve mostrar "O Windows protegeu o computador". Clique em **Mais informações → Executar assim mesmo**.
+
+          *English: download ``LiquidGlassDock-Setup-$version.exe`` below and run it. If Windows SmartScreen appears, click **More info → Run anyway**.*
+
+          $changes
+
+          ## Requisitos
+
+          Windows 11, 64 bits.
+
+          **SHA-256** do instalador: ``$hash``
+          "@
+          Set-Content -Path release-notes.md -Value $notes -Encoding utf8
+          Get-Content release-notes.md
+
+      - name: Criar a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${{ github.ref_name }}"
+          "artifacts/LiquidGlassDock-Setup-${{ steps.version.outputs.version }}.exe"
+          --title "Liquid Glass Dock ${{ steps.version.outputs.version }}"
+          --notes-file release-notes.md
+          --verify-tag

@@ -76,6 +76,26 @@ Os testes ficam em `tests/LiquidGlass.Tests` e usam xUnit. Lógica que não depe
 (layout, cálculos, leitura de arquivos) deve ganhar teste. Os testes não podem mexer no mouse nem
 no teclado de verdade.
 
+## Publicar uma versão
+
+Para mantenedores. A release é gerada pelo GitHub a partir de uma tag, pelo
+[workflow de release](.github/workflows/release.yml):
+
+1. Troque a `<Version>` em `src/LiquidGlass/LiquidGlass.csproj` (por exemplo, `0.9.0`).
+2. No `CHANGELOG.md`, renomeie a seção "Não lançado" para `## [0.9.0] - AAAA-MM-DD`, crie uma
+   "Não lançado" vazia em cima e ajuste os links do fim do arquivo.
+3. Faça o commit e crie a tag:
+
+   ```powershell
+   git commit -am "Versão 0.9.0"
+   git tag v0.9.0
+   git push origin main v0.9.0
+   ```
+
+O workflow confere que a tag bate com a `<Version>` e com o CHANGELOG, roda os testes, gera o
+instalador, calcula o SHA-256 e publica a release com as notas da versão. A partir daí, a dock de
+quem já usa oferece a atualização sozinha.
+
 ## Licença das contribuições
 
 O projeto é distribuído sob a [GPL-3.0](LICENSE). Ao enviar um pull request, você concorda que a
