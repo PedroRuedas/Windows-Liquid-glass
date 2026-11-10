@@ -96,3 +96,21 @@ jobs:
           --title "Liquid Glass Dock ${{ steps.version.outputs.version }}"
           --notes-file release-notes.md
           --verify-tag
+
+  winget:
+    name: Enviar ao winget
+    needs: release
+    runs-on: windows-latest
+    # Só com o segredo WINGET_TOKEN (token clássico com "public_repo" de quem tem um fork do
+    # microsoft/winget-pkgs). Sem ele, a release sai normalmente e este passo é pulado.
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    steps:
+      - name: Abrir o pull request da versão nova no winget-pkgs
+        if: env.WINGET_TOKEN != ''
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: PedroRuedas.LiquidGlassDock
+          installers-regex: 'LiquidGlassDock-Setup-.*\.exe$'
+          release-tag: ${{ github.ref_name }}
+          token: ${{ secrets.WINGET_TOKEN }}
