@@ -401,6 +401,13 @@
                     <controls:SettingCard Glyph="&#xE823;" Header="{x:Static res:Strings.CheckForUpdatesAutomatically}" Description="{x:Static res:Strings.CheckForUpdatesAutomaticallyDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.CheckForUpdates}" />
                     </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE9D9;" Header="{x:Static res:Strings.Diagnostics}" Description="{Binding DiagnosticsDescription}">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Margin="0,0,12,0" Command="{Binding ReportProblemCommand}" Content="{x:Static res:Strings.ReportProblem}" />
+                            <Button Command="{Binding CopyDiagnosticsCommand}" Content="{x:Static res:Strings.Copy}" />
+                        </StackPanel>
+                    </controls:SettingCard>
                 </StackPanel>
             </ScrollViewer>
 

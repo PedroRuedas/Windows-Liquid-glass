@@ -7,6 +7,16 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+### Adicionado
+- **Todos os apps** no menu Iniciar de vidro: a lista de apps instalados em ordem alfabética,
+  agrupada pela inicial, com "Fixar no Iniciar" no botão direito.
+- Arrastar um app aberto para o meio dos fixados o fixa ali mesmo.
+- A ordem dos apps abertos não fixados, quando arrastada, fica salva e volta depois de reiniciar a
+  dock (um app fechado volta para o mesmo lugar ao abrir de novo).
+- **Informações de diagnóstico** em Personalizar → Comportamento: "Copiar" põe na área de
+  transferência a versão, o Windows, os monitores, as preferências principais e os últimos erros,
+  com a pasta do usuário escondida. "Relatar um problema" copia e abre o formulário de bug.
+
 ## [0.9.0] - 2026-11-10
 
 ### Adicionado

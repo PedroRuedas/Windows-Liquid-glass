@@ -3,6 +3,13 @@ namespace LiquidGlass.Tests;
 /// <summary>Roda o teste numa thread STA, como a interface da dock, que é de onde o shell é usado.</summary>
 internal static class Sta
 {
+    public static T RunAndReturn<T>(Func<T> work)
+    {
+        T result = default!;
+        Run(() => result = work());
+        return result;
+    }
+
     public static void Run(Action action)
     {
         Exception? failure = null;

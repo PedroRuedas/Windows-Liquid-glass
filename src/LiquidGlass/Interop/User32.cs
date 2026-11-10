@@ -38,6 +38,7 @@ internal static class User32
 
     public const uint SmtoAbortIfHung = 0x0002;
     public const uint MonitorDefaultToPrimary = 1;
+    public const uint MonitorDefaultToNearest = 2;
 
     public const byte VkLeftWin = 0x5B;
     public const uint KeyEventKeyUp = 0x0002;
@@ -293,6 +294,9 @@ internal static class User32
 
     [DllImport("user32.dll")]
     public static extern nint MonitorFromWindow(nint hwnd, uint flags);
+
+    [DllImport("user32.dll")]
+    public static extern nint MonitorFromPoint(Point point, uint flags);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

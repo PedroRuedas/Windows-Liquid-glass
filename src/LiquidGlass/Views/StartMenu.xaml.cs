@@ -9,6 +9,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using LiquidGlass.Controls;
+using LiquidGlass.Converters;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
 using LiquidGlass.Resources;
@@ -45,6 +46,8 @@ public partial class StartMenu : Window, IDisposable
     private readonly ObservableCollection<StartEntry> _pins = [];
     private readonly ObservableCollection<StartEntry> _recent = [];
     private readonly ObservableCollection<StartEntry> _results = [];
+    private readonly ObservableCollection<StartEntry> _allApps = [];
+    private List<StartEntry>? _allAppsSource;
     private readonly DispatcherTimer _searchDelay = new() { Interval = TimeSpan.FromMilliseconds(120) };
 
     private List<StartEntry> _apps = [];
@@ -71,6 +74,9 @@ public partial class StartMenu : Window, IDisposable
         var results = new ListCollectionView(_results);
         results.GroupDescriptions.Add(new PropertyGroupDescription(nameof(StartEntry.Group)));
         Results.ItemsSource = results;
+        var allApps = new ListCollectionView(_allApps);
+        allApps.GroupDescriptions.Add(new PropertyGroupDescription(nameof(StartEntry.Name), new InitialConverter()));
+        AllAppsList.ItemsSource = allApps;
 
         _searchDelay.Tick += (_, _) =>
         {
@@ -348,6 +354,57 @@ public partial class StartMenu : Window, IDisposable
         _results.Clear();
         HomePanel.Visibility = Visibility.Visible;
         ResultsPanel.Visibility = Visibility.Collapsed;
+        AllAppsPanel.Visibility = Visibility.Collapsed;
+    }
+
+    private async void OnAllAppsClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        await ShowAllAppsAsync();
+    }
+
+    private void OnAllAppsBackClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        ShowHome();
+        TakeFocus();
+    }
+
+    /// <summary>A lista de todos os apps, a mesma que a pesquisa usa (carregada em segundo plano ao abrir o menu).</summary>
+    private async Task ShowAllAppsAsync()
+    {
+        if (_apps.Count == 0 && _appsLoading is { } loading)
+        {
+            await loading.ContinueWith(_ => { }, TaskScheduler.Default);
+        }
+
+        var apps = _apps.Count == 0 && _appsLoading is { IsCompletedSuccessfully: true } loaded ? loaded.Result : _apps;
+        if (!ReferenceEquals(apps, _allAppsSource))
+        {
+            _allAppsSource = apps;
+            _allApps.Clear();
+            foreach (var app in apps)
+            {
+                _allApps.Add(app);
+            }
+        }
+
+        HomePanel.Visibility = Visibility.Collapsed;
+        ResultsPanel.Visibility = Visibility.Collapsed;
+        AllAppsPanel.Visibility = Visibility.Visible;
+        if (_allApps.Count > 0)
+        {
+            AllAppsList.ScrollIntoView(_allApps[0]);
+        }
+    }
+
+    /// <summary>Com 200+ apps, só as linhas que aparecem pedem o ícone.</summary>
+    private void OnAllAppsItemLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: StartEntry entry } && entry.Icon is null)
+        {
+            WithIcon(entry);
+        }
     }
 
     /// <summary>
@@ -374,6 +431,7 @@ public partial class StartMenu : Window, IDisposable
         }
 
         HomePanel.Visibility = Visibility.Collapsed;
+        AllAppsPanel.Visibility = Visibility.Collapsed;
         ResultsPanel.Visibility = Visibility.Visible;
         Results.SelectedIndex = _results.Count > 0 ? 0 : -1;
         UpdateNoResults(query, searching: true);
@@ -436,6 +494,10 @@ public partial class StartMenu : Window, IDisposable
         {
             case Key.Escape when SearchBox.Text.Length > 0:
                 SearchBox.Text = string.Empty;
+                e.Handled = true;
+                break;
+            case Key.Escape when AllAppsPanel.IsVisible:
+                ShowHome();
                 e.Handled = true;
                 break;
             case Key.Escape:

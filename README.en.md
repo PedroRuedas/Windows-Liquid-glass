@@ -62,10 +62,11 @@ live customization window. Free, open source, and no administrator rights needed
 - **Window thumbnails:** hover a running app to see a live thumbnail of each of its windows. Click
   one to bring it forward; the X or middle click closes it. With many windows, thumbnails wrap and
   shrink until they all fit on screen.
-- Drag shortcuts or programs onto the dock to pin them, and drag icons to reorder them.
+- Drag shortcuts or programs onto the dock to pin them, and drag icons to reorder them. Both
+  orders are remembered across restarts, and dragging an open app among the pinned ones pins it.
 - **Glass Start menu:** the Start button and the Windows key open a dock menu with search (apps,
   Settings pages and indexed files), pinned apps (imported from the Windows Start menu the first
-  time) and recent files. The footer shows your account name and a power button: lock, sign out,
+  time), recent files and an alphabetical **All apps** list. The footer shows your account name and a power button: lock, sign out,
   sleep, hibernate (when enabled in Windows), shut down and restart. You can switch back to the
   Windows Start menu in the settings.
 - **Background apps:** a button opens a panel with the system tray icons; left and right clicks
