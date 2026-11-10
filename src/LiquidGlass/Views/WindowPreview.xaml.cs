@@ -38,6 +38,9 @@ public partial class WindowPreview : Popup
     /// <summary>Altura da linha "Mais N janelas", reservada para longe da dock.</summary>
     private const double MoreWindowsHeight = 24;
 
+    /// <summary>Altura do cartão de mídia, descontada do espaço das miniaturas quando ele aparece.</summary>
+    private const double MediaCardHeight = 80;
+
     /// <summary>Arredondamento de pixels do WrapPanel, para ele nunca quebrar a linha antes da conta.</summary>
     private const double WrapSlack = 12;
 
@@ -98,7 +101,8 @@ public partial class WindowPreview : Popup
         _edge = edge;
         _probe = probe;
         _item.PropertyChanged += OnItemPropertyChanged;
-        _available = AvailableArea(anchor, edge);
+        ShowMedia(item);
+        _available = AvailableArea(anchor, edge, MediaCard.Visibility == Visibility.Visible ? MediaCardHeight : 0);
         Cards.ItemsPanel = (ItemsPanelTemplate)FindResource(edge == DockEdge.Bottom ? "HorizontalCards" : "VerticalCards");
         Cards.MaxWidth = edge == DockEdge.Bottom ? _available.Width : double.PositiveInfinity;
         Cards.MaxHeight = edge == DockEdge.Bottom ? double.PositiveInfinity : _available.Height;
@@ -148,9 +152,9 @@ public partial class WindowPreview : Popup
     /// Espaço para os cartões, em DIPs: a área de trabalho inteira ao longo da dock e, para longe
     /// dela, do ícone até a borda oposta.
     /// </summary>
-    private static Size AvailableArea(FrameworkElement anchor, DockEdge edge)
+    private static Size AvailableArea(FrameworkElement anchor, DockEdge edge, double reserved)
     {
-        var work = User32.GetPrimaryMonitorInfo().WorkArea;
+        var work = User32.GetMonitorInfoFor(anchor).WorkArea;
         var icon = new Rect(anchor.PointToScreen(new Point(0, 0)), anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight)));
         (double Along, double Across) reach = edge switch
         {
@@ -161,7 +165,7 @@ public partial class WindowPreview : Popup
 
         var scale = VisualTreeHelper.GetDpi(anchor).DpiScaleX;
         var along = Math.Max((reach.Along / scale) - PanelChrome, 0);
-        var across = Math.Max((reach.Across / scale) - PanelChrome - MoreWindowsHeight, 0);
+        var across = Math.Max((reach.Across / scale) - PanelChrome - MoreWindowsHeight - reserved, 0);
         return edge == DockEdge.Bottom ? new Size(along, across) : new Size(across, along);
     }
 
@@ -180,6 +184,48 @@ public partial class WindowPreview : Popup
             Right = (int)Math.Round(left + width),
             Bottom = (int)Math.Round(top + height),
         };
+    }
+
+    /// <summary>O cartão de mídia, se o app estiver tocando algo (a lista é atualizada quando o mouse para no ícone).</summary>
+    private void ShowMedia(DockItemViewModel item)
+    {
+        var info = _dock.Media?.Find(
+            item.Windows.Select(window => window.AppUserModelId).Append(item.Pin?.AppUserModelId),
+            item.Windows.Select(window => window.ExecutablePath).Append(item.Pin?.ExecutablePath));
+        MediaCard.DataContext = info;
+        MediaCard.Visibility = info is null ? Visibility.Collapsed : Visibility.Visible;
+        UpdatePlayPause();
+    }
+
+    /// <summary>Glifo de pausar enquanto toca e de tocar quando está parado.</summary>
+    private void UpdatePlayPause() =>
+        PlayPause.Content = MediaCard.DataContext is MediaInfo { IsPlaying: true } ? "\uE769" : "\uE768";
+
+    private async void OnMediaPlayPause(object sender, RoutedEventArgs e)
+    {
+        if (MediaCard.DataContext is MediaInfo info && _dock.Media is { } media)
+        {
+            await media.TogglePlayPauseAsync(info);
+            UpdatePlayPause();
+        }
+    }
+
+    private async void OnMediaNext(object sender, RoutedEventArgs e)
+    {
+        if (MediaCard.DataContext is MediaInfo info && _dock.Media is { } media)
+        {
+            await media.NextAsync(info);
+            UpdatePlayPause();
+        }
+    }
+
+    private async void OnMediaPrevious(object sender, RoutedEventArgs e)
+    {
+        if (MediaCard.DataContext is MediaInfo info && _dock.Media is { } media)
+        {
+            await media.PreviousAsync(info);
+            UpdatePlayPause();
+        }
     }
 
     private Size MeasurePanel()

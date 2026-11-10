@@ -13,12 +13,14 @@ internal sealed class AppBarManager : IDisposable
     private static readonly HashSet<string> DesktopClasses = ["Progman", "WorkerW"];
 
     private readonly HwndSource _source;
+    private readonly Func<User32.MonitorInfo> _monitor;
     private readonly int _callbackMessage;
     private bool _isRegistered;
 
-    public AppBarManager(HwndSource source)
+    public AppBarManager(HwndSource source, Func<User32.MonitorInfo> monitor)
     {
         _source = source;
+        _monitor = monitor;
         _callbackMessage = User32.RegisterWindowMessage("LiquidGlass.AppBar");
 
         var data = Shell32.CreateAppBarData(source.Handle);
@@ -42,13 +44,13 @@ internal sealed class AppBarManager : IDisposable
         thickness = Math.Max(thickness, 0);
         if (!_isRegistered)
         {
-            Bounds = User32.GetPrimaryMonitorInfo().Monitor;
+            Bounds = _monitor().Monitor;
             return;
         }
 
         var data = Shell32.CreateAppBarData(_source.Handle);
         data.Edge = ToNativeEdge(edge);
-        data.Rect = User32.GetPrimaryMonitorInfo().Monitor;
+        data.Rect = _monitor().Monitor;
         Shell32.SHAppBarMessage(Shell32.AbmQueryPos, ref data);
 
         // QUERYPOS devolve o retângulo já descontando outras barras; recorta só a nossa espessura.

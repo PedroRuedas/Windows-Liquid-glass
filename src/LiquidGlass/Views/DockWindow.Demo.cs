@@ -129,6 +129,14 @@ public partial class DockWindow
 
     internal StartMenu DemoStartMenu => _startMenu;
 
+    internal void SaveDemoStack(string name)
+    {
+        Graphics.DemoCapture.Save(name, _stackFlyout.Child as FrameworkElement);
+        _stackFlyout.IsDemo = false;
+    }
+
+    internal void HoldDemoStack() => _stackFlyout.IsDemo = true;
+
     /// <summary>
     /// Demonstração (Debug): leva o "mouse" da ampliação a uma fração do comprimento dos ícones
     /// (0 = início, 1 = fim) pelo mesmo caminho do movimento real, sem mexer no mouse; null solta.

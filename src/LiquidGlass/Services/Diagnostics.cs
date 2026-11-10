@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -27,6 +28,13 @@ public static class Diagnostics
         text.AppendLine(CultureInfo.InvariantCulture, $"- Windows: {WindowsVersion()}");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Idioma: {Strings.Culture.Name} (Windows: {CultureInfo.InstalledUICulture.Name})");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Processo: {RuntimeInformation.ProcessArchitecture}, {RuntimeInformation.FrameworkDescription}");
+        text.AppendLine();
+        text.AppendLine("### Desempenho");
+        foreach (var line in Performance(Process.GetCurrentProcess(), DateTime.Now))
+        {
+            text.AppendLine(line);
+        }
+
         text.AppendLine();
         text.AppendLine("### Monitores");
         foreach (var screen in System.Windows.Forms.Screen.AllScreens)
@@ -81,6 +89,29 @@ public static class Diagnostics
         var version = string.IsNullOrEmpty(displayVersion) ? string.Empty : " " + displayVersion;
         return string.Create(CultureInfo.InvariantCulture, $"{name}{version} (build {build}.{revision})");
     }
+
+    /// <summary>
+    /// Memória, processador e recursos do processo da dock. A média de CPU é sobre o tempo em que a
+    /// dock está aberta: parada, ela deve ficar perto de 0%.
+    /// </summary>
+    public static IEnumerable<string> Performance(Process process, DateTime now)
+    {
+        process.Refresh();
+        var uptime = now - process.StartTime;
+        var cpu = process.TotalProcessorTime;
+        var average = uptime.TotalSeconds > 0 ? cpu.TotalSeconds / uptime.TotalSeconds / Environment.ProcessorCount * 100 : 0;
+        yield return string.Create(CultureInfo.InvariantCulture, $"- Aberta há: {FormatDuration(uptime)}");
+        yield return string.Create(CultureInfo.InvariantCulture,
+            $"- Memória privada: {process.PrivateMemorySize64 / 1048576.0:0.0} MB, em uso (working set): {process.WorkingSet64 / 1048576.0:0.0} MB, gerenciada: {GC.GetTotalMemory(false) / 1048576.0:0.0} MB");
+        yield return string.Create(CultureInfo.InvariantCulture,
+            $"- Processador: {cpu.TotalSeconds:0.0} s no total, média de {average:0.00}% desde que abriu");
+        yield return string.Create(CultureInfo.InvariantCulture,
+            $"- Threads: {process.Threads.Count}, handles: {process.HandleCount}, objetos GDI: {User32.GetGuiResources(process.Handle, User32.GrGdiObjects)}, USER: {User32.GetGuiResources(process.Handle, User32.GrUserObjects)}");
+    }
+
+    public static string FormatDuration(TimeSpan span) => span.TotalHours >= 1
+        ? string.Create(CultureInfo.InvariantCulture, $"{(int)span.TotalHours} h {span.Minutes:00} min")
+        : string.Create(CultureInfo.InvariantCulture, $"{Math.Max(span.Minutes, 0)} min {Math.Max(span.Seconds, 0):00} s");
 
     private static string AppVersion()
     {

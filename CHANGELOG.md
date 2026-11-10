@@ -7,6 +7,29 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+### Adicionado
+- **Selos e progresso nos ícones:** as mensagens não lidas que os apps mostram na barra do
+  Windows (Discord, Telegram, Teams…) e as barras de download aparecem no ícone da dock, com a
+  barra do Windows oculta. Opção em Personalizar → Comportamento.
+- **Controles de música nas miniaturas:** capa, título, artista e os botões de voltar,
+  tocar/pausar e avançar do que o app está tocando.
+- **Pilhas:** uma pasta fixada abre em grade com os arquivos mais recentes; o botão direito num
+  item mostra-o no Explorador. "Adicionar pasta…" em Apps fixados.
+- **Win+1…9** abrem os apps da dock pela posição; com Shift, uma janela nova.
+- **Trocar ícone…** no botão direito de um app, e "Restaurar ícone original".
+- **Dock em todos os monitores**, cada uma com o papel de parede do seu monitor no vidro. O
+  menu Iniciar, as miniaturas e a lâmpada mágica usam a dock do monitor certo.
+- **Cor do vidro** pode seguir o modo claro/escuro ou a cor de destaque do Windows.
+- O diagnóstico ganhou a seção **Desempenho**: memória, processador, threads e objetos do sistema.
+
+### Alterado
+- O projeto passa a usar o SDK do Windows (para os controles de música); o instalador cresceu
+  cerca de 4 MB.
+
+*English: badges and download progress on dock icons, media controls in thumbnails, folder
+stacks, Win+1…9 shortcuts, custom icons, a dock on every monitor, glass that follows the Windows
+theme or accent color, and performance numbers in the diagnostic report.*
+
 ## [0.10.0] - 2026-11-10
 
 ### Adicionado

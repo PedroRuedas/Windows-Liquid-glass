@@ -31,6 +31,7 @@ public partial class App : Application
     private readonly NetworkService _network = new();
     private readonly VirtualDesktopService _desktops = new();
     private readonly UpdateService _updates = new();
+    private readonly TaskbarListService _taskbarList = new();
 
     /// <summary>Quanto o "--quit" espera a dock em execução devolver a barra de tarefas e encerrar.</summary>
     private static readonly TimeSpan QuitTimeout = TimeSpan.FromSeconds(10);
@@ -46,6 +47,10 @@ public partial class App : Application
     private WorkspaceOverview? _overview;
     private DockViewModel? _dockViewModel;
     private DockWindow? _dockWindow;
+
+    /// <summary>As docks dos outros monitores, com "Dock em todos os monitores" ligado.</summary>
+    private readonly List<DockWindow> _extraDocks = [];
+    private DispatcherTimer? _displayChangeDelay;
     private SettingsWindow? _settingsWindow;
     private int _taskbarCreatedMessage;
 
@@ -116,6 +121,8 @@ public partial class App : Application
 
         _taskbar = new TaskbarController();
         _taskbar.Apply(Settings.TaskbarMode);
+        TaskbarListService.RecoverAfterCrash();
+        _taskbarList.OpenWindows = () => _tracker?.Windows.Select(window => window.Handle) ?? [];
         Settings.PropertyChanged += OnSettingsChanged;
         _efficiency = new EfficiencyMode();
 
@@ -128,7 +135,7 @@ public partial class App : Application
             (ImageSource)FindResource("StartIcon"),
             (ImageSource)FindResource("TrayIcon"),
             (ImageSource)FindResource("WorkspacesIcon"));
-        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, _battery, _network, _animator, dockIcons) { Updates = _updates };
+        _dockViewModel = new DockViewModel(Settings, _tracker, _icons, _battery, _network, _animator, dockIcons) { Updates = _updates, TaskbarList = _taskbarList, Media = new MediaService() };
         _dockViewModel.SettingsRequested += (_, _) => OpenSettings();
         _dockViewModel.QuitRequested += (_, _) => Shutdown();
         _dockViewModel.UpdatesRequested += (_, _) => ShowUpdates();
@@ -137,28 +144,41 @@ public partial class App : Application
         _dockWindow = new DockWindow(_dockViewModel, _wallpaper, _tray, _efficiency);
         _dockWindow.Closed += (_, _) => Shutdown();
         _dockWindow.Show();
-        _animator.IconLocator = _dockWindow.FindIconBounds;
+        _animator.IconLocator = FindIconBounds;
 
         var source = _dockWindow.NativeSource!;
         _tracker.Attach(source);
         _battery.Attach(source);
 
         _input = new GlobalInputHook();
-        _overview = new WorkspaceOverview(CreateOverviewContext, _input, _efficiency, keep => _dockWindow.KeepVisible = keep);
+        _overview = new WorkspaceOverview(CreateOverviewContext, _input, _efficiency, keep =>
+        {
+            foreach (var dock in AllDocks())
+            {
+                dock.KeepVisible = keep;
+            }
+        });
         _input.OverviewKeyPressed += (_, _) => _overview.Toggle();
 
         // Sem a dock na tela, a tecla Windows abre o menu do próprio Windows.
         _input.StartKeyPressed += (_, _) =>
         {
-            if (!_dockWindow.ToggleStartMenu())
+            if (!DockAtCursor().ToggleStartMenu())
             {
                 AppLauncher.OpenStartMenu();
             }
         };
         _input.SwitchKeyPressed += (_, direction) => _overview.Switch(direction);
+        _input.AppKeyPressed += (_, key) => _dockViewModel.ActivateByNumber(key.Index, key.NewWindow);
         _input.OverviewNavigation += (_, key) => _overview.HandleKey(key);
         _input.CaptionButtonPressed += (_, pressed) => _animator.OnCaptionButtonPressed(pressed.Window, pressed.Button);
-        _input.EscapePressed += (_, _) => _dockWindow.CloseWindowPreview();
+        _input.EscapePressed += (_, _) =>
+        {
+            foreach (var dock in AllDocks())
+            {
+                dock.CloseWindowPreview();
+            }
+        };
         _dockWindow.WindowPreviewOpenChanged += (_, isOpen) => _input.WatchEscape = isOpen;
         _dockViewModel.WorkspacesRequested += (_, _) => _overview.Toggle();
         _dockViewModel.ItemActivating += (_, item) =>
@@ -169,6 +189,10 @@ public partial class App : Application
             }
         };
         ApplyWindowFeatures();
+        UpdateExtraDocks();
+
+        // Depois do rastreador de janelas: ao começar, a dock pede aos apps abertos o selo e o progresso.
+        ApplyTaskbarList();
 #if DEBUG
         StartDemos();
 #endif
@@ -184,6 +208,12 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _settingsWindow?.Close();
+        foreach (var dock in _extraDocks)
+        {
+            dock.Close();
+        }
+
+        _extraDocks.Clear();
         _updates.Dispose();
         _overview?.Dispose();
         _input?.Dispose();
@@ -194,6 +224,7 @@ public partial class App : Application
         _network.Dispose();
         _tracker?.Dispose();
         _tray.Dispose();
+        _taskbarList.Dispose();
         _efficiency?.Dispose();
         _taskbar?.Dispose();
         _settingsService?.Dispose();
@@ -216,6 +247,7 @@ public partial class App : Application
 
         // Construir o controlador recupera um estado salvo; descartá-lo restaura o que sobrou.
         new TaskbarController().Dispose();
+        TaskbarListService.RecoverAfterCrash();
 
         Shutdown();
     }
@@ -246,6 +278,71 @@ public partial class App : Application
 
         Shutdown();
     }
+
+    /// <summary>
+    /// Os selos e o progresso dos apps só vêm para a dock com a barra do Windows oculta: visível, ela
+    /// continua mostrando-os, e tirar isso dela seria pior.
+    /// </summary>
+    private void ApplyTaskbarList() =>
+        _taskbarList.SetEnabled(Settings.ShowBadges && Settings.TaskbarMode == TaskbarMode.Hidden);
+
+    private const int WmDisplayChange = 0x007E;
+
+    private IEnumerable<DockWindow> AllDocks() => _dockWindow is null ? _extraDocks : _extraDocks.Prepend(_dockWindow);
+
+    /// <summary>
+    /// Com "Dock em todos os monitores", uma dock em cada monitor além do principal. Refeitas do zero
+    /// quando a opção ou as telas mudam: monitores aparecem e somem com a mesma facilidade.
+    /// </summary>
+    private void UpdateExtraDocks()
+    {
+        foreach (var dock in _extraDocks)
+        {
+            dock.Close();
+        }
+
+        _extraDocks.Clear();
+        if (!Settings.ShowOnAllMonitors || _dockViewModel is null || _efficiency is null)
+        {
+            return;
+        }
+
+        foreach (var screen in System.Windows.Forms.Screen.AllScreens.Where(screen => !screen.Primary))
+        {
+            var (x, y) = (screen.Bounds.Left + (screen.Bounds.Width / 2), screen.Bounds.Top + (screen.Bounds.Height / 2));
+            User32.MonitorInfo Monitor() => User32.GetMonitorInfoAt(x, y);
+            var dock = new DockWindow(_dockViewModel, new WallpaperService(Monitor, isPrimary: false), _tray, _efficiency, Monitor);
+            dock.WindowPreviewOpenChanged += (_, isOpen) => _input!.WatchEscape = isOpen;
+            _extraDocks.Add(dock);
+            dock.Show();
+        }
+    }
+
+    /// <summary>A lâmpada mágica vai até o ícone da dock que está no monitor da janela.</summary>
+    private Rect? FindIconBounds(nint hwnd)
+    {
+        var monitor = User32.GetMonitorInfoForWindow(hwnd).Monitor;
+        var dock = _extraDocks.FirstOrDefault(candidate => SameRect(candidate.MonitorBounds, monitor)) ?? _dockWindow;
+        return dock?.FindIconBounds(hwnd) ?? _dockWindow?.FindIconBounds(hwnd);
+    }
+
+    /// <summary>A tecla Windows abre o menu Iniciar na dock do monitor em que está o mouse.</summary>
+    private DockWindow DockAtCursor()
+    {
+        if (User32.GetCursorPos(out var cursor))
+        {
+            var monitor = User32.GetMonitorInfoAt(cursor.X, cursor.Y).Monitor;
+            if (_extraDocks.FirstOrDefault(candidate => SameRect(candidate.MonitorBounds, monitor)) is { } dock)
+            {
+                return dock;
+            }
+        }
+
+        return _dockWindow!;
+    }
+
+    private static bool SameRect(User32.Rect a, User32.Rect b) =>
+        a.Left == b.Left && a.Top == b.Top && a.Right == b.Right && a.Bottom == b.Bottom;
 
     private void ImportInitialPins()
     {
@@ -297,9 +394,16 @@ public partial class App : Application
                 break;
             case nameof(DockSettings.TaskbarMode):
                 _taskbar?.Apply(Settings.TaskbarMode);
+                ApplyTaskbarList();
+                break;
+            case nameof(DockSettings.ShowBadges):
+                ApplyTaskbarList();
                 break;
             case nameof(DockSettings.ShowTray):
                 _tray.IsEnabled = Settings.ShowTray;
+                break;
+            case nameof(DockSettings.ShowOnAllMonitors):
+                UpdateExtraDocks();
                 break;
             case nameof(DockSettings.LaunchAtStartup):
                 StartupService.SetEnabled(Settings.LaunchAtStartup);
@@ -308,6 +412,7 @@ public partial class App : Application
             case nameof(DockSettings.AnimateWorkspaceSwitch):
             case nameof(DockSettings.WinTabOpensOverview):
             case nameof(DockSettings.UseGlassStartMenu):
+            case nameof(DockSettings.WinNumberKeys):
                 ApplyWindowFeatures();
                 break;
         }
@@ -325,6 +430,7 @@ public partial class App : Application
         _input.WatchCaptionButtons = Settings.AnimateWindows;
         _input.InterceptWinTab = Settings.WinTabOpensOverview;
         _input.InterceptStartKey = Settings.UseGlassStartMenu;
+        _input.InterceptAppKeys = Settings.WinNumberKeys;
 
         // Sem a troca de áreas desta versão do Windows, Ctrl+Win+setas ficam com o próprio Windows.
         _input.InterceptDesktopSwitch = Settings.AnimateWorkspaceSwitch && _desktops.IsAvailable;
@@ -533,12 +639,43 @@ public partial class App : Application
                 return;
             }
 
+            if (Environment.GetEnvironmentVariable("LIQUIDGLASS_STACK_DEMO") is { Length: > 0 } folderName)
+            {
+                // A pasta fixada com esse nome abre como pilha, pelo mesmo caminho do clique, e é fotografada.
+                if (step == 1)
+                {
+                    var folder = _dockViewModel?.Items.FirstOrDefault(item => item.Name.Contains(folderName, StringComparison.OrdinalIgnoreCase));
+                    Graphics.DemoCapture.Log($"pilha: item {folder?.Name ?? "não encontrado"}, alvo {folder?.Pin?.Target}");
+                    if (folder is not null)
+                    {
+                        _dockWindow?.HoldDemoStack();
+                        _dockViewModel!.Activate(folder);
+                    }
+                }
+                else if (step == 2)
+                {
+                    _dockWindow?.SaveDemoStack("stack-open");
+                    timer.Stop();
+                }
+
+                return;
+            }
+
             if (Environment.GetEnvironmentVariable("LIQUIDGLASS_PREVIEW_DEMO") is { Length: > 0 } app)
             {
                 switch (step)
                 {
+                    case 0:
+                        break;
                     case 1:
-                        _dockWindow?.DemoPreview(app);
+                        // Como o mouse parado faria: primeiro descobre o que está tocando.
+                        _ = _dockViewModel?.Media?.RefreshAsync().ContinueWith(
+                            refresh => Dispatcher.Invoke(() =>
+                            {
+                                Graphics.DemoCapture.Log($"mídia: {refresh.Status}; apps: {string.Join(", ", _dockViewModel.Items.Where(item => item.IsRunning).Select(item => item.Name))}");
+                                _dockWindow?.DemoPreview(app);
+                            }),
+                            TaskScheduler.Default);
                         break;
                     case 2:
                         // Solta o painel: com o mouse longe, ele recolhe sozinho para dentro do ícone.
@@ -657,9 +794,23 @@ public partial class App : Application
     /// <summary>O Explorer reiniciou: a barra nativa voltou ao estado padrão e precisa ser escondida de novo.</summary>
     private nint WndProc(nint hwnd, int message, nint wParam, nint lParam, ref bool handled)
     {
+        if (message == WmDisplayChange)
+        {
+            // Monitor ligado, desligado ou com outra resolução: as docks extras são refeitas depois
+            // que o Windows termina de reorganizar as telas.
+            _displayChangeDelay ??= new DispatcherTimer(TimeSpan.FromSeconds(1.5), DispatcherPriority.Background, (_, _) =>
+            {
+                _displayChangeDelay?.Stop();
+                UpdateExtraDocks();
+            }, Dispatcher);
+            _displayChangeDelay.Stop();
+            _displayChangeDelay.Start();
+        }
+
         if (message == _taskbarCreatedMessage && _taskbarCreatedMessage != 0)
         {
             _taskbar?.Reapply();
+            _taskbarList.OnTaskbarCreated();
             _tracker?.Refresh();
         }
 
@@ -695,5 +846,6 @@ public partial class App : Application
         }
 
         _taskbar?.Restore();
+        _taskbarList.SetEnabled(false);
     }
 }

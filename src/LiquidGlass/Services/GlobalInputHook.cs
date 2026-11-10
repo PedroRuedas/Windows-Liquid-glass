@@ -66,6 +66,7 @@ public sealed class GlobalInputHook : IDisposable
     private volatile bool _interceptWinTab;
     private volatile bool _interceptStartKey;
     private volatile bool _interceptDesktopSwitch;
+    private volatile bool _interceptAppKeys;
     private volatile bool _captureOverviewKeys;
     private volatile bool _watchCaptionButtons;
     private volatile bool _watchEscape;
@@ -94,6 +95,23 @@ public sealed class GlobalInputHook : IDisposable
 
     /// <summary>Esc apertado com <see cref="WatchEscape"/> ligado. A tecla segue para o app em foco.</summary>
     public event EventHandler? EscapePressed;
+
+    /// <summary>Win+1…9 (índice 0…8) abre o app nessa posição da dock; com Shift, uma janela nova.</summary>
+    public event EventHandler<(int Index, bool NewWindow)>? AppKeyPressed;
+
+    /// <summary>Win+1…9 vão para a dock, como na barra de tarefas do Windows.</summary>
+    public bool InterceptAppKeys
+    {
+        get => _interceptAppKeys;
+        set
+        {
+            if (_interceptAppKeys != value)
+            {
+                _interceptAppKeys = value;
+                RequestHookUpdate();
+            }
+        }
+    }
 
     public bool InterceptWinTab
     {
@@ -249,7 +267,7 @@ public sealed class GlobalInputHook : IDisposable
     private void UpdateHooks()
     {
         var module = Kernel32.GetModuleHandle(null);
-        var wantsKeyboard = _interceptWinTab || _interceptStartKey || _interceptDesktopSwitch || _captureOverviewKeys || _watchEscape;
+        var wantsKeyboard = _interceptWinTab || _interceptStartKey || _interceptDesktopSwitch || _interceptAppKeys || _captureOverviewKeys || _watchEscape;
         if (wantsKeyboard && _keyboardHook == 0)
         {
             _keyboardHook = User32.SetWindowsHookEx(User32.WhKeyboardLl, _keyboardProc, module, 0);
@@ -363,6 +381,15 @@ public sealed class GlobalInputHook : IDisposable
             return true;
         }
 
+        // Win+1…9 (as teclas de número da linha de cima); Win+Alt e Win+Ctrl continuam com o Windows.
+        if (_interceptAppKeys && windows && !control && !_altDown && !User32.IsKeyDown(User32.VkMenu) && AppKeyIndex(key.VirtualKey) is { } index)
+        {
+            var newWindow = User32.IsKeyDown(VkShift);
+            Swallow(key, withWindowsKey: true);
+            Post(() => AppKeyPressed?.Invoke(this, (index, newWindow)));
+            return true;
+        }
+
         if (_interceptDesktopSwitch && windows && control && key.VirtualKey is User32.VkLeft or User32.VkRight)
         {
             var direction = key.VirtualKey == User32.VkLeft ? -1 : 1;
@@ -397,6 +424,9 @@ public sealed class GlobalInputHook : IDisposable
 
         return false;
     }
+
+    /// <summary>A posição (0…8) para as teclas 1…9; nulo para as demais, inclusive o 0.</summary>
+    internal static int? AppKeyIndex(uint virtualKey) => virtualKey is >= 0x31 and <= 0x39 ? (int)(virtualKey - 0x31) : null;
 
     private void TrackModifier(uint key, bool isDown)
     {

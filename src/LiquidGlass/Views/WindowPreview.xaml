@@ -50,6 +50,37 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Botão redondo de mídia: o glifo vem no Content; o de tocar vira pausar enquanto toca. -->
+        <Style x:Key="MediaButton" TargetType="Button">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Back" Width="30" Height="30" Background="Transparent" CornerRadius="15">
+                            <TextBlock HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="13"
+                                       Text="{TemplateBinding Content}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Back" Property="Background" Value="#33FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Back" Property="Background" Value="#1AFFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Popup.Resources>
 
     <!-- O espaçamento é a área da sombra; dentro dele fica o único elemento animado. -->
@@ -64,6 +95,46 @@
             <StackPanel Margin="8"
                         TextElement.Foreground="White"
                         TextElement.FontFamily="Segoe UI Variable Text, Segoe UI">
+                <!-- O que o app está tocando (Spotify, um vídeo no navegador), com os controles. -->
+                <Border x:Name="MediaCard"
+                        Width="300"
+                        Margin="2,2,2,6"
+                        Padding="8"
+                        HorizontalAlignment="Left"
+                        Background="#14FFFFFF"
+                        CornerRadius="14"
+                        Visibility="Collapsed">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left"
+                                Width="56"
+                                Height="56"
+                                Background="#1FFFFFFF"
+                                CornerRadius="8">
+                            <Border.Clip>
+                                <RectangleGeometry RadiusX="8" RadiusY="8" Rect="0,0,56,56" />
+                            </Border.Clip>
+                            <Grid>
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontSize="20"
+                                           Opacity="0.6"
+                                           Text="&#xE8D6;" />
+                                <Image Source="{Binding Artwork}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Grid>
+                        </Border>
+                        <StackPanel Margin="12,2,0,0" VerticalAlignment="Center">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="12" Opacity="0.75" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+                            <StackPanel Margin="-6,4,0,0" Orientation="Horizontal">
+                                <Button Style="{StaticResource MediaButton}" Click="OnMediaPrevious" IsEnabled="{Binding CanPrevious}" ToolTip="{x:Static res:Strings.MediaPrevious}" Content="&#xE892;" />
+                                <Button x:Name="PlayPause" Style="{StaticResource MediaButton}" Click="OnMediaPlayPause" ToolTip="{x:Static res:Strings.MediaPlayPause}" Content="&#xE768;" />
+                                <Button Style="{StaticResource MediaButton}" Click="OnMediaNext" IsEnabled="{Binding CanNext}" ToolTip="{x:Static res:Strings.MediaNext}" Content="&#xE893;" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
                 <ItemsControl x:Name="Cards">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>

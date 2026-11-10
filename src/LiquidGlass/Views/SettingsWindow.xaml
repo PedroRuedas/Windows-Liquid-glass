@@ -111,6 +111,10 @@
                         </ComboBox>
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE7F4;" Header="{x:Static res:Strings.AllMonitors}" Description="{x:Static res:Strings.AllMonitorsDescription}">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowOnAllMonitors}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xE91B;" Header="{x:Static res:Strings.IconSize}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="16" Maximum="96" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Settings.IconSize}" />
@@ -256,7 +260,15 @@
 
                     <TextBlock Style="{StaticResource SectionTitle}" Text="{x:Static res:Strings.SectionColor}" />
 
-                    <controls:SettingCard Glyph="&#xE790;" Header="{x:Static res:Strings.Tint}">
+                    <controls:SettingCard Glyph="&#xE771;" Header="{x:Static res:Strings.TintMode}" Description="{x:Static res:Strings.TintModeDescription}">
+                        <ComboBox Width="240"
+                                  DisplayMemberPath="Name"
+                                  ItemsSource="{Binding TintModes}"
+                                  SelectedValue="{Binding Settings.TintMode}"
+                                  SelectedValuePath="Value" />
+                    </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE790;" Header="{x:Static res:Strings.Tint}" IsEnabled="{Binding IsCustomTint}">
                         <ItemsControl x:Name="Swatches" ItemsSource="{Binding TintSwatches}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -281,7 +293,7 @@
                         </ItemsControl>
                     </controls:SettingCard>
 
-                    <controls:SettingCard Glyph="&#xE9E9;" Header="{x:Static res:Strings.TintStrength}">
+                    <controls:SettingCard Glyph="&#xE9E9;" Header="{x:Static res:Strings.TintStrength}" IsEnabled="{Binding IsCustomTint}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="0.8" Value="{Binding Settings.TintStrength}" />
                             <TextBlock Style="{StaticResource ValueText}" Text="{Binding Settings.TintStrength, StringFormat={}{0:P0}}" />
@@ -369,6 +381,14 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.WinTabOpensOverview}" />
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xEA8F;" Header="{x:Static res:Strings.ShowBadges}" Description="{x:Static res:Strings.ShowBadgesDescription}">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ShowBadges}" />
+                    </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE92E;" Header="{x:Static res:Strings.WinNumberKeys}" Description="{x:Static res:Strings.WinNumberKeysDescription}">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.WinNumberKeys}" />
+                    </controls:SettingCard>
+
                     <!-- O idioma vale ao abrir a dock: depois de trocar, a descrição avisa e aparece o botão de reiniciar. -->
                     <controls:SettingCard Glyph="&#xE774;" Header="{x:Static res:Strings.Language}" Description="{Binding LanguageDescription}">
                         <StackPanel Orientation="Horizontal">
@@ -422,6 +442,7 @@
 
                 <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12" Orientation="Horizontal">
                     <Button Command="{Binding AddAppCommand}" Content="{x:Static res:Strings.AddApp}" />
+                    <Button Margin="8,0,0,0" Command="{Binding AddFolderCommand}" Content="{x:Static res:Strings.AddFolder}" />
                     <Button Margin="8,0,0,0" Command="{Binding ImportTaskbarPinsCommand}" Content="{x:Static res:Strings.ImportFromTaskbar}" />
                     <Button Margin="24,0,0,0" Command="{Binding MovePinUpCommand}" ToolTip="{x:Static res:Strings.MoveUp}">
                         <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE70E;" />

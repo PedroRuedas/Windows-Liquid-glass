@@ -33,9 +33,20 @@ public sealed class DiagnosticsTests
 
         Assert.Contains("### Liquid Glass Dock", report, StringComparison.Ordinal);
         Assert.Contains("### Monitores", report, StringComparison.Ordinal);
+        Assert.Contains("### Desempenho", report, StringComparison.Ordinal);
+        Assert.Contains("Memória privada", report, StringComparison.Ordinal);
         Assert.Contains("### Preferências", report, StringComparison.Ordinal);
         Assert.Contains("### Últimos erros", report, StringComparison.Ordinal);
         Assert.DoesNotContain(Environment.UserName + @"\", report, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData(0, 42, "0 min 42 s")]
+    [InlineData(1, 5, "1 h 01 min")]
+    public void DurationsReadNaturally(int hours, int seconds, string expected)
+    {
+        var span = hours > 0 ? TimeSpan.FromHours(hours) + TimeSpan.FromMinutes(1) : TimeSpan.FromSeconds(seconds);
+        Assert.Equal(expected, Diagnostics.FormatDuration(span));
     }
 
     [Theory]

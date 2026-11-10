@@ -1,7 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:LiquidGlass.Controls"
-                    xmlns:models="clr-namespace:LiquidGlass.Models">
+                    xmlns:models="clr-namespace:LiquidGlass.Models"
+                    xmlns:services="clr-namespace:LiquidGlass.Services">
 
     <SolidColorBrush x:Key="DockLabelBackground" Color="#E61C1C1E" />
     <SolidColorBrush x:Key="DockLabelBorder" Color="#38FFFFFF" />
@@ -22,6 +23,45 @@
                         <ImageBrush ImageSource="{Binding Icon}" Stretch="Uniform" />
                     </Rectangle.OpacityMask>
                 </Rectangle>
+
+                <!--
+                    Selo e progresso que o app manda para a barra de tarefas. Numa grade de 100×100
+                    dentro de um Viewbox, crescem junto com o ícone na ampliação.
+                -->
+                <Viewbox IsHitTestVisible="False" Stretch="Uniform">
+                    <Canvas Width="100" Height="100">
+                        <Grid x:Name="ProgressTrack"
+                              Canvas.Left="12"
+                              Canvas.Top="86"
+                              Width="76"
+                              Height="9"
+                              Visibility="Collapsed">
+                            <Border Background="#B3000000" CornerRadius="4.5" />
+                            <Border x:Name="ProgressFill"
+                                    Margin="1.5"
+                                    HorizontalAlignment="Left"
+                                    Width="73"
+                                    Background="#FF34C759"
+                                    CornerRadius="3"
+                                    RenderTransformOrigin="0,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="{Binding Progress}" />
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
+                        <Image x:Name="Badge"
+                               Canvas.Left="58"
+                               Canvas.Top="-4"
+                               Width="46"
+                               Height="46"
+                               Source="{Binding Badge}"
+                               RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.Effect>
+                                <DropShadowEffect BlurRadius="6" Opacity="0.45" ShadowDepth="1" />
+                            </Image.Effect>
+                        </Image>
+                    </Canvas>
+                </Viewbox>
             </Grid>
 
             <Ellipse x:Name="Indicator"
@@ -66,6 +106,24 @@
         </Grid>
 
         <ControlTemplate.Triggers>
+            <DataTrigger Binding="{Binding HasProgress}" Value="True">
+                <Setter TargetName="ProgressTrack" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <!-- Sem valor conhecido (indeterminado), a barra fica cheia e mais apagada. -->
+            <DataTrigger Binding="{Binding ProgressState}" Value="{x:Static services:TaskbarProgressState.Indeterminate}">
+                <Setter TargetName="ProgressFill" Property="RenderTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="1" />
+                    </Setter.Value>
+                </Setter>
+                <Setter TargetName="ProgressFill" Property="Opacity" Value="0.55" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ProgressState}" Value="{x:Static services:TaskbarProgressState.Error}">
+                <Setter TargetName="ProgressFill" Property="Background" Value="#FFFF453A" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ProgressState}" Value="{x:Static services:TaskbarProgressState.Paused}">
+                <Setter TargetName="ProgressFill" Property="Background" Value="#FFFFCC00" />
+            </DataTrigger>
             <Trigger Property="IsPressed" Value="True">
                 <Setter TargetName="PressOverlay" Property="Opacity" Value="0.35" />
             </Trigger>
@@ -232,6 +290,10 @@
                         </Trigger>
                         <Trigger Property="Description" Value="{x:Null}">
                             <Setter TargetName="Description" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <!-- Desligado por outra opção (por exemplo, o tom do vidro seguindo o tema do Windows). -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

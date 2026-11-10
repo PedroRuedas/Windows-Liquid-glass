@@ -91,6 +91,20 @@ live customization window. Free, open source, and no administrator rights needed
 - **Switch desktops:** Ctrl+Win+← and → spin the cube to the neighbouring desktop without opening
   the overview.
 
+**More**
+- **Badges and progress:** unread counts that Discord, Telegram, Teams and other apps show on the
+  Windows taskbar appear on the icon corner, and downloads get a progress bar under the icon.
+- **Media controls:** while Spotify, a browser or another player is playing, the app's thumbnails
+  show the artwork, title and previous / play-pause / next buttons.
+- **Stacks:** a pinned folder opens as a grid of its most recent files, like macOS Stacks.
+- **Keyboard shortcuts:** Win+1…9 open the app at that position in the dock; add Shift for a new
+  window.
+- **Custom icons:** right-click → "Change icon…" accepts an image (PNG, ICO, JPG) or another
+  program's icon.
+- **Multiple monitors:** "Dock on all monitors" puts a dock on every screen, each with its own
+  wallpaper in the glass.
+- **Theme:** the glass can follow the Windows light/dark mode or accent color.
+
 **Customization**
 
 ![Customization](docs/settings.png)
