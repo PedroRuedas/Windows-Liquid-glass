@@ -58,7 +58,7 @@ jobs:
       - name: Enviar o instalador para assinar
         id: unsigned
         if: env.HAS_SIGNPATH == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: instalador-sem-assinatura
           path: artifacts/LiquidGlassDock-Setup-${{ steps.version.outputs.version }}.exe
