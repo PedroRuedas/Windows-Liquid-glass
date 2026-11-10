@@ -7,18 +7,24 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+## [0.9.0] - 2026-11-10
+
 ### Adicionado
-- Interface em inglês. A dock segue o idioma do Windows (português no Windows em português,
-  inglês nos demais), e a opção Personalizar → Comportamento → Idioma permite escolher, com um
-  botão para reiniciar a dock no idioma novo. O instalador também fala os dois idiomas.
-- Releases automáticas: uma tag `vX.Y.Z` gera o instalador nas máquinas do GitHub, calcula o
-  SHA-256 e publica a release com as notas do CHANGELOG (veja "Publicar uma versão" no
-  CONTRIBUTING). Com o segredo `WINGET_TOKEN`, a versão também é enviada ao winget.
-- Licença GPL-3.0, guia de contribuição, código de conduta, política de segurança, modelos de
-  issue e de pull request e integração contínua (build, testes e formatação a cada push).
-- README em inglês (`README.en.md`).
-- O instalador mostra a licença e traz links para o projeto, o suporte e as atualizações em
-  Configurações → Aplicativos.
+- **Interface em inglês.** A dock segue o idioma do Windows: português no Windows em português,
+  inglês nos demais. Para escolher, use Personalizar → Comportamento → Idioma; o botão "Reiniciar
+  a dock" aplica o idioma novo na hora. *English: the dock now speaks English and follows your
+  Windows display language.*
+- O instalador também fala inglês e português, pelo idioma do Windows, e mostra a licença.
+- Links para o projeto, o suporte e as atualizações em Configurações → Aplicativos.
+- O `LiquidGlass.exe` aparece como "Liquid Glass Dock" no Gerenciador de Tarefas.
+
+### Interno
+- Código aberto sob a licença GPL-3.0, com guia de contribuição, código de conduta, política de
+  segurança e modelos de issue e de pull request.
+- README em inglês e um GIF da dock no topo dos dois.
+- Integração contínua (build, testes e formatação a cada push) e Dependabot.
+- Releases automáticas: esta é a primeira versão gerada pelo GitHub a partir da tag, com o
+  instalador compilado a partir do código público.
 
 ## [0.8.0] - 2026-11-09
 
@@ -103,7 +109,8 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
   apps fixados e em execução, bandeja do sistema, personalização ao vivo, ocultar
   automaticamente e modo de eficiência quando a dock está parada.
 
-[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.8.0...HEAD
+[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.6.0...v0.7.0

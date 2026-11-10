@@ -16,7 +16,7 @@
         <AssemblyName>LiquidGlass</AssemblyName>
         <RootNamespace>LiquidGlass</RootNamespace>
         <Product>Liquid Glass Dock</Product>
-        <Version>0.8.0</Version>
+        <Version>0.9.0</Version>
         <!-- Aparecem em Propriedades → Detalhes do LiquidGlass.exe; o título é o nome no Gerenciador de Tarefas. -->
         <AssemblyTitle>Liquid Glass Dock</AssemblyTitle>
         <Authors>PedroRuedas</Authors>

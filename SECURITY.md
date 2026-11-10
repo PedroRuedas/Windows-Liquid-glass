@@ -7,7 +7,7 @@ Só a versão mais recente recebe correções de segurança. A dock procura atua
 
 | Versão | Suporte |
 | --- | --- |
-| A mais recente (0.8.x) | ✅ |
+| A mais recente (0.9.x) | ✅ |
 | Anteriores | ❌ |
 
 ## Como relatar uma vulnerabilidade
