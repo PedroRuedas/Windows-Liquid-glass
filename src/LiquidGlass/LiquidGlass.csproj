@@ -53,7 +53,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="ManagedShell" Version="0.0.374" />
         <!-- Só o compilador do instalador (ISCC.exe); nada dele vai para o app. -->
         <PackageReference Include="Tools.InnoSetup" Version="6.4.3" PrivateAssets="all" ExcludeAssets="runtime;compile" />
