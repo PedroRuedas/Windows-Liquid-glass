@@ -211,7 +211,7 @@ public partial class StartMenu : Window, IDisposable
         var topLeft = anchor.PointToScreen(new Point(0, 0));
         var bottomRight = anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight));
         var bounds = new Rect(topLeft, bottomRight);
-        var work = User32.GetPrimaryMonitorInfo().WorkArea;
+        var work = User32.GetMonitorInfoFor(anchor).WorkArea;
         var (width, height) = (Width * scale, Height * scale);
         var (shadow, gap, margin) = (ShadowPadding * scale, Gap * scale, ScreenMargin * scale);
         var center = new Point(bounds.X + (bounds.Width / 2), bounds.Y + (bounds.Height / 2));

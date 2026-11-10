@@ -254,11 +254,12 @@ public sealed class WindowAnimator : IDisposable
             return null;
         }
 
-        // A posição normal é relativa à área de trabalho do monitor principal, não à tela.
+        // A posição normal é relativa à área de trabalho do monitor principal, não à tela; maximizada,
+        // a janela ocupa a área de trabalho do monitor em que está.
         var monitor = User32.GetPrimaryMonitorInfo();
         if ((placement.Flags & User32.WpfRestoreToMaximized) != 0)
         {
-            return Rect.Inflate(ToRect(monitor.WorkArea), 8, 8);
+            return Rect.Inflate(ToRect(User32.GetMonitorInfoForWindow(hwnd).WorkArea), 8, 8);
         }
 
         var normal = ToRect(placement.NormalPosition);

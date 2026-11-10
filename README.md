@@ -33,6 +33,9 @@ administrador para instalar.
 - Áreas de trabalho num cubo 3D (Win+Tab), com troca animada entre áreas e janelas arrastáveis de
   uma área para outra.
 - Minimizar em "lâmpada mágica" para dentro do ícone e fechar encolhendo a janela.
+- Selos de mensagens não lidas e barras de download nos ícones, controles de música nas
+  miniaturas, pastas em "pilha" e atalhos Win+1…9.
+- Dock em todos os monitores, com o vidro acompanhando o tema claro ou escuro do Windows.
 - Atualiza sozinha pelas releases do GitHub e gasta quase nada parada.
 
 ## Recursos
@@ -71,6 +74,19 @@ administrador para instalar.
   em ordem alfabética. No rodapé ficam o nome da conta e
   o botão de energia: bloquear, sair, suspender, hibernar (quando ligada no Windows), desligar e
   reiniciar. Dá para trocar de volta para o menu do Windows nas preferências.
+- **Selos e progresso:** o número de mensagens não lidas que Discord, Telegram, Teams e outros
+  apps mostram na barra do Windows aparece no canto do ícone, e downloads e cópias ganham uma
+  barra de progresso embaixo dele.
+- **Controles de música:** com o Spotify, o navegador ou outro player tocando, as miniaturas do
+  app mostram a capa, o título e os botões de voltar, tocar/pausar e avançar.
+- **Pilhas:** uma pasta fixada (arraste-a para a dock ou use "Adicionar pasta…") abre em grade
+  com os arquivos mais recentes, como as Stacks do macOS.
+- **Atalhos de teclado:** Win+1…9 abrem o app nessa posição da dock (ou trazem, minimizam e
+  alternam as janelas dele, como o clique); com Shift, abrem uma janela nova.
+- **Ícone personalizado:** botão direito → "Trocar ícone…" aceita uma imagem (PNG, ICO, JPG) ou
+  o ícone de outro programa.
+- **Vários monitores:** com "Dock em todos os monitores", cada tela tem a sua dock, com o papel de
+  parede daquele monitor no vidro.
 - Botão Iniciar e Lixeira.
 - **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
   esquerdo e direito são repassados ao app, como na bandeja do Windows.
@@ -118,7 +134,7 @@ Todas as mudanças aparecem na dock na hora:
 | Seção | Opções |
 | --- | --- |
 | Aparência | posição (embaixo, esquerda, direita), comprimento da dock, tamanho dos ícones, espaçamento, distância da borda, arredondamento, rótulos, indicadores, miniaturas das janelas, botão Iniciar, botão das áreas de trabalho, apps em segundo plano, rede, bateria, Lixeira |
-| Vidro | estilos prontos, refração, desfoque, dispersão de cores, brilho da borda, saturação, sombra, cor e intensidade do tom |
+| Vidro | estilos prontos, refração, desfoque, dispersão de cores, brilho da borda, saturação, cor do vidro (personalizada, tema do Windows ou cor de destaque), sombra, cor e intensidade do tom |
 | Animações | ampliação, tamanho máximo, alcance, quicar ao abrir, quicar por atenção, fechar e minimizar no estilo do GNOME, deslizar entre áreas, velocidade |
 | Comportamento | ocultar automaticamente, barra de tarefas do Windows (oculta, auto-ocultar ou visível), iniciar com o Windows, Win+Tab abre as áreas de trabalho, atualizações (procurar, instalar, procurar automaticamente) |
 | Apps fixados | adicionar, importar da barra de tarefas, reordenar e remover |
@@ -318,6 +334,9 @@ de vidro" devolve o menu do Windows. Ao fechar a dock, tudo volta ao normal.
 ## Limitações conhecidas
 
 - O menu Iniciar de vidro não mostra a foto do usuário.
+- Os selos só aparecem com a barra do Windows oculta, e só de apps que usam a barra de tarefas
+  clássica (ITaskbarList): apps da Microsoft Store, como o WhatsApp, usam outro sistema. Um app
+  que já estava aberto quando a dock começou pode só mostrar o selo depois de reaberto.
 - A ordem dos fixados do menu Iniciar muda pelo botão direito ("Mover para o início"), não
   arrastando.
 - Os recentes automáticos do Windows (por exemplo, os do Explorador e do Bloco de Notas) não

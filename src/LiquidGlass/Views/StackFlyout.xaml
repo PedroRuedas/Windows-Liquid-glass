@@ -1,0 +1,105 @@
+<Popup x:Class="LiquidGlass.Views.StackFlyout"
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:controls="clr-namespace:LiquidGlass.Controls"
+       xmlns:res="clr-namespace:LiquidGlass.Resources"
+       AllowsTransparency="True"
+       Placement="Custom"
+       PopupAnimation="None"
+       StaysOpen="True">
+
+    <Popup.Resources>
+        <SolidColorBrush x:Key="TileHoverFill" Color="#26FFFFFF" />
+        <SolidColorBrush x:Key="PillFill" Color="#1AFFFFFF" />
+    </Popup.Resources>
+
+    <!-- O espaçamento é a área da sombra; dentro dele fica o único elemento animado. -->
+    <Border Padding="14">
+        <Grid x:Name="PopupContent">
+            <Grid.RenderTransform>
+                <ScaleTransform />
+            </Grid.RenderTransform>
+
+            <controls:LiquidGlassSurface Style="{StaticResource PopupGlassSurface}" CornerRadius="24" />
+
+            <DockPanel Margin="14,14,14,14"
+                       TextElement.Foreground="White"
+                       TextElement.FontFamily="Segoe UI Variable Text, Segoe UI">
+
+                <DockPanel DockPanel.Dock="Top" Margin="6,0,2,10">
+                    <Border x:Name="OpenFolderButton"
+                            DockPanel.Dock="Right"
+                            Padding="12,4"
+                            VerticalAlignment="Center"
+                            Background="{StaticResource PillFill}"
+                            CornerRadius="12"
+                            Cursor="Hand"
+                            MouseLeftButtonUp="OnOpenFolderClick">
+                        <TextBlock FontSize="12" Text="{x:Static res:Strings.StackOpenInExplorer}" />
+                    </Border>
+                    <TextBlock x:Name="Title"
+                               Margin="0,0,12,0"
+                               VerticalAlignment="Center"
+                               FontFamily="Segoe UI Variable Display, Segoe UI"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+
+                <TextBlock x:Name="EmptyText"
+                           DockPanel.Dock="Top"
+                           Margin="6,0,6,6"
+                           FontSize="13"
+                           Foreground="{StaticResource PopupSecondaryText}"
+                           Text="{x:Static res:Strings.StackEmpty}"
+                           Visibility="Collapsed" />
+
+                <ScrollViewer MaxHeight="372"
+                              HorizontalScrollBarVisibility="Disabled"
+                              PanningMode="VerticalOnly"
+                              VerticalScrollBarVisibility="Hidden">
+                    <ItemsControl x:Name="Entries" Width="368">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border x:Name="Tile"
+                                        Width="88"
+                                        Height="92"
+                                        Margin="2"
+                                        Padding="4,8,4,4"
+                                        Background="Transparent"
+                                        CornerRadius="12"
+                                        ToolTip="{Binding Path}"
+                                        MouseLeftButtonUp="OnEntryClick"
+                                        MouseRightButtonUp="OnEntryRightClick">
+                                    <StackPanel>
+                                        <Image Width="44"
+                                               Height="44"
+                                               Source="{Binding Icon}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <TextBlock Margin="0,6,0,0"
+                                                   FontSize="11.5"
+                                                   MaxHeight="32"
+                                                   Text="{Binding Name}"
+                                                   TextAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <Trigger SourceName="Tile" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Tile" Property="Background" Value="{StaticResource TileHoverFill}" />
+                                    </Trigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
+    </Border>
+</Popup>

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -27,6 +28,7 @@ public partial class DockWindow : Window
     private const double SideLabelSpace = 240;
     private const int SpiSetDesktopWallpaper = 0x0014;
     private const int SpiSetWorkArea = 0x002F;
+    private const int WmDwmColorizationColorChanged = 0x0320;
 
     /// <summary>Quanto o mouse precisa andar com o botão apertado para o clique virar arrasto.</summary>
     private const double ReorderThreshold = 6;
@@ -37,9 +39,11 @@ public partial class DockWindow : Window
     private static readonly TimeSpan PreviewDelay = TimeSpan.FromMilliseconds(450);
 
     private readonly DockViewModel _viewModel;
+    private readonly Func<User32.MonitorInfo> _monitor;
     private readonly WallpaperService _wallpaper;
     private readonly TrayIconService _tray;
     private readonly TrayFlyout _trayFlyout = new();
+    private readonly StackFlyout _stackFlyout = new();
     private readonly StartMenu _startMenu;
     private readonly WindowPreview _preview;
     private readonly DispatcherTimer _previewDelay = new() { Interval = PreviewDelay };
@@ -61,15 +65,25 @@ public partial class DockWindow : Window
     /// <summary>Falso só na demonstração do Debug, que não pode tomar o mouse de verdade.</summary>
     private bool _captureOnReorder = true;
 
-    public DockWindow(DockViewModel viewModel, WallpaperService wallpaper, TrayIconService tray, EfficiencyMode efficiency)
+    /// <summary>
+    /// <paramref name="monitor"/> devolve o monitor da dock (o principal, se nulo). Com a dock em
+    /// todos os monitores, cada um tem a sua janela, todas mostrando os mesmos apps.
+    /// </summary>
+    internal DockWindow(DockViewModel viewModel, WallpaperService wallpaper, TrayIconService tray, EfficiencyMode efficiency, Func<User32.MonitorInfo>? monitor = null)
     {
         InitializeComponent();
+        _monitor = monitor ?? User32.GetPrimaryMonitorInfo;
+        IsPrimaryDock = monitor is null;
+        Docks.Add(this);
+        Root.PreviewMouseDown += (_, _) => LastUsed = this;
         _viewModel = viewModel;
         _wallpaper = wallpaper;
         _tray = tray;
         _efficiency = efficiency;
         _trayFlyout.Opened += (_, _) => _efficiency.SetActive(_trayFlyout, active: true);
         _trayFlyout.Closed += (_, _) => _efficiency.SetActive(_trayFlyout, active: false);
+        _stackFlyout.Opened += (_, _) => _efficiency.SetActive(_stackFlyout, active: true);
+        _stackFlyout.Closed += (_, _) => _efficiency.SetActive(_stackFlyout, active: false);
         _preview = new WindowPreview(viewModel);
         _startMenu = new StartMenu(viewModel.Settings, efficiency);
         _preview.Opened += (_, _) =>
@@ -94,6 +108,7 @@ public partial class DockWindow : Window
         Settings.PropertyChanged += OnSettingsChanged;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.TrayToggleRequested += OnTrayToggleRequested;
+        _viewModel.StackRequested += OnStackRequested;
         _viewModel.StartMenuRequested += OnStartMenuRequested;
         _viewModel.ItemActivating += OnItemActivating;
         _wallpaper.Changed += OnWallpaperChanged;
@@ -101,6 +116,24 @@ public partial class DockWindow : Window
 
     /// <summary>Fonte nativa da janela, usada para receber mensagens do shell.</summary>
     public HwndSource? NativeSource => _source;
+
+    /// <summary>O retângulo do monitor desta dock, em pixels físicos.</summary>
+    internal User32.Rect MonitorBounds => _monitor().Monitor;
+
+    /// <summary>A dock do monitor principal; as dos outros monitores são extras.</summary>
+    public bool IsPrimaryDock { get; }
+
+    /// <summary>Todas as docks abertas, uma por monitor.</summary>
+    private static readonly List<DockWindow> Docks = [];
+
+    /// <summary>A dock em que o usuário clicou por último: é ela que abre a bandeja, a pilha ou o menu.</summary>
+    private static DockWindow? LastUsed { get; set; }
+
+    /// <summary>
+    /// Os pedidos (bandeja, pilha, menu Iniciar) vêm do modelo, que é o mesmo para todas as docks:
+    /// responde a dock clicada por último, ou a principal se nenhuma foi.
+    /// </summary>
+    private bool OwnsRequest() => LastUsed is { } last && Docks.Contains(last) ? last == this : IsPrimaryDock;
 
     private DockSettings Settings => _viewModel.Settings;
 
@@ -117,7 +150,7 @@ public partial class DockWindow : Window
         // Fora do Alt+Tab e sem roubar o foco do app que o usuário está usando.
         User32.AddExtendedStyle(_source.Handle, User32.WsExToolWindow | User32.WsExNoActivate);
 
-        _appBar = new AppBarManager(_source);
+        _appBar = new AppBarManager(_source, _monitor);
         _appBar.PositionChanged += (_, _) => UpdatePlacement();
         _appBar.FullScreenChanged += OnFullScreenChanged;
         _autoHide = new AutoHideController(Root, IsCursorAtDockEdge, ShouldStayVisible);
@@ -129,9 +162,18 @@ public partial class DockWindow : Window
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        Docks.Remove(this);
+        if (LastUsed == this)
+        {
+            LastUsed = null;
+        }
+
         Settings.PropertyChanged -= OnSettingsChanged;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.TrayToggleRequested -= OnTrayToggleRequested;
+        _viewModel.StackRequested -= OnStackRequested;
+        _stackFlyout.IsOpen = false;
+        _stackFlyout.Dispose();
         _viewModel.ItemActivating -= OnItemActivating;
         _wallpaper.Changed -= OnWallpaperChanged;
         _trayFlyout.IsOpen = false;
@@ -252,14 +294,14 @@ public partial class DockWindow : Window
 
     private void ApplyGlassSettings()
     {
-        var tint = Settings.TintColor;
+        var (tint, strength) = WindowsTheme.TintFor(Settings.TintMode, Settings.TintColor, Settings.TintStrength, WindowsTheme.IsLight(), WindowsTheme.Accent());
         Glass.ShadowPadding = ShadowPadding;
         Glass.Refraction = Settings.Refraction * 36;
         Glass.ChromaticAberration = Settings.ChromaticAberration;
         Glass.Highlight = Settings.Highlight;
         Glass.Saturation = Settings.Saturation;
         Glass.Shadow = Settings.Shadow;
-        Glass.Tint = Color.FromArgb((byte)Math.Round(Math.Clamp(Settings.TintStrength, 0, 1) * 255), tint.R, tint.G, tint.B);
+        Glass.Tint = Color.FromArgb((byte)Math.Round(Math.Clamp(strength, 0, 1) * 255), tint.R, tint.G, tint.B);
 
         var light = Settings.Edge switch
         {
@@ -591,6 +633,9 @@ public partial class DockWindow : Window
         }
 
         _previewCandidate = view;
+
+        // Enquanto o mouse espera as miniaturas, a dock já descobre o que está tocando.
+        _ = _viewModel.Media?.RefreshAsync();
         if (_preview.IsOpen)
         {
             ShowPendingPreview();
@@ -629,7 +674,13 @@ public partial class DockWindow : Window
     /// <summary>Um clique no ícone já decide a janela; as miniaturas saem da frente.</summary>
     private void OnItemActivating(object? sender, DockItemViewModel item) => CancelPreview();
 
-    private void OnStartMenuRequested(object? sender, EventArgs e) => ToggleStartMenu();
+    private void OnStartMenuRequested(object? sender, EventArgs e)
+    {
+        if (OwnsRequest())
+        {
+            ToggleStartMenu();
+        }
+    }
 
     /// <summary>
     /// Abre ou fecha o menu Iniciar de vidro junto ao botão Iniciar (ou ao meio da dock, sem ele).
@@ -660,9 +711,18 @@ public partial class DockWindow : Window
 
     private void OnTrayToggleRequested(object? sender, DockItemViewModel item)
     {
-        if (DockItems.ItemContainerGenerator.ContainerFromItem(item) is FrameworkElement anchor)
+        if (OwnsRequest() && DockItems.ItemContainerGenerator.ContainerFromItem(item) is FrameworkElement anchor)
         {
             _trayFlyout.Toggle(anchor, Settings.Edge, _tray.Icons);
+        }
+    }
+
+    private void OnStackRequested(object? sender, DockItemViewModel item)
+    {
+        if (OwnsRequest() && item.Pin is { } pin && DockItems.ItemContainerGenerator.ContainerFromItem(item) is FrameworkElement anchor)
+        {
+            CancelPreview();
+            _stackFlyout.Toggle(anchor, Settings.Edge, pin.Target, item.Name);
         }
     }
 
@@ -714,6 +774,7 @@ public partial class DockWindow : Window
             case nameof(DockSettings.Saturation):
             case nameof(DockSettings.Shadow):
             case nameof(DockSettings.TintColor):
+            case nameof(DockSettings.TintMode):
             case nameof(DockSettings.TintStrength):
                 ApplyGlassSettings();
                 break;
@@ -750,6 +811,11 @@ public partial class DockWindow : Window
                 break;
             case User32.WmSettingChange when wParam == SpiSetWorkArea:
                 Dispatcher.BeginInvoke(UpdatePlacement);
+                break;
+            case User32.WmSettingChange when lParam != 0 && Marshal.PtrToStringUni(lParam) == "ImmersiveColorSet":
+            case WmDwmColorizationColorChanged:
+                // Modo claro/escuro ou cor de destaque mudaram: o vidro que segue o tema acompanha.
+                Dispatcher.BeginInvoke(ApplyGlassSettings);
                 break;
             case User32.WmDisplayChange:
             case User32.WmDpiChanged:

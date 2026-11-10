@@ -13,6 +13,13 @@ internal static class ScreenCapture
 {
     private const uint SourceCopy = 0x00CC0020;
 
+    /// <summary>As demonstrações do Debug trocam o papel de parede por um gradiente neutro.</summary>
+#if DEBUG
+    public static bool UsesDemoWallpaper => DemoWallpaper.IsEnabled;
+#else
+    public static bool UsesDemoWallpaper => false;
+#endif
+
     /// <summary>Papel de parede como o Windows o desenha, para um monitor do tamanho informado (em pixels físicos).</summary>
     public static byte[] Wallpaper(int monitorWidth, int monitorHeight, int factor, out int width, out int height)
     {

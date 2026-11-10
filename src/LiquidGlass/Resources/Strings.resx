@@ -45,6 +45,18 @@
   <data name="CloseAllWindows" xml:space="preserve">
     <value>Fechar todas as janelas</value>
   </data>
+  <data name="ChangeIcon" xml:space="preserve">
+    <value>Trocar ícone…</value>
+  </data>
+  <data name="ResetIcon" xml:space="preserve">
+    <value>Restaurar ícone original</value>
+  </data>
+  <data name="ChooseIconTitle" xml:space="preserve">
+    <value>Escolha uma imagem ou um programa</value>
+  </data>
+  <data name="ChooseIconFilter" xml:space="preserve">
+    <value>Imagens e programas|{0}|Todos os arquivos (*.*)|*.*</value>
+  </data>
   <data name="Close" xml:space="preserve">
     <value>Fechar</value>
   </data>
@@ -149,6 +161,15 @@
   </data>
   <data name="CloseWindow" xml:space="preserve">
     <value>Fechar janela</value>
+  </data>
+  <data name="MediaPrevious" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="MediaPlayPause" xml:space="preserve">
+    <value>Tocar ou pausar</value>
+  </data>
+  <data name="MediaNext" xml:space="preserve">
+    <value>Próxima</value>
   </data>
   <data name="MoreWindowsOne" xml:space="preserve">
     <value>Mais 1 janela no menu do botão direito</value>
@@ -318,6 +339,12 @@
   <data name="EdgeRight" xml:space="preserve">
     <value>À direita</value>
   </data>
+  <data name="AllMonitors" xml:space="preserve">
+    <value>Dock em todos os monitores</value>
+  </data>
+  <data name="AllMonitorsDescription" xml:space="preserve">
+    <value>Uma dock em cada tela, todas com os mesmos apps. Desligado, só no monitor principal.</value>
+  </data>
   <data name="IconSize" xml:space="preserve">
     <value>Tamanho dos ícones</value>
   </data>
@@ -435,6 +462,21 @@
   <data name="TintStrength" xml:space="preserve">
     <value>Intensidade do tom</value>
   </data>
+  <data name="TintMode" xml:space="preserve">
+    <value>Cor do vidro</value>
+  </data>
+  <data name="TintModeDescription" xml:space="preserve">
+    <value>O tom do vidro pode acompanhar o modo claro ou escuro e a cor de destaque do Windows.</value>
+  </data>
+  <data name="TintModeCustom" xml:space="preserve">
+    <value>Personalizada</value>
+  </data>
+  <data name="TintModeWindows" xml:space="preserve">
+    <value>Tema do Windows (claro ou escuro)</value>
+  </data>
+  <data name="TintModeAccent" xml:space="preserve">
+    <value>Cor de destaque do Windows</value>
+  </data>
   <data name="Magnification" xml:space="preserve">
     <value>Ampliação</value>
   </data>
@@ -513,6 +555,18 @@
   <data name="WinTabOpensCubeDescription" xml:space="preserve">
     <value>Usa o cubo da dock no lugar da Visão de Tarefas do Windows.</value>
   </data>
+  <data name="ShowBadges" xml:space="preserve">
+    <value>Selos e progresso dos apps</value>
+  </data>
+  <data name="ShowBadgesDescription" xml:space="preserve">
+    <value>Mensagens não lidas (Discord, Telegram, Teams…) e barras de download no ícone. Funciona com a barra do Windows oculta.</value>
+  </data>
+  <data name="WinNumberKeys" xml:space="preserve">
+    <value>Win+1…9 abrem os apps da dock</value>
+  </data>
+  <data name="WinNumberKeysDescription" xml:space="preserve">
+    <value>Como na barra do Windows: Win+1 é o primeiro app, Win+2 o segundo. Com Shift, abre uma janela nova.</value>
+  </data>
   <data name="Language" xml:space="preserve">
     <value>Idioma</value>
   </data>
@@ -568,13 +622,25 @@
     <value>Versão atual: {0}.</value>
   </data>
   <data name="PinnedAppsTip" xml:space="preserve">
-    <value>Dica: arraste atalhos ou programas para a dock para fixá-los.</value>
+    <value>Dica: arraste atalhos, programas ou pastas para a dock. Uma pasta fixada abre como pilha, com os arquivos mais recentes.</value>
   </data>
   <data name="AddApp" xml:space="preserve">
     <value>Adicionar app…</value>
   </data>
   <data name="ImportFromTaskbar" xml:space="preserve">
     <value>Importar da barra de tarefas</value>
+  </data>
+  <data name="AddFolder" xml:space="preserve">
+    <value>Adicionar pasta…</value>
+  </data>
+  <data name="ChooseFolderTitle" xml:space="preserve">
+    <value>Escolha uma pasta para a pilha</value>
+  </data>
+  <data name="StackOpenInExplorer" xml:space="preserve">
+    <value>Abrir no Explorador</value>
+  </data>
+  <data name="StackEmpty" xml:space="preserve">
+    <value>Esta pasta está vazia.</value>
   </data>
   <data name="MoveUp" xml:space="preserve">
     <value>Mover para cima</value>

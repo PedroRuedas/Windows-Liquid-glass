@@ -16,6 +16,10 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private double _iconSize = 44;
 
+    /// <summary>Uma dock em cada monitor, todas com os mesmos apps (como a barra do Windows em todas as telas).</summary>
+    [ObservableProperty]
+    private bool _showOnAllMonitors;
+
     [ObservableProperty]
     private double _iconSpacing = 16;
 
@@ -80,6 +84,10 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private double _tintStrength = 0.14;
 
+    /// <summary>O vidro pode seguir o modo claro/escuro ou a cor de destaque do Windows.</summary>
+    [ObservableProperty]
+    private GlassTintMode _tintMode = GlassTintMode.Custom;
+
     [ObservableProperty]
     private double _shadow = 0.35;
 
@@ -124,6 +132,14 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _winTabOpensOverview = true;
 
+    /// <summary>Selos (mensagens não lidas) e barras de progresso que os apps mandam para a barra de tarefas.</summary>
+    [ObservableProperty]
+    private bool _showBadges = true;
+
+    /// <summary>Win+1…9 abrem os apps da dock, na ordem em que aparecem.</summary>
+    [ObservableProperty]
+    private bool _winNumberKeys = true;
+
     /// <summary>O botão Iniciar e a tecla Windows abrem o menu Iniciar de vidro no lugar do menu do Windows.</summary>
     [ObservableProperty]
     private bool _useGlassStartMenu = true;
@@ -150,6 +166,13 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private List<string> _runningOrder = [];
 
+    /// <summary>
+    /// Ícones escolhidos pelo usuário: a chave é a do app (<see cref="ViewModels.DockItemViewModel.IconKey"/>)
+    /// e o valor, a cópia da imagem em %AppData%\LiquidGlass\icons. Trocado inteiro a cada mudança, para salvar.
+    /// </summary>
+    [ObservableProperty]
+    private Dictionary<string, string> _customIcons = [];
+
     public ObservableCollection<PinnedApp> PinnedApps { get; set; } = [];
 
     /// <summary>Apps fixados no menu Iniciar de vidro, na ordem da grade.</summary>
@@ -166,6 +189,7 @@ public sealed partial class DockSettings : ObservableObject
     {
         Edge = other.Edge;
         IconSize = other.IconSize;
+        ShowOnAllMonitors = other.ShowOnAllMonitors;
         IconSpacing = other.IconSpacing;
         DockLength = other.DockLength;
         EdgeMargin = other.EdgeMargin;
@@ -186,6 +210,7 @@ public sealed partial class DockSettings : ObservableObject
         Saturation = other.Saturation;
         TintColor = other.TintColor;
         TintStrength = other.TintStrength;
+        TintMode = other.TintMode;
         Shadow = other.Shadow;
         MagnificationEnabled = other.MagnificationEnabled;
         Magnification = other.Magnification;
@@ -199,6 +224,8 @@ public sealed partial class DockSettings : ObservableObject
         TaskbarMode = other.TaskbarMode;
         LaunchAtStartup = other.LaunchAtStartup;
         WinTabOpensOverview = other.WinTabOpensOverview;
+        WinNumberKeys = other.WinNumberKeys;
+        ShowBadges = other.ShowBadges;
         UseGlassStartMenu = other.UseGlassStartMenu;
         CheckForUpdates = other.CheckForUpdates;
     }

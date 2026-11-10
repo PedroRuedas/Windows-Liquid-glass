@@ -298,6 +298,26 @@ internal static class User32
     [DllImport("user32.dll")]
     public static extern nint MonitorFromPoint(Point point, uint flags);
 
+    /// <summary>Pai das janelas só de mensagens (HWND_MESSAGE).</summary>
+    public static readonly nint HwndMessage = -3;
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern nint GetProp(nint hwnd, string name);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetProp(nint hwnd, string name, nint data);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern nint RemoveProp(nint hwnd, string name);
+
+    public const uint GrGdiObjects = 0;
+    public const uint GrUserObjects = 1;
+
+    /// <summary>Quantos objetos GDI ou USER o processo tem abertos (vazamentos aparecem aqui).</summary>
+    [DllImport("user32.dll")]
+    public static extern uint GetGuiResources(nint process, uint flags);
+
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetMonitorInfo(nint monitor, ref MonitorInfo info);
@@ -460,6 +480,36 @@ internal static class User32
             Right = left + GetSystemMetrics(SmCxVirtualScreen),
             Bottom = top + GetSystemMetrics(SmCyVirtualScreen),
         };
+    }
+
+    /// <summary>O monitor em que está o centro do elemento (o mais próximo, se ele estiver fora de todos).</summary>
+    public static MonitorInfo GetMonitorInfoFor(System.Windows.Media.Visual visual)
+    {
+        if (visual is System.Windows.FrameworkElement element && System.Windows.PresentationSource.FromVisual(element) is not null)
+        {
+            var center = element.PointToScreen(new System.Windows.Point(element.ActualWidth / 2, element.ActualHeight / 2));
+            return GetMonitorInfoAt((int)center.X, (int)center.Y);
+        }
+
+        return GetPrimaryMonitorInfo();
+    }
+
+    /// <summary>O monitor no ponto (em pixels físicos) ou o mais próximo dele.</summary>
+    public static MonitorInfo GetMonitorInfoAt(int x, int y)
+    {
+        var monitor = MonitorFromPoint(new Point { X = x, Y = y }, MonitorDefaultToNearest);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        GetMonitorInfo(monitor, ref info);
+        return info;
+    }
+
+    /// <summary>O monitor em que a janela está (o mais próximo, se ela estiver fora de todos).</summary>
+    public static MonitorInfo GetMonitorInfoForWindow(nint hwnd)
+    {
+        var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        GetMonitorInfo(monitor, ref info);
+        return info;
     }
 
     public static MonitorInfo GetPrimaryMonitorInfo()

@@ -52,6 +52,11 @@ internal static class DockMenus
             }
 
             menu.Items.Add(Command(item.IsPinned ? Strings.RemoveFromDock : Strings.KeepInDock, item.TogglePinCommand));
+            menu.Items.Add(Command(Strings.ChangeIcon, item.ChangeIconCommand));
+            if (item.HasCustomIcon)
+            {
+                menu.Items.Add(Command(Strings.ResetIcon, item.ResetIconCommand));
+            }
 
             if (item.IsRunning)
             {

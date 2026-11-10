@@ -18,11 +18,20 @@ public sealed class WallpaperService
     /// </summary>
     private const int Downscale = 2;
 
+    private readonly Func<User32.MonitorInfo> _monitor;
+    private readonly bool _isPrimary;
     private byte[]? _pixels;
     private int _width;
     private int _height;
     private int _blurRadius = -1;
     private int _version;
+
+    /// <summary>Do monitor principal (padrão) ou do monitor que <paramref name="monitor"/> devolve.</summary>
+    internal WallpaperService(Func<User32.MonitorInfo>? monitor = null, bool isPrimary = true)
+    {
+        _monitor = monitor ?? User32.GetPrimaryMonitorInfo;
+        _isPrimary = isPrimary;
+    }
 
     /// <summary>Disparado sempre que <see cref="Backdrop"/> muda.</summary>
     public event EventHandler? Changed;
@@ -80,8 +89,18 @@ public sealed class WallpaperService
 
     private void Capture()
     {
-        var monitor = User32.GetPrimaryMonitorInfo().Monitor;
+        var monitor = _monitor().Monitor;
         MonitorOrigin = new Point(monitor.Left, monitor.Top);
+
+        // O desenho do GDI só acerta o monitor principal; os outros são desenhados a partir da imagem
+        // e do ajuste que o Windows informa para cada monitor.
+        if (!_isPrimary && !ScreenCapture.UsesDemoWallpaper
+            && WallpaperRenderer.Render(monitor, User32.GetVirtualScreen(), Downscale, out var width, out var height) is { } rendered)
+        {
+            (_pixels, _width, _height) = (rendered, width, height);
+            return;
+        }
+
         _pixels = ScreenCapture.Wallpaper(
             Math.Max(monitor.Width, 1),
             Math.Max(monitor.Height, 1),

@@ -77,6 +77,16 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         new(AppLanguage.English, Strings.LanguageEnglish),
     ];
 
+    public IReadOnlyList<OptionItem<GlassTintMode>> TintModes { get; } =
+    [
+        new(GlassTintMode.Custom, Strings.TintModeCustom),
+        new(GlassTintMode.WindowsTheme, Strings.TintModeWindows),
+        new(GlassTintMode.Accent, Strings.TintModeAccent),
+    ];
+
+    /// <summary>O tom e a intensidade só valem com a cor personalizada.</summary>
+    public bool IsCustomTint => Settings.TintMode == GlassTintMode.Custom;
+
     /// <summary>O idioma escolhido não é o que está na tela: só vale depois de reiniciar a dock.</summary>
     public bool LanguageNeedsRestart => !Strings.IsInUse(Settings.Language);
 
@@ -122,6 +132,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(DockSettings.TintMode))
+        {
+            OnPropertyChanged(nameof(IsCustomTint));
+        }
+
         if (e.PropertyName == nameof(DockSettings.Language))
         {
             OnPropertyChanged(nameof(LanguageNeedsRestart));
@@ -167,6 +182,22 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
 
         foreach (var path in dialog.FileNames)
+        {
+            AddPin(PinnedAppFactory.FromPath(path));
+        }
+    }
+
+    /// <summary>Uma pasta fixada abre como pilha, com os arquivos mais recentes.</summary>
+    [RelayCommand]
+    private void AddFolder()
+    {
+        var dialog = new OpenFolderDialog { Title = Strings.ChooseFolderTitle, Multiselect = true };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        foreach (var path in dialog.FolderNames)
         {
             AddPin(PinnedAppFactory.FromPath(path));
         }
@@ -244,3 +275,6 @@ public sealed record PinnedAppItem(PinnedApp Pin, ImageSource? Icon);
 
 /// <summary>Uma opção da lista de idiomas.</summary>
 public sealed record LanguageOption(AppLanguage Value, string Name);
+
+/// <summary>Uma opção de uma lista de escolha: o valor guardado e o nome mostrado.</summary>
+public sealed record OptionItem<T>(T Value, string Name);

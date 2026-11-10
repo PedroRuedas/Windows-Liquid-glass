@@ -90,7 +90,7 @@ public sealed partial class ScreenBackdrop : ObservableObject
     /// <summary>Captura e desfoca <paramref name="region"/> (em pixels físicos), limitada ao monitor.</summary>
     private void Capture(Rect region)
     {
-        var monitor = User32.GetPrimaryMonitorInfo().Monitor;
+        var monitor = User32.GetMonitorInfoAt((int)(region.X + (region.Width / 2)), (int)(region.Y + (region.Height / 2))).Monitor;
         region.Intersect(new Rect(monitor.Left, monitor.Top, monitor.Width, monitor.Height));
         if (region.IsEmpty || region.Width < 1 || region.Height < 1)
         {

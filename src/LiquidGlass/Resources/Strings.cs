@@ -84,6 +84,18 @@ public static class Strings
     /// <summary>Fechar todas as janelas</summary>
     public static string CloseAllWindows => Get();
 
+    /// <summary>Trocar ícone…</summary>
+    public static string ChangeIcon => Get();
+
+    /// <summary>Restaurar ícone original</summary>
+    public static string ResetIcon => Get();
+
+    /// <summary>Escolha uma imagem ou um programa</summary>
+    public static string ChooseIconTitle => Get();
+
+    /// <summary>Imagens e programas|{0}|Todos os arquivos (*.*)|*.*</summary>
+    public static string ChooseIconFilter(string extensions) => Format([extensions]);
+
     /// <summary>Fechar</summary>
     public static string Close => Get();
 
@@ -188,6 +200,15 @@ public static class Strings
 
     /// <summary>Fechar janela</summary>
     public static string CloseWindow => Get();
+
+    /// <summary>Anterior</summary>
+    public static string MediaPrevious => Get();
+
+    /// <summary>Tocar ou pausar</summary>
+    public static string MediaPlayPause => Get();
+
+    /// <summary>Próxima</summary>
+    public static string MediaNext => Get();
 
     /// <summary>Mais 1 janela no menu do botão direito</summary>
     public static string MoreWindowsOne => Get();
@@ -357,6 +378,12 @@ public static class Strings
     /// <summary>À direita</summary>
     public static string EdgeRight => Get();
 
+    /// <summary>Dock em todos os monitores</summary>
+    public static string AllMonitors => Get();
+
+    /// <summary>Uma dock em cada tela, todas com os mesmos apps. Desligado, só no monitor principal.</summary>
+    public static string AllMonitorsDescription => Get();
+
     /// <summary>Tamanho dos ícones</summary>
     public static string IconSize => Get();
 
@@ -474,6 +501,21 @@ public static class Strings
     /// <summary>Intensidade do tom</summary>
     public static string TintStrength => Get();
 
+    /// <summary>Cor do vidro</summary>
+    public static string TintMode => Get();
+
+    /// <summary>O tom do vidro pode acompanhar o modo claro ou escuro e a cor de destaque do Windows.</summary>
+    public static string TintModeDescription => Get();
+
+    /// <summary>Personalizada</summary>
+    public static string TintModeCustom => Get();
+
+    /// <summary>Tema do Windows (claro ou escuro)</summary>
+    public static string TintModeWindows => Get();
+
+    /// <summary>Cor de destaque do Windows</summary>
+    public static string TintModeAccent => Get();
+
     /// <summary>Ampliação</summary>
     public static string Magnification => Get();
 
@@ -552,6 +594,18 @@ public static class Strings
     /// <summary>Usa o cubo da dock no lugar da Visão de Tarefas do Windows.</summary>
     public static string WinTabOpensCubeDescription => Get();
 
+    /// <summary>Selos e progresso dos apps</summary>
+    public static string ShowBadges => Get();
+
+    /// <summary>Mensagens não lidas (Discord, Telegram, Teams…) e barras de download no ícone. Funciona com a barra do Windows oculta.</summary>
+    public static string ShowBadgesDescription => Get();
+
+    /// <summary>Win+1…9 abrem os apps da dock</summary>
+    public static string WinNumberKeys => Get();
+
+    /// <summary>Como na barra do Windows: Win+1 é o primeiro app, Win+2 o segundo. Com Shift, abre uma janela nova.</summary>
+    public static string WinNumberKeysDescription => Get();
+
     /// <summary>Idioma</summary>
     public static string Language => Get();
 
@@ -606,7 +660,7 @@ public static class Strings
     /// <summary>Versão atual: {0}.</summary>
     public static string CurrentVersion(string version) => Format([version]);
 
-    /// <summary>Dica: arraste atalhos ou programas para a dock para fixá-los.</summary>
+    /// <summary>Dica: arraste atalhos, programas ou pastas para a dock. Uma pasta fixada abre como pilha, com os arquivos mais recentes.</summary>
     public static string PinnedAppsTip => Get();
 
     /// <summary>Adicionar app…</summary>
@@ -614,6 +668,18 @@ public static class Strings
 
     /// <summary>Importar da barra de tarefas</summary>
     public static string ImportFromTaskbar => Get();
+
+    /// <summary>Adicionar pasta…</summary>
+    public static string AddFolder => Get();
+
+    /// <summary>Escolha uma pasta para a pilha</summary>
+    public static string ChooseFolderTitle => Get();
+
+    /// <summary>Abrir no Explorador</summary>
+    public static string StackOpenInExplorer => Get();
+
+    /// <summary>Esta pasta está vazia.</summary>
+    public static string StackEmpty => Get();
 
     /// <summary>Mover para cima</summary>
     public static string MoveUp => Get();

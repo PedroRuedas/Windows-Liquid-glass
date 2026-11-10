@@ -97,6 +97,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     /// <summary>O botão Iniciar pede o menu de vidro (com ele ligado nas preferências).</summary>
     public event EventHandler? StartMenuRequested;
 
+    /// <summary>Uma pasta fixada foi clicada: a dock abre a pilha dela.</summary>
+    public event EventHandler<DockItemViewModel>? StackRequested;
+
     /// <summary>Um ícone foi clicado; a visão das áreas de trabalho fecha para o app aparecer.</summary>
     public event EventHandler<DockItemViewModel>? ItemActivating;
 
@@ -105,10 +108,53 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     /// <summary>Atualizações pelo menu da dock; sem ele, o menu não as oferece.</summary>
     public UpdateService? Updates { get; init; }
 
+    /// <summary>O que os apps estão tocando, para o cartão de mídia das miniaturas.</summary>
+    public MediaService? Media { get; init; }
+
+    /// <summary>Selos e barras de progresso que os apps mandam para a barra de tarefas.</summary>
+    public TaskbarListService? TaskbarList
+    {
+        get => _taskbarList;
+        init
+        {
+            _taskbarList = value;
+            if (value is not null)
+            {
+                value.Changed += (_, _) => UpdateTaskbarState();
+            }
+        }
+    }
+
+    private readonly TaskbarListService? _taskbarList;
+
     public ObservableCollection<DockItemViewModel> Items { get; } = [];
 
     /// <summary>Ampliação aplicada ao painel (1 quando desativada).</summary>
     public double EffectiveMagnification => Settings.MagnificationEnabled ? Math.Max(Settings.Magnification, 1) : 1;
+
+    /// <summary>
+    /// Win+1…9: o app na posição <paramref name="index"/>, contando só os apps (fixados e abertos)
+    /// na ordem da dock. Faz o mesmo que o clique; com <paramref name="newWindow"/>, o botão do meio.
+    /// </summary>
+    public bool ActivateByNumber(int index, bool newWindow)
+    {
+        var apps = Items.Where(item => item.IsApplication && !item.IsRemoving).ToList();
+        if (index < 0 || index >= apps.Count)
+        {
+            return false;
+        }
+
+        if (newWindow)
+        {
+            OpenNew(apps[index]);
+        }
+        else
+        {
+            Activate(apps[index]);
+        }
+
+        return true;
+    }
 
     public void Activate(DockItemViewModel item)
     {
@@ -135,6 +181,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
                 break;
             case DockItemKind.TrayButton:
                 TrayToggleRequested?.Invoke(this, item);
+                break;
+            case DockItemKind.Application when StackRequested is not null && StackService.IsFolder(item.Pin?.Target):
+                StackRequested.Invoke(this, item);
                 break;
             case DockItemKind.Application when item.IsRunning:
                 FocusOrCycle(item);
@@ -238,6 +287,93 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
     public List<DockItemViewModel> PinnedItems() =>
         Items.Where(candidate => candidate.IsApplication && !candidate.IsRemoving && candidate.IsPinned).ToList();
 
+    /// <summary>"Trocar ícone…": uma imagem (PNG, ICO, JPG) ou o ícone de outro programa.</summary>
+    public void ChangeIcon(DockItemViewModel item)
+    {
+        if (item.IconKey is not { } key)
+        {
+            return;
+        }
+
+        var extensions = string.Join(";", CustomIcons.ImageExtensions.Concat(CustomIcons.ProgramExtensions).Select(extension => "*" + extension));
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = Strings.ChooseIconTitle,
+            Filter = Strings.ChooseIconFilter(extensions),
+        };
+
+        if (dialog.ShowDialog() != true || CustomIcons.Import(dialog.FileName) is not { } stored)
+        {
+            return;
+        }
+
+        var icons = new Dictionary<string, string>(Settings.CustomIcons, StringComparer.OrdinalIgnoreCase);
+        CustomIcons.Delete(icons.GetValueOrDefault(key));
+        icons[key] = stored;
+        Settings.CustomIcons = icons;
+        _customIconCache.Remove(stored);
+        ApplyCustomIcons();
+    }
+
+    public void ResetIcon(DockItemViewModel item)
+    {
+        if (item.IconKey is not { } key || !Settings.CustomIcons.ContainsKey(key))
+        {
+            return;
+        }
+
+        var icons = new Dictionary<string, string>(Settings.CustomIcons, StringComparer.OrdinalIgnoreCase);
+        CustomIcons.Delete(icons[key]);
+        icons.Remove(key);
+        Settings.CustomIcons = icons;
+        ApplyCustomIcons();
+    }
+
+    /// <summary>
+    /// Selo e progresso de cada app, a partir das janelas dele: o selo da primeira janela que tem um
+    /// e o progresso da primeira que está mostrando algum (como a barra do Windows faz com o grupo).
+    /// </summary>
+    private void UpdateTaskbarState()
+    {
+        foreach (var item in Items.Where(item => item.IsApplication))
+        {
+            item.Badge = Settings.ShowBadges && _taskbarList is { } list
+                ? item.Windows.Select(window => list.OverlayFor(window.Handle)).FirstOrDefault(icon => icon is not null)
+                : null;
+
+            var progress = Settings.ShowBadges && _taskbarList is { } source
+                ? item.Windows.Select(window => source.ProgressFor(window.Handle)).FirstOrDefault(state => state.State != TaskbarProgressState.None)
+                : default;
+            item.ProgressState = progress.State;
+            item.Progress = progress.Value;
+        }
+    }
+
+    /// <summary>Põe o ícone escolhido pelo usuário (ou de volta o do app) em cada app da dock.</summary>
+    private void ApplyCustomIcons()
+    {
+        foreach (var item in Items.Where(item => item.IsApplication))
+        {
+            var path = item.IconKey is { } key && Settings.CustomIcons.TryGetValue(key, out var stored) ? stored : null;
+            var custom = path is null ? null : LoadCustomIcon(path);
+            item.HasCustomIcon = custom is not null;
+            item.Icon = custom ?? item.DefaultIcon;
+        }
+    }
+
+    private ImageSource? LoadCustomIcon(string path)
+    {
+        if (!_customIconCache.TryGetValue(path, out var icon))
+        {
+            icon = CustomIcons.Load(path);
+            _customIconCache[path] = icon;
+        }
+
+        return icon;
+    }
+
+    private readonly Dictionary<string, ImageSource?> _customIconCache = new(StringComparer.OrdinalIgnoreCase);
+
     public void CloseAll(DockItemViewModel item)
     {
         foreach (var window in item.Windows)
@@ -336,6 +472,9 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             case nameof(DockSettings.ShowWorkspacesButton):
             case nameof(DockSettings.ShowNetwork):
                 Rebuild();
+                break;
+            case nameof(DockSettings.ShowBadges):
+                UpdateTaskbarState();
                 break;
             case nameof(DockSettings.MagnificationEnabled):
             case nameof(DockSettings.Magnification):
@@ -485,6 +624,8 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
         }
 
         Reconcile(desired);
+        ApplyCustomIcons();
+        UpdateTaskbarState();
         OnForegroundChanged(this, _tracker.ForegroundWindow);
     }
 
@@ -556,7 +697,7 @@ public sealed partial class DockViewModel : ObservableObject, IDisposable
             icon = IconService.GetWindowIcon(windows[0].Handle);
         }
 
-        return new DockItemViewModel(this, DockItemKind.Application) { Name = name, Icon = icon };
+        return new DockItemViewModel(this, DockItemKind.Application) { Name = name, Icon = icon, DefaultIcon = icon };
     }
 
     private void Reconcile(List<DockItemViewModel> desired)
