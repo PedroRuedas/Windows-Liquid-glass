@@ -20,6 +20,8 @@ jobs:
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
+      # Só diz se o segredo existe; o valor fica no passo que assina.
+      HAS_SIGNPATH: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +51,40 @@ jobs:
 
       - name: Gerar o instalador
         run: dotnet publish src/LiquidGlass -p:PublishProfile=Installer
+
+      # Assinatura digital gratuita do SignPath Foundation para projetos open source. Só roda com o
+      # segredo SIGNPATH_API_TOKEN e a variável SIGNPATH_ORGANIZATION_ID; sem eles, a release sai
+      # sem assinatura, como antes. Veja "Assinatura de código" no README.
+      - name: Enviar o instalador para assinar
+        id: unsigned
+        if: env.HAS_SIGNPATH == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: instalador-sem-assinatura
+          path: artifacts/LiquidGlassDock-Setup-${{ steps.version.outputs.version }}.exe
+          if-no-files-found: error
+
+      - name: Assinar no SignPath
+        if: steps.unsigned.outcome == 'success'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: Windows-Liquid-glass
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: artifacts/signed
+
+      - name: Usar o instalador assinado
+        if: steps.unsigned.outcome == 'success'
+        shell: pwsh
+        run: |
+          $name = 'LiquidGlassDock-Setup-${{ steps.version.outputs.version }}.exe'
+          Copy-Item "artifacts/signed/$name" "artifacts/$name" -Force
+          $signature = Get-AuthenticodeSignature "artifacts/$name"
+          if ($signature.Status -ne 'Valid') { throw "Assinatura inválida: $($signature.Status)" }
+          "Assinado por: $($signature.SignerCertificate.Subject)"
 
       - name: Notas da release
         shell: pwsh

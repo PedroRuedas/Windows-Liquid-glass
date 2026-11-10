@@ -336,6 +336,22 @@ como preparar o ambiente, rodar os testes e enviar mudanças. Falhas de seguran�
 
 Se a dock te ajudou, deixe uma ⭐ no repositório: isso ajuda outras pessoas a encontrá-la.
 
+## Assinatura de código
+
+Assinatura de código gratuita fornecida pelo [SignPath.io](https://about.signpath.io), certificado
+pelo [SignPath Foundation](https://signpath.org) (pedido em andamento; até a aprovação, as releases
+saem sem assinatura).
+
+- **Quem pode alterar o código e aprovar releases:** [PedroRuedas](https://github.com/PedroRuedas),
+  mantenedor. Contribuições externas entram só por pull request revisado.
+- **Como o instalador é gerado:** só pelo [workflow de release](.github/workflows/release.yml), nas
+  máquinas do GitHub, a partir de uma tag do código público. Nenhum binário compilado em máquina
+  pessoal é assinado.
+- **Privacidade:** a dock só se comunica com outros sistemas para procurar versões novas nas
+  releases do GitHub (`api.github.com`), ao abrir e a cada 6 horas (dá para desligar em
+  Personalizar → Comportamento), e para baixar o instalador quando você pede a atualização. Nenhum
+  dado pessoal é enviado.
+
 ## Licença
 
 Este projeto é distribuído sob a [GNU General Public License v3.0](LICENSE). Você pode usar,

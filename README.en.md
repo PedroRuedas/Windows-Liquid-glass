@@ -175,6 +175,22 @@ Bug reports, ideas and pull requests are welcome, in English or Portuguese. See 
 
 If you like the dock, a ⭐ helps other people find it.
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
+[SignPath Foundation](https://signpath.org) (application in progress; until it is approved,
+releases are unsigned).
+
+- **Committers, reviewers and approvers:** [PedroRuedas](https://github.com/PedroRuedas),
+  maintainer. Outside contributions are accepted only through reviewed pull requests.
+- **Build:** installers are produced only by the [release workflow](.github/workflows/release.yml)
+  on GitHub-hosted runners, from a tag of the public source. No binary built on a personal machine
+  is signed.
+- **Privacy:** this program does not transfer any information to other networked systems, except
+  for checking GitHub releases (`api.github.com`) for a new version when it starts and every 6 hours
+  (this can be turned off under Customize → Behavior) and downloading the installer when you ask
+  for an update. No personal data is sent.
+
 ## License
 
 Liquid Glass Dock is licensed under the [GNU General Public License v3.0](LICENSE).
