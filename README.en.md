@@ -17,7 +17,7 @@ taskbar.**
 [Features](#features) · [Installation](#installation) · [FAQ](#faq) · [Contributing](#contributing) ·
 [Changelog](CHANGELOG.md) · [🇧🇷 Português](README.md)
 
-![The liquid glass dock over the wallpaper, with icons magnified under the cursor](docs/dock.png)
+![The liquid glass dock: icons grow as the mouse passes over them, and Calculator minimizes into its icon with the magic lamp effect](docs/dock-demo.gif)
 
 </div>
 

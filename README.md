@@ -17,7 +17,7 @@ tarefas do Windows 11.**
 [Recursos](#recursos) · [Instalação](#instalação) · [Perguntas frequentes](#perguntas-frequentes) ·
 [Contribuir](#contribuir) · [Histórico de versões](CHANGELOG.md) · [🇺🇸 English](README.en.md)
 
-![A dock de vidro líquido sobre o papel de parede, com os ícones ampliados sob o cursor](docs/dock.png)
+![A dock de vidro líquido: os ícones crescem quando o mouse passa e a Calculadora minimiza em lâmpada mágica até o ícone dela](docs/dock-demo.gif)
 
 </div>
 
