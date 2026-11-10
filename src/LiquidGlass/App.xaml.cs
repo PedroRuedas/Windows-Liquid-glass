@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Interop;
@@ -7,6 +8,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 using LiquidGlass.ViewModels;
 using LiquidGlass.Views;
@@ -18,6 +20,9 @@ public partial class App : Application
 {
     private const string SettingsArgument = "--settings";
     private const string QuitArgument = "--quit";
+
+    /// <summary>Aberta pela própria dock ao reiniciar: espera a anterior fechar em vez de desistir.</summary>
+    private const string RestartArgument = "--restart";
 
     private readonly IconService _icons = new();
     private readonly TrayIconService _tray = new();
@@ -81,7 +86,9 @@ public partial class App : Application
             return;
         }
 
-        if (!_instance.IsFirstInstance)
+        // Só espera quem não é a primeira: esperar um mutex que já é nosso o adquiriria duas vezes.
+        var waitedForRestart = !_instance.IsFirstInstance && e.Args.Contains(RestartArgument) && _instance.WaitForFirstInstanceToExit(QuitTimeout);
+        if (!_instance.IsFirstInstance && !waitedForRestart)
         {
             // Outra dock já está rodando: abrir o app de novo mostra a personalização dela.
             _instance.RequestShowSettings();
@@ -96,6 +103,9 @@ public partial class App : Application
             onQuit: () => Dispatcher.BeginInvoke(Shutdown));
 
         _settingsService = new SettingsService();
+
+        // Antes de qualquer janela: os textos são lidos uma vez, ao criar cada uma.
+        Strings.Apply(Settings.Language);
         if (_settingsService.IsFirstRun)
         {
             ImportInitialPins();
@@ -210,6 +220,33 @@ public partial class App : Application
         Shutdown();
     }
 
+    /// <summary>
+    /// Abre outra dock, que espera esta fechar e assume com a personalização aberta. Se ela não
+    /// abrir, esta continua: nunca deixa o usuário sem dock nem barra de tarefas.
+    /// </summary>
+    private void Restart()
+    {
+        if (Environment.ProcessPath is not { } executable)
+        {
+            return;
+        }
+
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo(executable)
+            {
+                ArgumentList = { RestartArgument, SettingsArgument },
+                UseShellExecute = false,
+            });
+        }
+        catch (Win32Exception)
+        {
+            return;
+        }
+
+        Shutdown();
+    }
+
     private void ImportInitialPins()
     {
         var pins = PinnedAppFactory.ImportTaskbarPins().ToList();
@@ -227,7 +264,9 @@ public partial class App : Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(new SettingsViewModel(Settings, _icons, _updates));
+        var viewModel = new SettingsViewModel(Settings, _icons, _updates);
+        viewModel.RestartRequested += (_, _) => Restart();
+        _settingsWindow = new SettingsWindow(viewModel);
         _settingsWindow.Closed += (_, _) =>
         {
             _settingsWindow = null;

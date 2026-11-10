@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 
 namespace LiquidGlass.Services;
 
@@ -19,7 +20,6 @@ internal static class StartMenuCatalog
     public const string SettingsIcon = AppsFolder + "windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel";
 
     private static readonly CompareInfo Compare = CultureInfo.GetCultureInfo("pt-BR").CompareInfo;
-    private static readonly CultureInfo PortugueseCulture = CultureInfo.GetCultureInfo("pt-BR");
 
     private static readonly string RecentFolder = Environment.GetFolderPath(Environment.SpecialFolder.Recent);
 
@@ -31,44 +31,47 @@ internal static class StartMenuCatalog
     /// <summary>Quantos atalhos recentes olhar, no máximo, até achar os arquivos que ainda existem.</summary>
     private const int RecentScanLimit = 400;
 
-    /// <summary>Páginas das Configurações que a pesquisa encontra, com palavras que levam a elas.</summary>
-    private static readonly (string Name, string Uri, string Keywords)[] SettingsPages =
+    /// <summary>
+    /// Páginas das Configurações que a pesquisa encontra. O nome e as palavras que levam a cada uma
+    /// ficam nos textos da interface (SettingsPage_* e SettingsPageKeywords_*), em cada idioma.
+    /// </summary>
+    private static readonly SettingsPage[] SettingsPages =
     [
-        ("Configurações", "ms-settings:", "opções preferências ajustes"),
-        ("Wi-Fi", "ms-settings:network-wifi", "wifi rede internet sem fio wireless"),
-        ("Rede e Internet", "ms-settings:network-status", "ethernet cabo conexão"),
-        ("Bluetooth e dispositivos", "ms-settings:bluetooth", "fone mouse teclado parear"),
-        ("Tela", "ms-settings:display", "monitor resolução brilho escala vídeo"),
-        ("Som", "ms-settings:sound", "áudio volume alto-falante microfone"),
-        ("Notificações", "ms-settings:notifications", "avisos alertas não perturbe"),
-        ("Energia e bateria", "ms-settings:powersleep", "suspender desligar tela economia"),
-        ("Armazenamento", "ms-settings:storagesense", "disco espaço limpeza"),
-        ("Plano de fundo", "ms-settings:personalization-background", "papel de parede personalização imagem"),
-        ("Cores", "ms-settings:colors", "modo escuro claro tema destaque personalização"),
-        ("Temas", "ms-settings:themes", "personalização aparência"),
-        ("Tela de bloqueio", "ms-settings:lockscreen", "bloquear personalização"),
-        ("Aplicativos instalados", "ms-settings:appsfeatures", "programas desinstalar remover apps"),
-        ("Aplicativos padrão", "ms-settings:defaultapps", "navegador padrão abrir com"),
-        ("Inicialização", "ms-settings:startupapps", "iniciar com o windows apps ao iniciar"),
-        ("Suas informações", "ms-settings:yourinfo", "conta usuário perfil foto"),
-        ("Opções de entrada", "ms-settings:signinoptions", "senha pin windows hello login"),
-        ("Data e hora", "ms-settings:dateandtime", "relógio fuso horário"),
-        ("Idioma e região", "ms-settings:regionlanguage", "língua formato país"),
-        ("Digitação", "ms-settings:typing", "teclado corretor sugestões"),
-        ("Mouse", "ms-settings:mousetouchpad", "cursor ponteiro rolagem touchpad"),
-        ("Impressoras e scanners", "ms-settings:printers", "imprimir impressora"),
-        ("Windows Update", "ms-settings:windowsupdate", "atualizações atualizar"),
-        ("Privacidade e segurança", "ms-settings:privacy", "permissões câmera localização"),
-        ("Segurança do Windows", "windowsdefender:", "antivírus defender firewall vírus"),
-        ("Sobre", "ms-settings:about", "sistema especificações nome do computador versão"),
-        ("VPN", "ms-settings:network-vpn", "rede privada"),
-        ("Proxy", "ms-settings:network-proxy", "rede"),
-        ("Modo avião", "ms-settings:network-airplanemode", "avião offline"),
-        ("Área de transferência", "ms-settings:clipboard", "copiar colar histórico"),
-        ("Multitarefa", "ms-settings:multitasking", "janelas snap ajustar"),
-        ("Jogos", "ms-settings:gaming-gamebar", "game bar xbox captura"),
-        ("Acessibilidade", "ms-settings:easeofaccess", "lupa narrador contraste legenda"),
-        ("Painel de Controle", "control.exe", "control painel"),
+        new("Settings", "ms-settings:"),
+        new("WiFi", "ms-settings:network-wifi"),
+        new("NetworkStatus", "ms-settings:network-status"),
+        new("Bluetooth", "ms-settings:bluetooth"),
+        new("Display", "ms-settings:display"),
+        new("Sound", "ms-settings:sound"),
+        new("Notifications", "ms-settings:notifications"),
+        new("Power", "ms-settings:powersleep"),
+        new("Storage", "ms-settings:storagesense"),
+        new("Background", "ms-settings:personalization-background"),
+        new("Colors", "ms-settings:colors"),
+        new("Themes", "ms-settings:themes"),
+        new("LockScreen", "ms-settings:lockscreen"),
+        new("InstalledApps", "ms-settings:appsfeatures"),
+        new("DefaultApps", "ms-settings:defaultapps"),
+        new("StartupApps", "ms-settings:startupapps"),
+        new("YourInfo", "ms-settings:yourinfo"),
+        new("SignInOptions", "ms-settings:signinoptions"),
+        new("DateTime", "ms-settings:dateandtime"),
+        new("Region", "ms-settings:regionlanguage"),
+        new("Typing", "ms-settings:typing"),
+        new("Mouse", "ms-settings:mousetouchpad"),
+        new("Printers", "ms-settings:printers"),
+        new("WindowsUpdate", "ms-settings:windowsupdate"),
+        new("Privacy", "ms-settings:privacy"),
+        new("WindowsSecurity", "windowsdefender:"),
+        new("About", "ms-settings:about"),
+        new("Vpn", "ms-settings:network-vpn"),
+        new("Proxy", "ms-settings:network-proxy"),
+        new("AirplaneMode", "ms-settings:network-airplanemode"),
+        new("Clipboard", "ms-settings:clipboard"),
+        new("Multitasking", "ms-settings:multitasking"),
+        new("Gaming", "ms-settings:gaming-gamebar"),
+        new("Accessibility", "ms-settings:easeofaccess"),
+        new("ControlPanel", "control.exe"),
     ];
 
     /// <summary>Todos os apps instalados, como na lista "Todos os apps" do Windows. Chame numa thread STA.</summary>
@@ -222,32 +225,32 @@ internal static class StartMenuCatalog
             || prefix.Equals("https", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Quando, em palavras: "Agora", "Há 5 min", "Há 20 h", "Ontem", "27 de out".</summary>
+    /// <summary>Quando, em palavras, no idioma da interface: "Agora", "Há 5 min", "Há 20 h", "Ontem", "27 de out".</summary>
     public static string RelativeTime(DateTime when, DateTime now)
     {
         var elapsed = now - when;
         if (elapsed < TimeSpan.FromMinutes(1))
         {
-            return "Agora";
+            return Strings.TimeNow;
         }
 
         if (elapsed < TimeSpan.FromHours(1))
         {
-            return string.Create(PortugueseCulture, $"Há {(int)elapsed.TotalMinutes} min");
+            return Strings.TimeMinutesAgo((int)elapsed.TotalMinutes);
         }
 
         if (elapsed < TimeSpan.FromHours(24))
         {
-            return string.Create(PortugueseCulture, $"Há {(int)elapsed.TotalHours} h");
+            return Strings.TimeHoursAgo((int)elapsed.TotalHours);
         }
 
         if (when.Date == now.Date.AddDays(-1))
         {
-            return "Ontem";
+            return Strings.TimeYesterday;
         }
 
-        var format = when.Year == now.Year ? "d 'de' MMM" : "d 'de' MMM 'de' yyyy";
-        return when.ToString(format, PortugueseCulture).Replace(".", string.Empty, StringComparison.Ordinal);
+        var format = when.Year == now.Year ? Strings.DateFormatThisYear : Strings.DateFormatOtherYear;
+        return when.ToString(format, Strings.Culture).Replace(".", string.Empty, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -320,8 +323,16 @@ internal static class StartMenuCatalog
             .Where(match => match.score > 0)
             .OrderByDescending(match => match.score)
             .Take(count)
-            .Select(match => new StartEntry(match.page.Name, match.page.Uri, StartEntryKind.Setting, SettingsIcon, "Configurações"))
+            .Select(match => new StartEntry(match.page.Name, match.page.Uri, StartEntryKind.Setting, SettingsIcon, Strings.SettingsApp))
             .ToList();
+
+    /// <summary>Uma página das Configurações; o nome e as palavras-chave vêm no idioma da interface.</summary>
+    private sealed record SettingsPage(string Id, string Uri)
+    {
+        public string Name => Strings.Lookup("SettingsPage_" + Id);
+
+        public string Keywords => Strings.Lookup("SettingsPageKeywords_" + Id);
+    }
 
     /// <summary>
     /// Arquivos da pasta do usuário pelo índice de pesquisa do Windows (o mesmo da pesquisa do

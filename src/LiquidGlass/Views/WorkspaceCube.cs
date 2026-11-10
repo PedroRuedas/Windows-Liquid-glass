@@ -12,6 +12,7 @@ using System.Windows.Shapes;
 using LiquidGlass.Controls;
 using LiquidGlass.Graphics;
 using LiquidGlass.Interop;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 
 namespace LiquidGlass.Views;
@@ -178,7 +179,7 @@ public sealed class WorkspaceCube : Window
         ShowActivated = false;
         Topmost = true;
         Background = Brushes.Black;
-        Title = "Áreas de trabalho";
+        Title = Strings.Desktops;
 
         _pill = CreatePill();
         BuildScene();
@@ -569,8 +570,8 @@ public sealed class WorkspaceCube : Window
 
         group.Children.Add(new GeometryDrawing(Frozen(Color.FromArgb(0xE6, 0xFF, 0xFF, 0xFF)), null, plus));
         var text = new FormattedText(
-            "Nova área de trabalho",
-            CultureInfo.CurrentCulture,
+            Strings.NewDesktop,
+            Strings.Culture,
             FlowDirection.LeftToRight,
             new Typeface(TextFont, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
             bounds.Height * 0.035,
@@ -1290,11 +1291,11 @@ public sealed class WorkspaceCube : Window
         var isNew = face >= _desktops.Count;
         _label.Text = (dragging, face < 0, isNew) switch
         {
-            (true, true, _) => "Solte a janela em outra área de trabalho",
-            (true, _, true) => "Soltar aqui cria uma área de trabalho com a janela",
-            (true, _, _) => string.Create(CultureInfo.CurrentCulture, $"Mover para a área de trabalho {face + 1}"),
-            (_, _, true) => "Nova área de trabalho · clique ou Enter para criar",
-            _ => string.Create(CultureInfo.CurrentCulture, $"Área de trabalho {face + 1}"),
+            (true, true, _) => Strings.CubeDropOnOther,
+            (true, _, true) => Strings.CubeDropCreates,
+            (true, _, _) => Strings.CubeMoveTo(face + 1),
+            (_, _, true) => Strings.CubeNewHint,
+            _ => Strings.CubeDesktop(face + 1),
         };
         _dots.Children.Clear();
         for (var index = 0; index < _desktops.Count; index++)

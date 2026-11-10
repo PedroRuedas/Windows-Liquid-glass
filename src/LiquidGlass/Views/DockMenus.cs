@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 using LiquidGlass.ViewModels;
 
@@ -47,14 +48,14 @@ internal static class DockMenus
             // A maioria dos apps com tarefas já oferece "Nova janela" do jeito deles (com perfil, por exemplo).
             if (!item.IsRunning || !jumpList.Any(category => category.IsTasks && category.Entries.Any(IsNewWindowTask)))
             {
-                menu.Items.Add(Command(item.IsRunning ? "Nova janela" : "Abrir", item.OpenNewCommand));
+                menu.Items.Add(Command(item.IsRunning ? Strings.NewWindow : Strings.Open, item.OpenNewCommand));
             }
 
-            menu.Items.Add(Command(item.IsPinned ? "Remover da Dock" : "Manter na Dock", item.TogglePinCommand));
+            menu.Items.Add(Command(item.IsPinned ? Strings.RemoveFromDock : Strings.KeepInDock, item.TogglePinCommand));
 
             if (item.IsRunning)
             {
-                menu.Items.Add(Command(item.Windows.Count > 1 ? "Fechar todas as janelas" : "Fechar", item.CloseAllCommand));
+                menu.Items.Add(Command(item.Windows.Count > 1 ? Strings.CloseAllWindows : Strings.Close, item.CloseAllCommand));
             }
 
             menu.Items.Add(new Separator());
@@ -65,8 +66,8 @@ internal static class DockMenus
             menu.Items.Add(UpdateItem(updates, dock));
         }
 
-        menu.Items.Add(Command("Personalizar a Dock…", dock.OpenSettingsCommand));
-        menu.Items.Add(Command("Sair do Liquid Glass", dock.QuitCommand));
+        menu.Items.Add(Command(Strings.CustomizeDockMenu, dock.OpenSettingsCommand));
+        menu.Items.Add(Command(Strings.QuitDock, dock.QuitCommand));
     }
 
     /// <summary>
@@ -78,7 +79,7 @@ internal static class DockMenus
         var hasGroups = jumpList.Any(category => !category.IsTasks);
         foreach (var category in jumpList.OrderBy(category => category.IsTasks))
         {
-            var title = category.IsTasks ? (hasGroups ? "Tarefas" : null) : category.Name;
+            var title = category.IsTasks ? (hasGroups ? Strings.JumpListTasks : null) : category.Name;
             if (title is { Length: > 0 })
             {
                 menu.Items.Add(new MenuItem { Header = title, IsEnabled = false });
@@ -107,7 +108,7 @@ internal static class DockMenus
         if (!JumpListService.Launch(entry))
         {
             MessageBox.Show(
-                $"Não foi possível abrir “{entry.Title}”. O arquivo ou o programa pode ter sido movido ou apagado.",
+                Strings.JumpListOpenFailed(entry.Title),
                 "Liquid Glass Dock",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -130,20 +131,20 @@ internal static class DockMenus
     {
         return updates.State switch
         {
-            UpdateState.Checking => new MenuItem { Header = "Procurando atualizações…", IsEnabled = false },
+            UpdateState.Checking => new MenuItem { Header = Strings.MenuCheckingForUpdates, IsEnabled = false },
             UpdateState.Downloading => new MenuItem
             {
-                Header = string.Create(CultureInfo.CurrentCulture, $"Baixando atualização… {updates.Progress:0%}"),
+                Header = Strings.MenuDownloadingUpdate(updates.Progress),
                 IsEnabled = false,
             },
-            UpdateState.Installing => new MenuItem { Header = "Instalando atualização…", IsEnabled = false },
+            UpdateState.Installing => new MenuItem { Header = Strings.MenuInstallingUpdate, IsEnabled = false },
             _ when updates.Available is { } release => new MenuItem
             {
-                Header = string.Create(CultureInfo.CurrentCulture, $"Atualizar para a versão {release.Version}"),
+                Header = Strings.MenuUpdateTo(release.Version),
                 Command = dock.InstallUpdateCommand,
                 FontWeight = FontWeights.SemiBold,
             },
-            _ => Command("Procurar atualizações…", dock.CheckForUpdatesCommand),
+            _ => Command(Strings.MenuCheckForUpdates, dock.CheckForUpdatesCommand),
         };
     }
 

@@ -1,4 +1,5 @@
 using System.Windows.Media;
+using LiquidGlass.Resources;
 
 namespace LiquidGlass.Models;
 
@@ -16,10 +17,10 @@ public sealed record GlassPreset(
 {
     public static IReadOnlyList<GlassPreset> All { get; } =
     [
-        new("Cristalino", 0.7, 6, 0.35, 0.8, 1.25, Colors.White, 0.14, 0.35),
-        new("Fosco", 0.35, 22, 0.1, 0.6, 1.1, Colors.White, 0.28, 0.3),
-        new("Escuro", 0.6, 10, 0.25, 0.55, 1.15, Color.FromRgb(0x10, 0x10, 0x14), 0.45, 0.45),
-        new("Prisma", 1.0, 3, 1.0, 1.0, 1.5, Colors.White, 0.06, 0.3),
+        new(Strings.PresetCrystal, 0.7, 6, 0.35, 0.8, 1.25, Colors.White, 0.14, 0.35),
+        new(Strings.PresetFrosted, 0.35, 22, 0.1, 0.6, 1.1, Colors.White, 0.28, 0.3),
+        new(Strings.PresetDark, 0.6, 10, 0.25, 0.55, 1.15, Color.FromRgb(0x10, 0x10, 0x14), 0.45, 0.45),
+        new(Strings.PresetPrism, 1.0, 3, 1.0, 1.0, 1.5, Colors.White, 0.06, 0.3),
     ];
 
     public void ApplyTo(DockSettings settings)

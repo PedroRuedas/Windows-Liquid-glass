@@ -36,7 +36,9 @@
             Com um heap de ~10 MB, as coletas na própria thread levam cerca de 1 ms.
         -->
         <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
-        <SatelliteResourceLanguages>pt-BR;pt</SatelliteResourceLanguages>
+        <!-- Textos em Resources/Strings*.resx: português no assembly principal, inglês em en/. -->
+        <NeutralLanguage>pt-BR</NeutralLanguage>
+        <SatelliteResourceLanguages>pt-BR;pt;en</SatelliteResourceLanguages>
     </PropertyGroup>
 
     <ItemGroup>

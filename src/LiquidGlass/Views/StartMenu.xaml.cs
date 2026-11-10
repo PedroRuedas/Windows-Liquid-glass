@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using LiquidGlass.Controls;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 using LiquidGlass.Services;
 
 namespace LiquidGlass.Views;
@@ -402,7 +403,7 @@ public partial class StartMenu : Window, IDisposable
     private void UpdateNoResults(string query, bool searching)
     {
         NoResults.Visibility = _results.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        NoResults.Text = searching ? "Procurando…" : $"Nada encontrado para \"{query}\".";
+        NoResults.Text = searching ? Strings.StartSearching : Strings.StartNoResults(query);
     }
 
     /// <summary>
@@ -472,7 +473,7 @@ public partial class StartMenu : Window, IDisposable
         CloseAnimated();
         if (!AppLauncher.Launch(entry.Target))
         {
-            MessageBox.Show($"Não foi possível abrir \"{entry.Name}\".", "Liquid Glass Dock", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(Strings.StartOpenFailed(entry.Name), "Liquid Glass Dock", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -484,7 +485,7 @@ public partial class StartMenu : Window, IDisposable
         }
 
         var menu = new ContextMenu { PlacementTarget = element, Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint };
-        menu.Items.Add(MenuItem("Abrir", () => Launch(entry)));
+        menu.Items.Add(MenuItem(Strings.Open, () => Launch(entry)));
         var pinIndex = IndexOfPin(entry);
         if (entry.Kind == StartEntryKind.App)
         {
@@ -492,19 +493,19 @@ public partial class StartMenu : Window, IDisposable
             {
                 if (pinIndex > 0)
                 {
-                    menu.Items.Add(MenuItem("Mover para o início", () => _settings.StartPins.Move(pinIndex, 0)));
+                    menu.Items.Add(MenuItem(Strings.MoveToTop, () => _settings.StartPins.Move(pinIndex, 0)));
                 }
 
-                menu.Items.Add(MenuItem("Desafixar do Iniciar", () => _settings.StartPins.RemoveAt(pinIndex)));
+                menu.Items.Add(MenuItem(Strings.UnpinFromStart, () => _settings.StartPins.RemoveAt(pinIndex)));
             }
             else
             {
-                menu.Items.Add(MenuItem("Fixar no Iniciar", () => _settings.StartPins.Add(StartMenuCatalog.ToPin(entry))));
+                menu.Items.Add(MenuItem(Strings.PinToStart, () => _settings.StartPins.Add(StartMenuCatalog.ToPin(entry))));
             }
         }
         else if (entry.Kind == StartEntryKind.File)
         {
-            menu.Items.Add(MenuItem("Abrir local do arquivo", () =>
+            menu.Items.Add(MenuItem(Strings.OpenFileLocation, () =>
             {
                 CloseAnimated();
                 Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{entry.Target}\"") { UseShellExecute = true })?.Dispose();
@@ -537,17 +538,17 @@ public partial class StartMenu : Window, IDisposable
             PlacementTarget = PowerButton,
             Placement = atMouse ? System.Windows.Controls.Primitives.PlacementMode.MousePoint : System.Windows.Controls.Primitives.PlacementMode.Top,
         };
-        menu.Items.Add(PowerItem("", "Bloquear", PowerActions.Lock));
-        menu.Items.Add(PowerItem("", "Sair", PowerActions.SignOut));
+        menu.Items.Add(PowerItem("", Strings.PowerLock, PowerActions.Lock));
+        menu.Items.Add(PowerItem("", Strings.PowerSignOut, PowerActions.SignOut));
         menu.Items.Add(new Separator());
-        menu.Items.Add(PowerItem("", "Suspender", PowerActions.Sleep));
+        menu.Items.Add(PowerItem("", Strings.PowerSleep, PowerActions.Sleep));
         if (PowerActions.CanHibernate)
         {
-            menu.Items.Add(PowerItem("", "Hibernar", PowerActions.Hibernate));
+            menu.Items.Add(PowerItem("", Strings.PowerHibernate, PowerActions.Hibernate));
         }
 
-        menu.Items.Add(PowerItem("", "Desligar", PowerActions.Shutdown));
-        menu.Items.Add(PowerItem("", "Reiniciar", PowerActions.Restart));
+        menu.Items.Add(PowerItem("", Strings.PowerShutDown, PowerActions.Shutdown));
+        menu.Items.Add(PowerItem("", Strings.PowerRestart, PowerActions.Restart));
 
         ScreenBackdrop.Shared.CaptureAroundCursor();
         menu.IsOpen = true;
@@ -572,7 +573,7 @@ public partial class StartMenu : Window, IDisposable
             CloseAnimated();
             if (!action())
             {
-                MessageBox.Show($"O Windows não deixou \"{text}\" agora.", "Liquid Glass Dock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Strings.PowerFailed(text), "Liquid Glass Dock", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         });
     }

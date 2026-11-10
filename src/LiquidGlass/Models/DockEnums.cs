@@ -8,6 +8,14 @@ public enum DockEdge
     Right,
 }
 
+/// <summary>Idioma da interface. Em Automático, segue o idioma do Windows.</summary>
+public enum AppLanguage
+{
+    Automatic,
+    Portuguese,
+    English,
+}
+
 /// <summary>O que fazer com a barra de tarefas nativa enquanto a dock está ativa.</summary>
 public enum TaskbarMode
 {

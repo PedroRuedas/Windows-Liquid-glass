@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using LiquidGlass.Interop;
 using LiquidGlass.Models;
+using LiquidGlass.Resources;
 
 namespace LiquidGlass.Services;
 
@@ -110,10 +111,10 @@ public static class PinnedAppFactory
 
     public static IEnumerable<PinnedApp> Defaults()
     {
-        yield return new PinnedApp(ExplorerPath, "Explorador de Arquivos", ExplorerPath, null);
+        yield return new PinnedApp(ExplorerPath, Strings.FileExplorer, ExplorerPath, null);
 
         const string settingsAppId = "windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel";
-        yield return new PinnedApp(AppsFolderPrefix + settingsAppId, "Configurações", null, settingsAppId);
+        yield return new PinnedApp(AppsFolderPrefix + settingsAppId, Strings.SettingsApp, null, settingsAppId);
     }
 
     /// <summary>

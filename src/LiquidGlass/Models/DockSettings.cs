@@ -136,6 +136,13 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private bool _checkForUpdates = true;
 
+    /// <summary>
+    /// Idioma da interface; vale ao abrir a dock. Fica fora de <see cref="CopyPreferencesFrom"/>:
+    /// "Restaurar padrões" não deve trocar o idioma de quem o escolheu.
+    /// </summary>
+    [ObservableProperty]
+    private AppLanguage _language = AppLanguage.Automatic;
+
     public ObservableCollection<PinnedApp> PinnedApps { get; set; } = [];
 
     /// <summary>Apps fixados no menu Iniciar de vidro, na ordem da grade.</summary>
