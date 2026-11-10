@@ -7,6 +7,8 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+## [0.11.0] - 2026-11-10
+
 ### Adicionado
 - **Selos e progresso nos ícones:** as mensagens não lidas que os apps mostram na barra do
   Windows (Discord, Telegram, Teams…) e as barras de download aparecem no ícone da dock, com a
@@ -152,7 +154,8 @@ report to paste into bug reports.*
   apps fixados e em execução, bandeja do sistema, personalização ao vivo, ocultar
   automaticamente e modo de eficiência quando a dock está parada.
 
-[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.10.0...HEAD
+[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.7.1...v0.8.0
