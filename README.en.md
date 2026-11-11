@@ -89,7 +89,7 @@ live customization window. Free, open source, and no administrator rights needed
 - Win+Tab (or the dock button) pulls the camera back and shows your desktops as faces of a cube,
   with windows floating in front of the blurred wallpaper.
 
-  ![Virtual desktop cube](docs/workspaces.png)
+  ![The virtual desktop cube: it spins, a desktop is closed with the × and its window moves to the neighbor, a window is dragged to another desktop, and Ctrl+Win+arrows switch desktops](docs/workspaces-demo.webp)
 
 - Drag to spin the cube; on release it snaps to the nearest desktop, with momentum. Arrow keys and
   the mouse wheel rotate one face; click a face to enter it. A "+" face always creates a new desktop.

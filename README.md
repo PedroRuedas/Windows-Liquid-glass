@@ -112,7 +112,7 @@ administrador para instalar.
 - Win+Tab (ou o botão da dock) afasta a câmera e mostra as áreas de trabalho como faces de um cubo,
   em círculo, com as janelas flutuando à frente do papel de parede desfocado.
 
-  ![Cubo das áreas de trabalho](docs/workspaces.png)
+  ![Cubo das áreas de trabalho: ele gira, uma área fecha pelo × e a janela dela passa para a vizinha, uma janela é arrastada para outra área e Ctrl+Win+setas trocam de área](docs/workspaces-demo.webp)
 
 - Arraste com o mouse para girar o cubo (na vertical ele inclina); ao soltar, ele encaixa na área
   mais próxima, levando em conta o embalo. Setas e roda do mouse giram uma face; clique numa face
