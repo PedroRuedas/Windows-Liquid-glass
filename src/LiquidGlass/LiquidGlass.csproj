@@ -17,7 +17,7 @@
         <AssemblyName>LiquidGlass</AssemblyName>
         <RootNamespace>LiquidGlass</RootNamespace>
         <Product>Liquid Glass Dock</Product>
-        <Version>0.11.0</Version>
+        <Version>0.12.0</Version>
         <!-- Aparecem em Propriedades → Detalhes do LiquidGlass.exe; o título é o nome no Gerenciador de Tarefas. -->
         <AssemblyTitle>Liquid Glass Dock</AssemblyTitle>
         <Authors>PedroRuedas</Authors>
@@ -58,6 +58,8 @@
         <PackageReference Include="ManagedShell" Version="0.0.374" />
         <!-- Só o compilador do instalador (ISCC.exe); nada dele vai para o app. -->
         <PackageReference Include="Tools.InnoSetup" Version="7.1.0" PrivateAssets="all" ExcludeAssets="runtime;compile" />
+        <!-- Direct3D 11 para o fundo ao vivo: copia da placa de vídeo só o trecho das janelas que fica atrás da dock. -->
+        <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
     </ItemGroup>
 
     <!-- Shaders: o .ps compilado fica versionado para que o build funcione sem o Windows SDK. -->

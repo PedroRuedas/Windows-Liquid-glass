@@ -48,6 +48,7 @@ public partial class DockWindow : Window
     private readonly WindowPreview _preview;
     private readonly DispatcherTimer _previewDelay = new() { Interval = PreviewDelay };
     private readonly EfficiencyMode _efficiency;
+    private readonly LiveBackdrop _live;
     private readonly object _menuActivity = new();
     private HwndSource? _source;
     private AppBarManager? _appBar;
@@ -112,6 +113,10 @@ public partial class DockWindow : Window
         _viewModel.StartMenuRequested += OnStartMenuRequested;
         _viewModel.ItemActivating += OnItemActivating;
         _wallpaper.Changed += OnWallpaperChanged;
+        _live = new LiveBackdrop(wallpaper, Dispatcher);
+        _live.Changed += OnWallpaperChanged;
+        Glass.LayoutUpdated += (_, _) => UpdateLiveRegion();
+        IsVisibleChanged += (_, _) => UpdateLiveRegion();
     }
 
     /// <summary>Fonte nativa da janela, usada para receber mensagens do shell.</summary>
@@ -158,6 +163,8 @@ public partial class DockWindow : Window
         UpdatePlacement();
         ApplyGlassSettings();
         _ = _wallpaper.RefreshAsync(Settings.Blur);
+        _live.SetBlur(Settings.Blur);
+        _live.SetEnabled(Settings.LiveBackdrop);
     }
 
     private void OnClosed(object? sender, EventArgs e)
@@ -176,6 +183,8 @@ public partial class DockWindow : Window
         _stackFlyout.Dispose();
         _viewModel.ItemActivating -= OnItemActivating;
         _wallpaper.Changed -= OnWallpaperChanged;
+        _live.Changed -= OnWallpaperChanged;
+        _live.Dispose();
         _trayFlyout.IsOpen = false;
         _viewModel.StartMenuRequested -= OnStartMenuRequested;
         _startMenu.Close();
@@ -197,7 +206,7 @@ public partial class DockWindow : Window
         }
 
         var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-        var reserved = Settings.AutoHide ? 0 : (int)Math.Ceiling(DockThickness * scale);
+        var reserved = Settings.AutoHide || !Settings.ReserveSpace ? 0 : (int)Math.Ceiling(DockThickness * scale);
         _appBar.Reserve(Settings.Edge, reserved);
         var area = _appBar.Bounds;
         var labelSpace = Settings.Edge == DockEdge.Bottom ? LabelSpace : SideLabelSpace;
@@ -755,6 +764,7 @@ public partial class DockWindow : Window
             case nameof(DockSettings.EdgeMargin):
             case nameof(DockSettings.TaskbarMode):
             case nameof(DockSettings.AutoHide):
+            case nameof(DockSettings.ReserveSpace):
             case nameof(DockSettings.AnimationSpeed):
                 UpdatePlacement();
                 break;
@@ -767,6 +777,10 @@ public partial class DockWindow : Window
                 break;
             case nameof(DockSettings.Blur):
                 _ = _wallpaper.SetBlurAsync(Settings.Blur);
+                _live.SetBlur(Settings.Blur);
+                break;
+            case nameof(DockSettings.LiveBackdrop):
+                _live.SetEnabled(Settings.LiveBackdrop);
                 break;
             case nameof(DockSettings.Refraction):
             case nameof(DockSettings.ChromaticAberration):
@@ -789,10 +803,44 @@ public partial class DockWindow : Window
         }
     }
 
+    /// <summary>O vidro mostra o fundo ao vivo enquanto há janela por baixo e o papel de parede no resto do tempo.</summary>
     private void OnWallpaperChanged(object? sender, EventArgs e)
     {
+        if (_live.Image is { } live)
+        {
+            Glass.BackdropOrigin = _live.Origin;
+            Glass.Backdrop = live;
+            return;
+        }
+
         Glass.BackdropOrigin = _wallpaper.MonitorOrigin;
         Glass.Backdrop = _wallpaper.Backdrop;
+    }
+
+    /// <summary>
+    /// A área do vidro na tela, para o fundo ao vivo saber quais janelas estão atrás dele. Escondida
+    /// (tela cheia ou ocultação automática), a dock não precisa de fundo nenhum.
+    /// </summary>
+    private void UpdateLiveRegion()
+    {
+        if (!_live.IsEnabled)
+        {
+            return;
+        }
+
+        if (!IsVisible || _autoHide is { IsHidden: true } || PresentationSource.FromVisual(Glass) is null || Glass.ActualWidth <= 0)
+        {
+            _live.SetRegion(Int32Rect.Empty);
+            return;
+        }
+
+        var topLeft = Glass.PointToScreen(new Point(ShadowPadding, ShadowPadding));
+        var bottomRight = Glass.PointToScreen(new Point(Glass.ActualWidth - ShadowPadding, Glass.ActualHeight - ShadowPadding));
+        var monitor = _monitor().Monitor;
+        var region = LiveBackdrop.Intersect(
+            new Int32Rect((int)Math.Floor(topLeft.X), (int)Math.Floor(topLeft.Y), (int)Math.Ceiling(bottomRight.X - topLeft.X), (int)Math.Ceiling(bottomRight.Y - topLeft.Y)),
+            new Int32Rect(monitor.Left, monitor.Top, monitor.Width, monitor.Height));
+        _live.SetRegion(region ?? Int32Rect.Empty);
     }
 
     private async void RefreshWallpaperLater()

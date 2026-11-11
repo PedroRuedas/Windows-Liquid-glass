@@ -17,7 +17,7 @@ tarefas do Windows 11.**
 [Recursos](#recursos) · [Instalação](#instalação) · [Perguntas frequentes](#perguntas-frequentes) ·
 [Contribuir](#contribuir) · [Histórico de versões](CHANGELOG.md) · [🇺🇸 English](README.en.md)
 
-![A dock de vidro líquido: os ícones crescem quando o mouse passa e a Calculadora minimiza em lâmpada mágica até o ícone dela](docs/dock-demo.gif)
+![A dock de vidro líquido sobre um fundo colorido: os ícones crescem quando o mouse passa, a Calculadora minimiza em lâmpada mágica até o ícone dela e uma janela desliza por baixo da dock, refratada ao vivo pelo vidro](docs/dock-demo.webp)
 
 </div>
 
@@ -28,6 +28,7 @@ administrador para instalar.
 
 **Destaques**
 - Vidro líquido de verdade: o papel de parede é curvado nas bordas por um shader, como uma lente.
+- Fundo ao vivo: janelas que passam por baixo da dock aparecem refratadas no vidro, em tempo real.
 - Barra de tarefas completa: apps fixados e abertos, miniaturas das janelas, listas de atalhos
   ("Nova guia", "Nova janela anônima"), bandeja do sistema, rede e bateria.
 - Áreas de trabalho num cubo 3D (Win+Tab), com troca animada entre áreas e janelas arrastáveis de
@@ -42,11 +43,16 @@ administrador para instalar.
 
 **Vidro líquido**
 - Refração real: um pixel shader HLSL curva o papel de parede nas bordas, como uma lente.
+- **Fundo ao vivo:** quando uma janela entra embaixo da dock (arrastada até lá, ou maximizada com
+  "Reservar espaço para a dock" desligado), o vidro mostra e distorce o conteúdo dela em tempo
+  real, como a dock do macOS. Sem janela por baixo, volta ao papel de parede.
 - Dispersão de cores (aberração cromática), brilho especular no contorno, tom, saturação e sombra.
 - Bordas suavizadas em qualquer arredondamento, de cantos retos até o formato de pílula.
 - Estilos prontos: *Cristalino*, *Fosco*, *Escuro* e *Prisma*.
 
 ![Refração](docs/refraction.png)
+
+![Fundo ao vivo: uma janela passa por baixo da dock e as cores dela aparecem refratadas no vidro](docs/live-backdrop.png)
 
 **Animações dos ícones**
 - Ampliação estilo macOS: o ícone sob o cursor cresce e os vizinhos acompanham em curva suave,
@@ -263,9 +269,14 @@ arredondados nem refração. Por isso a dock desenha o próprio vidro:
    field* e desloca a amostragem perto da borda, como uma lente, além de dispersão de cores,
    brilho, tom e sombra.
 
-Como a dock reserva espaço na tela, normalmente só o papel de parede fica atrás dela, e o
-efeito pode ser calculado sem capturar a tela continuamente. Com isso, a dock também aparece
-normalmente em prints.
+Quando nenhuma janela está atrás do vidro, é só isso: nada é capturado continuamente. Quando uma
+janela entra na área da dock, o `LiveBackdrop` pede ao Windows a imagem dessa janela
+(Windows.Graphics.Capture, sem a borda amarela), copia da placa de vídeo só o trecho que fica
+atrás do vidro, mistura com o papel de parede e desfoca, em meia resolução e numa thread própria.
+Como a dock lê as janelas uma a uma, e não a tela, ela nunca captura a si mesma e continua
+aparecendo normalmente em prints e gravações. Janelas que não mudam não geram quadros novos; com
+uma janela se mexendo por baixo, o custo medido foi de ~1,4 ms por quadro e menos de 1% de CPU. O
+Direct3D só é criado quando há janela por baixo e é liberado 15 s depois que ela sai.
 
 ### Bandeja do sistema
 
@@ -342,6 +353,9 @@ de vidro" devolve o menu do Windows. Ao fechar a dock, tudo volta ao normal.
 - Os recentes automáticos do Windows (por exemplo, os do Explorador e do Bloco de Notas) não
   entram no menu do botão direito: só as listas que o próprio app registra.
 - Janelas fixadas em todas as áreas de trabalho não podem ser arrastadas no cubo.
+- No fundo ao vivo, conteúdo protegido contra cópia (como vídeos de streaming com DRM) aparece
+  escuro no vidro, como em qualquer captura de tela. Na primeira vez que uma janela passa por
+  baixo da dock, o driver de vídeo é carregado e a memória sobe cerca de 30 MB.
 
 Encontrou outra? [Abra uma issue](https://github.com/PedroRuedas/Windows-Liquid-glass/issues/new/choose).
 Em Personalizar → Comportamento, "Relatar um problema" abre o formulário já com as informações de
@@ -381,4 +395,5 @@ sob a GPL-3.0 e com o código-fonte disponível.
 
 - [ManagedShell](https://github.com/cairoshell/ManagedShell): Apache License 2.0
 - [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet): MIT
+- [Vortice.Windows](https://github.com/amerkoleci/Vortice.Windows) (Direct3D 11): MIT
 - [Inno Setup](https://jrsoftware.org/isinfo.php): gera o instalador (não faz parte do app)

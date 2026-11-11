@@ -432,6 +432,15 @@
   <data name="BlurDescription" xml:space="preserve">
     <value>Makes the background more frosted.</value>
   </data>
+  <data name="LiveBackdrop" xml:space="preserve">
+    <value>Reflect windows behind the dock</value>
+  </data>
+  <data name="LiveBackdropDescription" xml:space="preserve">
+    <value>When a window goes under the dock, the glass shows and bends its content live. Uses a little GPU only while a window is underneath.</value>
+  </data>
+  <data name="LiveBackdropUnavailable" xml:space="preserve">
+    <value>This version of Windows can't capture windows without the yellow border; the glass shows the wallpaper.</value>
+  </data>
   <data name="ChromaticAberration" xml:space="preserve">
     <value>Color dispersion</value>
   </data>
@@ -524,6 +533,12 @@
   </data>
   <data name="AutoHideDescription" xml:space="preserve">
     <value>The dock appears when the mouse touches the screen edge.</value>
+  </data>
+  <data name="ReserveSpace" xml:space="preserve">
+    <value>Reserve space for the dock</value>
+  </data>
+  <data name="ReserveSpaceDescription" xml:space="preserve">
+    <value>Maximized windows stop above the dock. When off, they use the whole screen and go under the glass.</value>
   </data>
   <data name="WindowsTaskbar" xml:space="preserve">
     <value>Windows taskbar</value>

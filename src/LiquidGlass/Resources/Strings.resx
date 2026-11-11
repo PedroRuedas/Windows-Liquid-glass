@@ -432,6 +432,15 @@
   <data name="BlurDescription" xml:space="preserve">
     <value>Deixa o fundo mais fosco.</value>
   </data>
+  <data name="LiveBackdrop" xml:space="preserve">
+    <value>Refletir as janelas atrás da dock</value>
+  </data>
+  <data name="LiveBackdropDescription" xml:space="preserve">
+    <value>Quando uma janela passa por baixo, o vidro mostra e distorce o que ela exibe, ao vivo. Usa um pouco da placa de vídeo só enquanto há uma janela por baixo.</value>
+  </data>
+  <data name="LiveBackdropUnavailable" xml:space="preserve">
+    <value>Este Windows não permite capturar janelas sem a borda amarela; o vidro mostra o papel de parede.</value>
+  </data>
   <data name="ChromaticAberration" xml:space="preserve">
     <value>Dispersão de cores</value>
   </data>
@@ -524,6 +533,12 @@
   </data>
   <data name="AutoHideDescription" xml:space="preserve">
     <value>A dock aparece quando o mouse encosta na borda.</value>
+  </data>
+  <data name="ReserveSpace" xml:space="preserve">
+    <value>Reservar espaço para a dock</value>
+  </data>
+  <data name="ReserveSpaceDescription" xml:space="preserve">
+    <value>Janelas maximizadas param antes da dock. Desligado, elas usam a tela inteira e passam por baixo do vidro.</value>
   </data>
   <data name="WindowsTaskbar" xml:space="preserve">
     <value>Barra de tarefas do Windows</value>

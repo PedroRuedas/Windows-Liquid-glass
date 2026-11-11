@@ -38,7 +38,7 @@ body:
     attributes:
       label: Versão da dock
       description: Aparece no canto superior esquerdo da janela Personalizar (botão direito na dock → Personalizar).
-      placeholder: "0.11.0"
+      placeholder: "0.12.0"
     validations:
       required: true
 

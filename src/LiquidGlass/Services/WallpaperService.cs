@@ -6,6 +6,9 @@ using LiquidGlass.Interop;
 
 namespace LiquidGlass.Services;
 
+/// <summary>Papel de parede sem desfoque, em meia resolução; <paramref name="Origin"/> é o canto do monitor em pixels físicos.</summary>
+internal sealed record WallpaperPixels(byte[] Pixels, int Width, int Height, Point Origin);
+
 /// <summary>
 /// Mantém uma cópia (já desfocada) do papel de parede do monitor principal, exatamente como o
 /// Windows o desenha. É o "fundo" que o vidro líquido refrata.
@@ -41,6 +44,9 @@ public sealed class WallpaperService
 
     /// <summary>Origem do monitor principal em pixels físicos.</summary>
     public Point MonitorOrigin { get; private set; }
+
+    /// <summary>A última captura, sem desfoque: a base do fundo ao vivo. Trocada inteira a cada captura.</summary>
+    internal WallpaperPixels? Pixels { get; private set; }
 
     /// <summary>Captura o papel de parede novamente (troca de imagem, resolução ou tema).</summary>
     public Task RefreshAsync(double blurRadius)
@@ -98,6 +104,7 @@ public sealed class WallpaperService
             && WallpaperRenderer.Render(monitor, User32.GetVirtualScreen(), Downscale, out var width, out var height) is { } rendered)
         {
             (_pixels, _width, _height) = (rendered, width, height);
+            Pixels = new WallpaperPixels(rendered, width, height, MonitorOrigin);
             return;
         }
 
@@ -107,5 +114,6 @@ public sealed class WallpaperService
             Downscale,
             out _width,
             out _height);
+        Pixels = new WallpaperPixels(_pixels, _width, _height, MonitorOrigin);
     }
 }
