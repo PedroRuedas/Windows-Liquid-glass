@@ -49,7 +49,9 @@ public static class Diagnostics
         text.AppendLine(CultureInfo.InvariantCulture,
             $"- Posição: {settings.Edge}, ícones {settings.IconSize:0} px, ampliação {(settings.MagnificationEnabled ? settings.Magnification.ToString("0.00", CultureInfo.InvariantCulture) : "desligada")}");
         text.AppendLine(CultureInfo.InvariantCulture,
-            $"- Barra do Windows: {settings.TaskbarMode}, ocultar a dock: {settings.AutoHide}, menu Iniciar de vidro: {settings.UseGlassStartMenu}");
+            $"- Barra do Windows: {settings.TaskbarMode}, ocultar a dock: {settings.AutoHide}, reservar espaço: {settings.ReserveSpace}, menu Iniciar de vidro: {settings.UseGlassStartMenu}");
+        text.AppendLine(CultureInfo.InvariantCulture,
+            $"- Fundo ao vivo: {(LiveBackdrop.IsUnavailable ? "indisponível neste Windows" : settings.LiveBackdrop.ToString())}");
         text.AppendLine(CultureInfo.InvariantCulture,
             $"- Animações de janela: {settings.AnimateWindows}, cubo: {settings.AnimateWorkspaceSwitch}, Win+Tab: {settings.WinTabOpensOverview}");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Apps fixados: {settings.PinnedApps.Count}");
@@ -107,6 +109,8 @@ public static class Diagnostics
             $"- Processador: {cpu.TotalSeconds:0.0} s no total, média de {average:0.00}% desde que abriu");
         yield return string.Create(CultureInfo.InvariantCulture,
             $"- Threads: {process.Threads.Count}, handles: {process.HandleCount}, objetos GDI: {User32.GetGuiResources(process.Handle, User32.GrGdiObjects)}, USER: {User32.GetGuiResources(process.Handle, User32.GrUserObjects)}");
+        yield return string.Create(CultureInfo.InvariantCulture,
+            $"- Fundo ao vivo: {LiveBackdrop.ActiveWindows} janela(s) capturada(s) agora, {LiveBackdrop.AverageFrameMilliseconds:0.0} ms por quadro");
     }
 
     public static string FormatDuration(TimeSpan span) => span.TotalHours >= 1

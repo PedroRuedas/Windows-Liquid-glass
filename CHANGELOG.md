@@ -7,6 +7,28 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+## [0.12.0] - 2026-11-10
+
+### Adicionado
+- **Fundo ao vivo:** quando uma janela passa por baixo da dock, o vidro mostra e refrata o que
+  ela exibe, em tempo real, como a dock do macOS. A dock lê só as janelas que estão atrás do vidro
+  (Windows.Graphics.Capture, sem a borda amarela), então continua aparecendo em prints e
+  gravações. Sem janela por baixo, volta ao papel de parede, que não custa nada. Opção em
+  Personalizar → Vidro.
+- **Reservar espaço para a dock:** desligado, janelas maximizadas ocupam a tela inteira e passam
+  por baixo do vidro. Opção em Personalizar → Comportamento.
+- O diagnóstico mostra quantas janelas o fundo ao vivo está capturando e quanto tempo leva cada
+  quadro.
+
+### Alterado
+- O demo do README virou um vídeo em WebP, com cores de verdade (o GIF tinha só 256), sobre um
+  fundo colorido onde a refração aparece.
+
+*English: the glass now refracts windows that pass under the dock in real time, like the macOS
+Dock, without capturing the dock itself (it still shows up in screenshots). A new option lets
+maximized windows use the whole screen and go under the dock. The README demo is now a
+full-color WebP.*
+
 ## [0.11.0] - 2026-11-10
 
 ### Adicionado
@@ -154,7 +176,8 @@ report to paste into bug reports.*
   apps fixados e em execução, bandeja do sistema, personalização ao vivo, ocultar
   automaticamente e modo de eficiência quando a dock está parada.
 
-[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.11.0...HEAD
+[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.8.0...v0.9.0

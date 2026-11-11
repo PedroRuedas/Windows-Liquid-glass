@@ -254,3 +254,90 @@ public sealed class CustomIconTests
         }
     }
 }
+
+public sealed class LiveBackdropTests
+{
+    private static readonly Int32Rect Dock = new(600, 1000, 720, 70);
+
+    [Fact]
+    public void OnlyWindowsTouchingTheDockAreCaptured()
+    {
+        var above = new WindowOver(1, new Int32Rect(600, 100, 700, 500), default);
+        var under = new WindowOver(2, new Int32Rect(500, 800, 400, 400), default);
+
+        Assert.Equal([under], LiveBackdrop.SelectWindows([above, under], Dock));
+    }
+
+    [Fact]
+    public void WindowsBelowOneThatCoversTheDockAreSkipped()
+    {
+        var front = new WindowOver(1, new Int32Rect(700, 950, 100, 100), default);
+        var maximized = new WindowOver(2, new Int32Rect(0, 0, 1920, 1080), default);
+        var hidden = new WindowOver(3, new Int32Rect(0, 600, 1920, 480), default);
+
+        // De baixo para cima, como são desenhadas.
+        Assert.Equal([maximized, front], LiveBackdrop.SelectWindows([front, maximized, hidden], Dock));
+    }
+
+    [Fact]
+    public void NoWindowsMeansTheWallpaper()
+    {
+        Assert.Empty(LiveBackdrop.SelectWindows([], Dock));
+    }
+
+    [Fact]
+    public void OpaquePixelsAreAveragedTwoByTwo()
+    {
+        var target = new byte[2 * 1 * 4];
+        var source = new byte[4 * 2 * 4];
+        for (var pixel = 0; pixel < 8; pixel++)
+        {
+            // Coluna 0 e 1 (primeiro pixel do fundo): 0, 40, 80, 120 no azul.
+            source[(pixel * 4) + 0] = (byte)(pixel % 4 < 2 ? ((pixel % 4) + (2 * (pixel / 4))) * 40 : 200);
+            source[(pixel * 4) + 3] = 255;
+        }
+
+        LiveBackdrop.BlendHalf(target, 2, 1, source, 4, 2, 0, 0);
+
+        Assert.Equal(60, target[0]);
+        Assert.Equal(200, target[4]);
+        Assert.Equal(255, target[3]);
+    }
+
+    [Fact]
+    public void TransparentCornersKeepTheWallpaper()
+    {
+        byte[] target = [10, 20, 30, 255];
+        var source = new byte[2 * 2 * 4];
+
+        LiveBackdrop.BlendHalf(target, 1, 1, source, 2, 2, 0, 0);
+
+        Assert.Equal([10, 20, 30, 255], target);
+    }
+
+    [Fact]
+    public void HalfTransparentPixelsMixWithTheWallpaper()
+    {
+        byte[] target = [200, 200, 200, 255];
+
+        // Pré-multiplicado: branco com metade da opacidade é 128.
+        var source = Enumerable.Repeat<byte[]>([128, 128, 128, 128], 4).SelectMany(pixel => pixel).ToArray();
+
+        LiveBackdrop.BlendHalf(target, 1, 1, source, 2, 2, 0, 0);
+
+        Assert.InRange(target[0], 226, 230);
+    }
+
+    [Fact]
+    public void WindowsOutsideTheBufferAreClipped()
+    {
+        var target = new byte[2 * 2 * 4];
+        var source = Enumerable.Repeat<byte>(255, 4 * 4 * 4).ToArray();
+
+        // O trecho começa no segundo pixel do fundo e passaria da borda.
+        LiveBackdrop.BlendHalf(target, 2, 2, source, 4, 4, 2, 2);
+
+        Assert.Equal(0, target[0]);
+        Assert.Equal(255, target[(3 * 4) + 0]);
+    }
+}

@@ -715,7 +715,8 @@ public partial class App : Application
     /// <summary>
     /// Demonstração (Debug) para o GIF do README, com LIQUIDGLASS_SHOWCASE_DEMO = título de uma
     /// janela: o "mouse" passa pela dock e volta (ampliação), sai, e a janela minimiza em lâmpada
-    /// mágica e volta. Tudo por código, sem mexer no mouse nem no teclado. Começa 6 s depois de
+    /// mágica e volta; depois fica parada 6 s (o script da gravação passa uma janela por baixo dela, para
+    /// o fundo ao vivo). Tudo por código, sem mexer no mouse nem no teclado. Começa 6 s depois de
     /// abrir e registra os marcos no demo.log. Usa ícones e ampliação maiores durante a gravação e
     /// devolve os valores do usuário no fim.
     /// </summary>
@@ -764,7 +765,7 @@ public partial class App : Application
                 Graphics.DemoCapture.Log("showcase: restaurar");
                 _animator?.Activate(User32.FindWindow(null, title));
             }
-            else if (t >= 10.5)
+            else if (t >= 17)
             {
                 Settings.IconSize = iconSize;
                 Settings.Magnification = magnification;

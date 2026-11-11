@@ -69,6 +69,10 @@ public sealed partial class DockSettings : ObservableObject
     [ObservableProperty]
     private double _blur = 6;
 
+    /// <summary>O vidro refrata, ao vivo, as janelas que passam por baixo da dock (e não só o papel de parede).</summary>
+    [ObservableProperty]
+    private bool _liveBackdrop = true;
+
     [ObservableProperty]
     private double _chromaticAberration = 0.35;
 
@@ -121,6 +125,10 @@ public sealed partial class DockSettings : ObservableObject
     // Comportamento
     [ObservableProperty]
     private bool _autoHide;
+
+    /// <summary>Janelas maximizadas param antes da dock; desligado, ocupam a tela toda e passam por baixo dela.</summary>
+    [ObservableProperty]
+    private bool _reserveSpace = true;
 
     [ObservableProperty]
     private TaskbarMode _taskbarMode = TaskbarMode.Hidden;
@@ -205,6 +213,7 @@ public sealed partial class DockSettings : ObservableObject
         ShowNetwork = other.ShowNetwork;
         Refraction = other.Refraction;
         Blur = other.Blur;
+        LiveBackdrop = other.LiveBackdrop;
         ChromaticAberration = other.ChromaticAberration;
         Highlight = other.Highlight;
         Saturation = other.Saturation;
@@ -221,6 +230,7 @@ public sealed partial class DockSettings : ObservableObject
         AnimateWindows = other.AnimateWindows;
         AnimateWorkspaceSwitch = other.AnimateWorkspaceSwitch;
         AutoHide = other.AutoHide;
+        ReserveSpace = other.ReserveSpace;
         TaskbarMode = other.TaskbarMode;
         LaunchAtStartup = other.LaunchAtStartup;
         WinTabOpensOverview = other.WinTabOpensOverview;

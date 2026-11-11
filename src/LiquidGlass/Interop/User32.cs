@@ -395,6 +395,25 @@ internal static class User32
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SetWindowDisplayAffinity(nint hwnd, uint affinity);
 
+    public const long WsExLayered = 0x00080000;
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetLayeredWindowAttributes(nint hwnd, out uint colorKey, out byte alpha, out uint flags);
+
+    /// <summary>
+    /// Janela "layered" com opacidade zero: existe e está visível para o Windows, mas não aparece
+    /// (como o overlay da NVIDIA, que cobre a tela inteira o tempo todo).
+    /// </summary>
+    public static bool IsFullyTransparent(nint hwnd)
+    {
+        const uint LwaAlpha = 0x2;
+        return (GetExtendedStyle(hwnd) & WsExLayered) != 0
+            && GetLayeredWindowAttributes(hwnd, out _, out var alpha, out var flags)
+            && (flags & LwaAlpha) != 0
+            && alpha == 0;
+    }
+
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool PeekMessage(out Message message, nint hwnd, uint filterMin, uint filterMax, uint remove);

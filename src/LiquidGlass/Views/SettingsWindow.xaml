@@ -230,6 +230,10 @@
                         </StackPanel>
                     </controls:SettingCard>
 
+                    <controls:SettingCard Glyph="&#xE7F4;" Header="{x:Static res:Strings.LiveBackdrop}" Description="{x:Static viewModels:SettingsViewModel.LiveBackdropDescription}">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.LiveBackdrop}" />
+                    </controls:SettingCard>
+
                     <controls:SettingCard Glyph="&#xF157;" Header="{x:Static res:Strings.ChromaticAberration}" Description="{x:Static res:Strings.ChromaticAberrationDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="220" IsMoveToPointEnabled="True" Minimum="0" Maximum="1" Value="{Binding Settings.ChromaticAberration}" />
@@ -359,6 +363,10 @@
 
                     <controls:SettingCard Glyph="&#xE890;" Header="{x:Static res:Strings.AutoHide}" Description="{x:Static res:Strings.AutoHideDescription}">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.AutoHide}" />
+                    </controls:SettingCard>
+
+                    <controls:SettingCard Glyph="&#xE740;" Header="{x:Static res:Strings.ReserveSpace}" Description="{x:Static res:Strings.ReserveSpaceDescription}">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Settings.ReserveSpace}" />
                     </controls:SettingCard>
 
                     <controls:SettingCard Glyph="&#xE75B;" Header="{x:Static res:Strings.WindowsTaskbar}" Description="{x:Static res:Strings.WindowsTaskbarDescription}">

@@ -246,9 +246,12 @@ internal static class ScreenCapture
 /// <summary>
 /// Demonstrações (Debug): com LIQUIDGLASS_DEMO_WALLPAPER=1, um gradiente neutro com manchas de cor
 /// toma o lugar do papel de parede e da área de trabalho, para prints sem nada pessoal no fundo.
+/// Com o caminho de uma imagem, é ela que toma o lugar (esticada no tamanho do monitor).
 /// </summary>
 internal static class DemoWallpaper
 {
+    private static readonly string? Setting = Environment.GetEnvironmentVariable("LIQUIDGLASS_DEMO_WALLPAPER");
+
     private static readonly (double X, double Y, double Radius, byte R, byte G, byte B)[] Blobs =
     [
         (0.2, 0.28, 0.32, 40, 120, 255),
@@ -256,10 +259,25 @@ internal static class DemoWallpaper
         (0.51, 0.76, 0.36, 0, 200, 180),
     ];
 
-    public static bool IsEnabled { get; } = Environment.GetEnvironmentVariable("LIQUIDGLASS_DEMO_WALLPAPER") == "1";
+    public static bool IsEnabled { get; } = Setting == "1" || File.Exists(Setting);
 
     public static byte[] Render(int width, int height)
     {
+        if (File.Exists(Setting))
+        {
+            var image = new System.Windows.Media.Imaging.BitmapImage();
+            image.BeginInit();
+            image.UriSource = new Uri(Path.GetFullPath(Setting));
+            image.DecodePixelWidth = width;
+            image.DecodePixelHeight = height;
+            image.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            image.EndInit();
+            var converted = new System.Windows.Media.Imaging.FormatConvertedBitmap(image, System.Windows.Media.PixelFormats.Bgra32, null, 0);
+            var imagePixels = new byte[width * height * 4];
+            converted.CopyPixels(imagePixels, width * 4, 0);
+            return imagePixels;
+        }
+
         var pixels = new byte[width * height * 4];
         for (var y = 0; y < height; y++)
         {

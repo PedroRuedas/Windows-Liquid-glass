@@ -17,7 +17,7 @@ taskbar.**
 [Features](#features) · [Installation](#installation) · [FAQ](#faq) · [Contributing](#contributing) ·
 [Changelog](CHANGELOG.md) · [🇧🇷 Português](README.md)
 
-![The liquid glass dock: icons grow as the mouse passes over them, and Calculator minimizes into its icon with the magic lamp effect](docs/dock-demo.gif)
+![The liquid glass dock on a colorful background: icons grow as the mouse passes over them, Calculator minimizes into its icon with the magic lamp effect, and a window slides under the dock, refracted live by the glass](docs/dock-demo.webp)
 
 </div>
 
@@ -30,6 +30,7 @@ live customization window. Free, open source, and no administrator rights needed
 
 **Highlights**
 - Real liquid glass: a pixel shader bends the wallpaper at the edges, like a lens.
+- Live backdrop: windows that pass under the dock show up refracted in the glass, in real time.
 - A complete taskbar: pinned and running apps, live window thumbnails, jump lists ("New tab",
   "New incognito window"), system tray, network and battery.
 - Virtual desktops on a 3D cube (Win+Tab), with animated switching and windows you can drag from one
@@ -41,11 +42,16 @@ live customization window. Free, open source, and no administrator rights needed
 
 **Liquid glass**
 - Real refraction: an HLSL pixel shader bends the wallpaper at the edges, like a lens.
+- **Live backdrop:** when a window goes under the dock (dragged there, or maximized with "Reserve
+  space for the dock" turned off), the glass shows and bends its content in real time, like the
+  macOS Dock. With no window underneath, it goes back to the wallpaper.
 - Chromatic aberration, specular rim highlight, tint, saturation and shadow.
 - Smooth edges at any corner radius, from square corners to a pill shape.
 - Presets: *Crystal*, *Frosted*, *Dark* and *Prism*.
 
 ![Refraction](docs/refraction.png)
+
+![Live backdrop: a window passes under the dock and its colors show up refracted in the glass](docs/live-backdrop.png)
 
 **Icon animations**
 - macOS-style magnification: the icon under the cursor grows and its neighbours follow on a smooth
@@ -163,8 +169,13 @@ refraction. So the dock draws its own glass:
 3. `LiquidGlassEffect` (`Effects/Shaders/LiquidGlass.fx`) computes the shape with a signed distance
    field and offsets sampling near the edge, like a lens, plus dispersion, highlight, tint and shadow.
 
-Because the dock reserves screen space, usually only the wallpaper is behind it, so the effect is
-computed without continuous screen capture, and the dock shows up normally in screenshots.
+With no window behind the glass, that's all: nothing is captured continuously. When a window enters
+the dock area, `LiveBackdrop` asks Windows for that window's image (Windows.Graphics.Capture,
+without the yellow border), copies only the part behind the glass from the GPU, blends it over the
+wallpaper and blurs it, at half resolution on its own thread. Because the dock reads windows one by
+one rather than the screen, it never captures itself and still shows up normally in screenshots
+and recordings. Measured with a window moving underneath: ~1.4 ms per frame and under 1% CPU.
+Direct3D is only created while a window is underneath and released 15 s after it leaves.
 
 When idle for 3 seconds, the dock enters Windows' efficiency mode (EcoQoS) and returns to normal as
 soon as the cursor reaches it. Measured idle: 0.00 s of CPU time over 20 s, ~115 MB private memory.
@@ -210,5 +221,6 @@ releases are unsigned).
 Liquid Glass Dock is licensed under the [GNU General Public License v3.0](LICENSE).
 
 Third-party: [ManagedShell](https://github.com/cairoshell/ManagedShell) (Apache-2.0),
-[CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) (MIT). The installer is built
+[CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) (MIT),
+[Vortice.Windows](https://github.com/amerkoleci/Vortice.Windows) (MIT). The installer is built
 with [Inno Setup](https://jrsoftware.org/isinfo.php).

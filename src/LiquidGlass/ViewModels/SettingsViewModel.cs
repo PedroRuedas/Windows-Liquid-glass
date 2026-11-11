@@ -92,6 +92,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public string LanguageDescription => LanguageNeedsRestart ? Strings.LanguageRestartHint : Strings.LanguageDescription;
 
+    /// <summary>Sem a captura sem borda (Windows antigo ou bloqueada), o recurso avisa que não está funcionando.</summary>
+    public static string LiveBackdropDescription => LiveBackdrop.IsUnavailable ? Strings.LiveBackdropUnavailable : Strings.LiveBackdropDescription;
+
     /// <summary>Depois de copiar, a descrição confirma e diz o que fazer com o texto.</summary>
     [ObservableProperty]
     private string _diagnosticsDescription = Strings.DiagnosticsDescription;

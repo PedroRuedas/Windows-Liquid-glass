@@ -471,6 +471,15 @@ public static class Strings
     /// <summary>Deixa o fundo mais fosco.</summary>
     public static string BlurDescription => Get();
 
+    /// <summary>Refletir as janelas atrás da dock</summary>
+    public static string LiveBackdrop => Get();
+
+    /// <summary>Quando uma janela passa por baixo, o vidro mostra e distorce o que ela exibe, ao vivo. Usa um pouco da placa de vídeo só enquanto há uma janela por baixo.</summary>
+    public static string LiveBackdropDescription => Get();
+
+    /// <summary>Este Windows não permite capturar janelas sem a borda amarela; o vidro mostra o papel de parede.</summary>
+    public static string LiveBackdropUnavailable => Get();
+
     /// <summary>Dispersão de cores</summary>
     public static string ChromaticAberration => Get();
 
@@ -563,6 +572,12 @@ public static class Strings
 
     /// <summary>A dock aparece quando o mouse encosta na borda.</summary>
     public static string AutoHideDescription => Get();
+
+    /// <summary>Reservar espaço para a dock</summary>
+    public static string ReserveSpace => Get();
+
+    /// <summary>Janelas maximizadas param antes da dock. Desligado, elas usam a tela inteira e passam por baixo do vidro.</summary>
+    public static string ReserveSpaceDescription => Get();
 
     /// <summary>Barra de tarefas do Windows</summary>
     public static string WindowsTaskbar => Get();
