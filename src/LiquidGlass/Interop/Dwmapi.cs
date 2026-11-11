@@ -6,6 +6,7 @@ internal static class Dwmapi
 {
     private const int DwmwaTransitionsForceDisabled = 3;
     private const int DwmwaExtendedFrameBounds = 9;
+    private const int DwmwaCloak = 13;
     private const int DwmwaCloaked = 14;
 
     private const int TnpRectDestination = 0x1;
@@ -47,6 +48,16 @@ internal static class Dwmapi
     public static bool IsCloaked(nint hwnd)
     {
         return DwmGetWindowAttribute(hwnd, DwmwaCloaked, out int cloaked, sizeof(int)) == 0 && cloaked != 0;
+    }
+
+    /// <summary>
+    /// Esconde (ou mostra) a janela da própria dock sem tirá-la do lugar: escondida, ela continua sendo
+    /// desenhada, e ao aparecer já mostra o último quadro.
+    /// </summary>
+    public static void SetCloaked(nint hwnd, bool cloaked)
+    {
+        var value = cloaked ? 1 : 0;
+        DwmSetWindowAttribute(hwnd, DwmwaCloak, ref value, sizeof(int));
     }
 
     /// <summary>

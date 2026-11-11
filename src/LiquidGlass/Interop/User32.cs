@@ -93,6 +93,7 @@ internal static class User32
     public const int VkEscape = 0x1B;
     public const int VkLeft = 0x25;
     public const int VkRight = 0x27;
+    public const int VkDelete = 0x2E;
     public const int VkRightWin = 0x5C;
 
     /// <summary>Tecla sem função: injetada antes de soltar a tecla Windows para o menu Iniciar não abrir.</summary>

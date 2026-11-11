@@ -39,6 +39,9 @@ public sealed record OverviewContext(
 /// <item>Na visão, arrastar uma janela a tira da área dela; soltá-la em outra face a move para lá (na
 /// face "+", cria uma área com ela). Segurar na borda da tela, a roda ou as setas giram o cubo durante
 /// o arrasto; Esc ou soltar fora do cubo devolvem a janela.</item>
+/// <item>Fechar uma área: o "×" de vidro no canto da face da frente, a tecla Delete ou o clique do meio
+/// numa face. As janelas dela vão para a área vizinha (como na Visão de Tarefas) e o anel perde a face.
+/// A última área não fecha.</item>
 /// <item>Troca rápida (Ctrl+Win+setas): o cubo gira até a área vizinha, recuando um pouco no meio.</item>
 /// </list>
 /// As faces são retratos tirados ao abrir: a área atual vem da tela; as outras, das próprias janelas
@@ -54,6 +57,7 @@ public sealed class WorkspaceCube : Window
     private const double DragThreshold = 6;
     private const double DragDegreesPerScreen = 220;
     private const int MinSides = 4;
+    private const double CloseSize = 34;
 
     /// <summary>Faixa de cada lado da tela (fração da largura) que gira o cubo durante o arrasto de uma janela.</summary>
     private const double EdgeZone = 0.06;
@@ -116,6 +120,11 @@ public sealed class WorkspaceCube : Window
         HorizontalAlignment = HorizontalAlignment.Center,
     };
 
+    private readonly Canvas _closeLayer = new();
+    private readonly Grid _closeButton;
+
+    /// <summary>Área que o "×" fecha: a da frente; -1 com o botão escondido.</summary>
+    private int _closeFace = -1;
     private readonly Canvas _dragLayer = new() { IsHitTestVisible = false };
     private readonly Image _ghost = new()
     {
@@ -157,6 +166,13 @@ public sealed class WorkspaceCube : Window
         _monitor = User32.GetPrimaryMonitorInfo().Monitor;
         var current = context.Desktops.GetCurrent() ?? Guid.Empty;
         _desktops = [.. context.Desktops.GetDesktops()];
+#if DEBUG
+        if (DemoDesktops is { } only)
+        {
+            _desktops = [.. _desktops.Where(only.Contains)];
+        }
+#endif
+
         if (!_desktops.Contains(current))
         {
             _desktops = [current];
@@ -182,11 +198,13 @@ public sealed class WorkspaceCube : Window
         Title = Strings.Desktops;
 
         _pill = CreatePill();
+        _closeButton = CreateCloseButton();
         BuildScene();
         LoadTextures();
         Content = _root;
 
         _root.MouseLeftButtonDown += OnMouseDown;
+        _root.MouseDown += OnMiddleDown;
         _root.MouseMove += OnMouseMove;
         _root.MouseLeftButtonUp += OnMouseUp;
         _root.MouseWheel += OnMouseWheel;
@@ -333,6 +351,45 @@ public sealed class WorkspaceCube : Window
     [Conditional("DEBUG")]
     internal void DemoDrop() => Release(_pointer);
 
+#if DEBUG
+    /// <summary>Demonstração (Debug): só estas áreas entram no cubo; as do usuário ficam fora do vídeo.</summary>
+    internal static IReadOnlyCollection<Guid>? DemoDesktops { get; set; }
+
+    /// <summary>Demonstração (Debug): onde aparece agora o meio da janela, na face da área dela.</summary>
+    internal Point? DemoWindowPoint(nint hwnd)
+    {
+        foreach (var (desktop, shot) in _shots)
+        {
+            if (shot.Windows.FirstOrDefault(window => window.Handle == hwnd) is { Handle: not 0 } window)
+            {
+                return Project(_desktops.IndexOf(desktop), new Point(window.Bounds.X + (window.Bounds.Width / 2.0), window.Bounds.Y + (window.Bounds.Height / 2.0)));
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Demonstração (Debug): onde aparece agora o meio da face da frente.</summary>
+    internal Point? DemoFrontCenter() => Project(NearestFace(_yaw.Value).Face, new Point(_monitor.Width / 2.0, _monitor.Height * 0.62));
+
+    /// <summary>Demonstração (Debug): o meio do "×", se ele estiver à vista.</summary>
+    internal Point? DemoClosePoint() => _closeFace < 0
+        ? null
+        : new Point(Canvas.GetLeft(_closeButton) + (CloseSize / 2), Canvas.GetTop(_closeButton) + (CloseSize / 2));
+
+    /// <summary>Demonstração (Debug): o que o mouse faria — apertar, mover e soltar — sem mexer nele.</summary>
+    internal void DemoPress(Point point) => Press(point);
+
+    internal void DemoMove(Point point) => Drag(point);
+
+    internal void DemoRelease() => Release(_pointer);
+
+    /// <summary>Demonstração (Debug): o clique no "×".</summary>
+    internal void DemoClose() => RemoveDesktop(_closeFace);
+
+    internal Point DemoToScreen(Point point) => _root.PointToScreen(point);
+#endif
+
     public void HandleKey(OverviewKey key)
     {
         switch (key)
@@ -356,6 +413,9 @@ public sealed class WorkspaceCube : Window
                 break;
             case OverviewKey.Right:
                 Rotate(1);
+                break;
+            case OverviewKey.Delete when _drag is null && IsOverviewOpen:
+                RemoveDesktop(NearestFace(_yaw.Target).Face);
                 break;
         }
     }
@@ -461,11 +521,67 @@ public sealed class WorkspaceCube : Window
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 0, (_context.Reserve.Bottom / _context.DpiScale) + 30),
+            // Acima do aviso "Área de trabalho N" que o próprio Windows mostra embaixo, a cada troca de área.
+            Margin = new Thickness(0, 0, 0, (_context.Reserve.Bottom / _context.DpiScale) + 58),
             IsHitTestVisible = false,
             Opacity = 0,
             Children = { glass, content },
         };
+    }
+
+    /// <summary>O "×" de vidro que fecha a área da frente; fica preso ao canto de cima da face.</summary>
+    private Grid CreateCloseButton()
+    {
+        var glass = new LiquidGlassSurface
+        {
+            Style = (Style)FindResource("PopupGlassSurface"),
+            CornerRadius = CloseSize / 2,
+            Backdrop = _context.Wallpaper.Backdrop,
+            BackdropOrigin = _context.Wallpaper.MonitorOrigin,
+        };
+
+        var cross = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M0,0 L10,10 M10,0 L0,10"),
+            Stroke = Brushes.White,
+            StrokeThickness = 1.8,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0.85,
+        };
+
+        var button = new Grid
+        {
+            Width = CloseSize,
+            Height = CloseSize,
+            Background = Brushes.Transparent,
+            Cursor = Cursors.Hand,
+            ToolTip = Strings.CubeCloseDesktop,
+            Visibility = Visibility.Collapsed,
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = new ScaleTransform(1, 1),
+            Children = { glass, cross },
+        };
+
+        // O botão trata o próprio clique: o cubo não recebe o aperto (nem gira, nem entra na face).
+        button.MouseLeftButtonDown += (_, e) => e.Handled = true;
+        button.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            RemoveDesktop(_closeFace);
+        };
+        button.MouseEnter += (_, _) => SetHover(true);
+        button.MouseLeave += (_, _) => SetHover(false);
+        return button;
+
+        void SetHover(bool hover)
+        {
+            cross.Opacity = hover ? 1 : 0.85;
+            var scale = (ScaleTransform)button.RenderTransform;
+            scale.ScaleX = scale.ScaleY = hover ? 1.12 : 1;
+        }
     }
 
     /// <summary>Uma face por área e sempre mais uma, a "+", para criar outra (no mínimo 4 faces).</summary>
@@ -498,6 +614,8 @@ public sealed class WorkspaceCube : Window
         });
         _root.Children.Add(_viewport);
         _root.Children.Add(_pill);
+        _closeLayer.Children.Add(_closeButton);
+        _root.Children.Add(_closeLayer);
         _dragLayer.Children.Add(_ghost);
         _root.Children.Add(_dragLayer);
         UpdateLabel(_currentDesktop);
@@ -727,17 +845,22 @@ public sealed class WorkspaceCube : Window
         _source = (HwndSource)PresentationSource.FromVisual(this);
         User32.AddExtendedStyle(_source.Handle, User32.WsExToolWindow | User32.WsExNoActivate);
 
-        // Nasce fora da tela: uma janela opaca pisca preta até o primeiro quadro ficar pronto.
+        // Uma janela opaca pisca preta até o primeiro quadro ficar pronto: ela nasce já no monitor, mas
+        // escondida pelo DWM. Fora da tela ela cairia no monitor vizinho, que pode ter outra escala, e o
+        // WPF a encolheria ao trazê-la (ao lado de um monitor de 125%, o cubo cobria só 80% da tela).
+        Dwmapi.SetCloaked(_source.Handle, cloaked: true);
         User32.SetWindowPos(
-            _source.Handle, User32.HwndTopMost, _monitor.Right + 64, _monitor.Top, _monitor.Width, _monitor.Height,
+            _source.Handle, User32.HwndTopMost, _monitor.Left, _monitor.Top, _monitor.Width, _monitor.Height,
             User32.SwpNoActivate);
     }
 
     private void OnContentRendered(object? sender, EventArgs e)
     {
+        // De novo: se a janela foi criada em outro monitor, a troca de escala pode ter mudado o tamanho.
         User32.SetWindowPos(
             _source!.Handle, User32.HwndTopMost, _monitor.Left, _monitor.Top, _monitor.Width, _monitor.Height,
             User32.SwpNoActivate);
+        Dwmapi.SetCloaked(_source.Handle, cloaked: false);
         User32.SetWindowPos(_context.DockHandle, User32.HwndTopMost, 0, 0, 0, 0, User32.SwpNoMove | User32.SwpNoSize | User32.SwpNoActivate);
         _isShownOnScreen = true;
         _shownAt = _clock.Elapsed;
@@ -826,6 +949,72 @@ public sealed class WorkspaceCube : Window
         Render();
         StartRendering();
         return id;
+    }
+
+    /// <summary>
+    /// Fecha a área da face: as janelas dela vão para a vizinha da esquerda (a da direita, se for a
+    /// primeira), o anel perde a face e gira até a área que recebeu as janelas. Se era a área atual,
+    /// o Windows passa para a vizinha por baixo do cubo.
+    /// </summary>
+    private void RemoveDesktop(int face)
+    {
+        if (_isClosing || _drag is not null || _isPressed || face < 0 || face >= _desktops.Count || _desktops.Count < 2)
+        {
+            return;
+        }
+
+        var removed = _desktops[face];
+        var receiver = _desktops[face == 0 ? 1 : face - 1];
+        if (!_context.Desktops.Remove(removed, receiver))
+        {
+            return;
+        }
+
+        var front = NearestFace(_yaw.Value).Face;
+        var wasCurrent = face == _currentDesktop;
+        var moved = _shots[removed].Windows;
+        _shots[receiver].Windows.AddRange(moved);
+        _shots.Remove(removed);
+        _desktops.RemoveAt(face);
+
+        // As faces seguintes descem uma posição levando as camadas já retratadas (BuildRing as reusa).
+        _faces.RemoveAt(face);
+        var receiverFace = _desktops.IndexOf(receiver);
+        if (wasCurrent)
+        {
+            // O Windows já trocou; o pedido garante a troca mesmo se outra estava a caminho.
+            _currentDesktop = receiverFace;
+            _isSwitchPending = true;
+        }
+        else if (face < _currentDesktop)
+        {
+            _currentDesktop--;
+        }
+
+        SetSides(_desktops.Count);
+        BuildRing();
+        if (moved.Count > 0)
+        {
+            _ = RebuildLayerAsync(receiver);
+        }
+
+        // Fechou a da frente: a face que tomou o lugar dela aparece e o cubo gira até quem recebeu as janelas.
+        var target = front == face ? receiverFace : front > face ? front - 1 : front;
+        _yaw.Set(FaceYaw(front == face ? Math.Min(face, _sides - 1) : target));
+        _yaw.Start(NearestYaw(target, _yaw.Value), SnapDuration / Speed, Ease.OutCubic);
+        UpdateLabel(target, force: true);
+        Render();
+        StartRendering();
+    }
+
+    /// <summary>Clique do meio numa face fecha aquela área.</summary>
+    private void OnMiddleDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Middle && IsOverviewOpen && FaceAt(e.GetPosition(_root)) is { Face.IsReal: true } hit)
+        {
+            e.Handled = true;
+            RemoveDesktop(hit.Face.Index);
+        }
     }
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
@@ -1254,6 +1443,32 @@ public sealed class WorkspaceCube : Window
         SortLayers();
         _pill.Opacity = Math.Clamp((progress - 0.4) / 0.6, 0, 1);
         UpdateLabel(_drag is { } drag ? drag.Target : NearestFace(_yaw.Value).Face);
+        UpdateCloseButton();
+    }
+
+    /// <summary>
+    /// O "×" fica no canto de cima, à direita, da face da frente, quando ela é uma área e há outra
+    /// para receber as janelas; some com uma janela na mão e ao fechar o cubo.
+    /// </summary>
+    private void UpdateCloseButton()
+    {
+        var face = NearestFace(_yaw.Value).Face;
+        Point? corner = !_isClosing && _drag is null && _pill.Opacity > 0 && face < _desktops.Count && _desktops.Count > 1
+            ? Project(face, new Point(_monitor.Width, 0))
+            : null;
+
+        if (corner is not { } point)
+        {
+            _closeFace = -1;
+            _closeButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _closeFace = face;
+        _closeButton.Visibility = Visibility.Visible;
+        _closeButton.Opacity = _pill.Opacity;
+        Canvas.SetLeft(_closeButton, point.X - (CloseSize / 2));
+        Canvas.SetTop(_closeButton, point.Y - (CloseSize / 2));
     }
 
     /// <summary>Camadas transparentes precisam ser desenhadas de trás para frente.</summary>

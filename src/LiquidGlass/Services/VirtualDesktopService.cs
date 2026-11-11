@@ -54,20 +54,24 @@ public sealed class VirtualDesktopService
 
     public Guid? Add() => Call(manager => (Guid?)manager.CreateDesktop().GetId());
 
-    /// <summary>Remove a área; as janelas dela vão para a vizinha, como na Visão de Tarefas.</summary>
-    public bool Remove(Guid desktop)
+    /// <summary>
+    /// Remove a área; as janelas dela vão para <paramref name="fallback"/> ou, sem ela, para a vizinha
+    /// da esquerda (a da direita, se for a primeira), como na Visão de Tarefas. Se era a área atual,
+    /// o Windows passa para a que recebeu as janelas.
+    /// </summary>
+    public bool Remove(Guid desktop, Guid? fallback = null)
     {
         return Call(manager =>
         {
             var desktops = GetDesktops();
             var index = desktops.ToList().IndexOf(desktop);
-            if (index < 0 || desktops.Count < 2 || Find(manager, desktop) is not { } target)
+            if (index < 0 || desktops.Count < 2 || fallback == desktop || Find(manager, desktop) is not { } target)
             {
                 return false;
             }
 
-            var fallback = Find(manager, desktops[index == 0 ? 1 : index - 1]);
-            return fallback is not null && Do(() => manager.RemoveDesktop(target, fallback));
+            var receiver = Find(manager, fallback ?? desktops[index == 0 ? 1 : index - 1]);
+            return receiver is not null && Do(() => manager.RemoveDesktop(target, receiver));
         });
     }
 

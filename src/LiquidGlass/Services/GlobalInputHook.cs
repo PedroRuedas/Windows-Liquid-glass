@@ -11,6 +11,7 @@ public enum OverviewKey
     Left,
     Right,
     Enter,
+    Delete,
 }
 
 /// <summary>Botão da barra de título pressionado em uma janela de outro app.</summary>
@@ -406,6 +407,7 @@ public sealed class GlobalInputHook : IDisposable
                 User32.VkLeft => OverviewKey.Left,
                 User32.VkRight => OverviewKey.Right,
                 User32.VkReturn => OverviewKey.Enter,
+                User32.VkDelete => OverviewKey.Delete,
                 _ => null,
             };
 
