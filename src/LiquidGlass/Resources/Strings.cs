@@ -234,6 +234,9 @@ public static class Strings
     /// <summary>Área de trabalho {0}</summary>
     public static string CubeDesktop(int number) => Format([number]);
 
+    /// <summary>Fechar a área de trabalho (as janelas vão para a vizinha) · Delete</summary>
+    public static string CubeCloseDesktop => Get();
+
     /// <summary>Pesquisar aplicativos, configurações e documentos</summary>
     public static string StartSearchPlaceholder => Get();
 

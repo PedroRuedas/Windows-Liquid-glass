@@ -94,6 +94,8 @@ live customization window. Free, open source, and no administrator rights needed
 - Drag to spin the cube; on release it snaps to the nearest desktop, with momentum. Arrow keys and
   the mouse wheel rotate one face; click a face to enter it. A "+" face always creates a new desktop.
 - Drag a window off its desktop and drop it on another face to move it there.
+- **Close a desktop:** the glass "×" on the front face's corner, the Delete key or a middle-click on
+  a face. Its windows move to the neighbouring desktop, as in Task View; the last desktop stays.
 - **Switch desktops:** Ctrl+Win+← and → spin the cube to the neighbouring desktop without opening
   the overview.
 

@@ -195,6 +195,9 @@
   <data name="CubeDesktop" xml:space="preserve">
     <value>Desktop {0}</value>
   </data>
+  <data name="CubeCloseDesktop" xml:space="preserve">
+    <value>Close desktop (its windows move to the neighbor) · Delete</value>
+  </data>
   <data name="StartSearchPlaceholder" xml:space="preserve">
     <value>Search apps, settings and documents</value>
   </data>

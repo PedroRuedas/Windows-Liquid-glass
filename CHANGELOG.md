@@ -7,6 +7,20 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+## [0.13.0] - 2026-11-11
+
+### Adicionado
+- **Fechar áreas de trabalho no cubo:** um "×" de vidro no canto da face da frente, a tecla Delete
+  ou o clique do meio numa face. As janelas da área vão para a vizinha, como na Visão de Tarefas, e
+  o cubo gira até ela. A última área não fecha.
+
+### Corrigido
+- Com um monitor de outra escala ao lado (por exemplo, 125% ao lado de 100%), o cubo das áreas de
+  trabalho cobria só parte da tela: ele nascia fora da tela, no monitor vizinho, e o Windows o
+  encolhia ao trazê-lo. Agora ele nasce no próprio monitor, escondido até o primeiro quadro.
+- A legenda do cubo subiu um pouco para não ficar sob o aviso "Área de trabalho N" que o Windows
+  mostra a cada troca de área.
+
 ## [0.12.0] - 2026-11-10
 
 ### Adicionado
@@ -176,7 +190,8 @@ report to paste into bug reports.*
   apps fixados e em execução, bandeja do sistema, personalização ao vivo, ocultar
   automaticamente e modo de eficiência quando a dock está parada.
 
-[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.12.0...HEAD
+[Não lançado]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/PedroRuedas/Windows-Liquid-glass/compare/v0.9.0...v0.10.0

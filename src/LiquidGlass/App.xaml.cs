@@ -456,6 +456,12 @@ public partial class App : Application
             return;
         }
 
+        if (Environment.GetEnvironmentVariable("LIQUIDGLASS_WORKSPACE_DEMO") is { Length: > 0 } workspaceSpec)
+        {
+            StartWorkspaceDemo(workspaceSpec);
+            return;
+        }
+
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         var step = 0;
         var cubeDemo = Environment.GetEnvironmentVariable("LIQUIDGLASS_CUBE_DEMO") == "1";
@@ -774,6 +780,218 @@ public partial class App : Application
             }
         };
         Graphics.DemoCapture.Log("showcase: aberto");
+        timer.Start();
+
+        static double Ease(double x) => (1 - Math.Cos(Math.PI * Math.Clamp(x, 0, 1))) / 2;
+    }
+
+    /// <summary>
+    /// Demonstração (Debug) das áreas de trabalho para o vídeo, com LIQUIDGLASS_WORKSPACE_DEMO = títulos de
+    /// janelas por área ("Photos;Weather|Notes|Music|Clock"): cria uma área nova para cada grupo, leva as
+    /// janelas para lá e mostra só essas áreas no cubo (as do usuário ficam fora do vídeo). Depois gira o
+    /// cubo, fecha a última área pelo "×", arrasta a primeira janela para a segunda área, entra nela e
+    /// troca de área com Ctrl+Win+setas. Tudo por código, sem mexer no mouse nem no teclado; o "mouse"
+    /// que o vídeo mostra é desenhado depois, a partir de demo-cursor.csv. No fim devolve as janelas à
+    /// área original, volta para ela e remove as áreas criadas.
+    /// </summary>
+    private void StartWorkspaceDemo(string spec)
+    {
+        const double Start = 4;
+
+        // Uma demonstração interrompida deixa as áreas dela abertas: a seguinte volta à área original
+        // (primeira linha) e as remove antes de começar.
+        var leftovers = System.IO.Path.Combine(AppDataPaths.Root, "demo-desktops.txt");
+        if (System.IO.File.Exists(leftovers))
+        {
+            var lines = System.IO.File.ReadAllLines(leftovers).Where(line => line.Length > 0).Select(Guid.Parse).ToList();
+            _desktops.Switch(lines[0]);
+            foreach (var leftover in lines.Skip(1))
+            {
+                Graphics.DemoCapture.Log($"áreas: sobra removida: {_desktops.Remove(leftover, lines[0])}");
+            }
+
+            System.IO.File.Delete(leftovers);
+        }
+
+        var groups = spec.Split('|').Select(group => group.Split(';', StringSplitOptions.RemoveEmptyEntries)).ToArray();
+        var original = _desktops.GetCurrent();
+        var ids = new List<Guid>();
+        var windows = new List<nint>();
+        foreach (var group in groups)
+        {
+            if (_desktops.Add() is not { } id)
+            {
+                Graphics.DemoCapture.Log("áreas: não foi possível criar uma área");
+                return;
+            }
+
+            ids.Add(id);
+            System.IO.File.WriteAllLines(leftovers, [.. new[] { original ?? Guid.Empty }.Concat(ids).Select(guid => guid.ToString())]);
+            foreach (var title in group)
+            {
+                var hwnd = User32.FindWindow(null, title);
+                windows.Add(hwnd);
+                Graphics.DemoCapture.Log($"áreas: {title} -> área {ids.Count}: {hwnd != 0 && _desktops.MoveWindow(hwnd, id)}");
+            }
+        }
+
+        WorkspaceCube.DemoDesktops = ids;
+        _desktops.Switch(ids[0]);
+        var dragged = windows[0];
+
+        var cursorLog = new System.IO.StreamWriter(System.IO.Path.Combine(AppDataPaths.Root, "demo-cursor.csv"));
+        var clock = Stopwatch.StartNew();
+        var done = new HashSet<string>();
+        var glides = new Dictionary<string, (Point From, Point To)>();
+        Point? cursor = null;
+        var pressedUntil = -1.0;
+        var dragging = false;
+        var timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(8) };
+        timer.Tick += (_, _) =>
+        {
+            var t = clock.Elapsed.TotalSeconds - Start;
+            var cube = _overview?.Current;
+            if (t < 0)
+            {
+                return;
+            }
+
+            if (Once("abrir", 1.0))
+            {
+                _overview?.Toggle();
+            }
+
+            if (Once("direita 1", 2.2) || Once("direita 2", 3.3) || Once("direita 3", 4.4))
+            {
+                _overview?.HandleKey(OverviewKey.Right);
+            }
+
+            // O "mouse" sai do meio da face e vai até o "×", e fecha a área.
+            Glide("ao x", 5.2, 6.0, () => cube?.DemoFrontCenter(), () => cube?.DemoClosePoint());
+            if (Once("fechar", 6.3))
+            {
+                pressedUntil = t + 0.16;
+                cube?.DemoClose();
+            }
+
+            if (Once("esquerda 1", 7.5) || Once("esquerda 2", 8.6))
+            {
+                _overview?.HandleKey(OverviewKey.Left);
+            }
+
+            // Pega a janela, levanta, gira o cubo com ela na mão e solta na área seguinte.
+            Glide("à janela", 9.3, 10.1, () => cursor, () => cube?.DemoWindowPoint(dragged));
+            if (Once("apertar", 10.3) && cursor is { } press)
+            {
+                cube?.DemoPress(press);
+                dragging = true;
+            }
+
+            Glide("levantar", 10.35, 10.85, () => cursor, () => cursor is { } c ? c + new Vector(0, -70) : null);
+            if (Once("girar com a janela", 11.0))
+            {
+                cube?.DemoRotate(back: false);
+            }
+
+            Glide("ao meio", 11.8, 12.5, () => cursor, () => cube?.DemoFrontCenter());
+            if (dragging && cursor is { } held)
+            {
+                cube?.DemoMove(held);
+            }
+
+            if (Once("soltar", 12.8))
+            {
+                dragging = false;
+                cube?.DemoRelease();
+            }
+
+            // Clique na face: entra na área com a janela nova.
+            if (Once("entrar", 14.2) && cursor is { } click)
+            {
+                pressedUntil = t + 0.16;
+                cube?.DemoPress(click);
+                cube?.DemoRelease();
+            }
+
+            if (Once("sumir mouse", 14.5))
+            {
+                cursor = null;
+            }
+
+            if (Once("ctrl+win+direita", 16.0))
+            {
+                _overview?.Switch(1);
+            }
+
+            if (Once("ctrl+win+esquerda 1", 17.6) || Once("ctrl+win+esquerda 2", 19.2))
+            {
+                _overview?.Switch(-1);
+            }
+
+            var screen = cursor is { } shown && _overview?.Current is { } open ? open.DemoToScreen(shown) : (Point?)null;
+            cursorLog.WriteLine(screen is { } s
+                ? $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()},{s.X:0},{s.Y:0},{(dragging || t < pressedUntil ? 1 : 0)}"
+                : $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()},,,0");
+
+            if (Once("fim", 20.8))
+            {
+                timer.Stop();
+                cursorLog.Dispose();
+                WorkspaceCube.DemoDesktops = null;
+                if (original is { } home)
+                {
+                    foreach (var hwnd in windows.Where(hwnd => hwnd != 0))
+                    {
+                        _desktops.MoveWindow(hwnd, home);
+                    }
+
+                    _desktops.Switch(home);
+                }
+
+                foreach (var id in ids)
+                {
+                    _desktops.Remove(id);
+                }
+
+                System.IO.File.Delete(leftovers);
+                Graphics.DemoCapture.Log("áreas: fim");
+            }
+
+            bool Once(string name, double at)
+            {
+                if (t < at || !done.Add(name))
+                {
+                    return false;
+                }
+
+                Graphics.DemoCapture.Log($"áreas: {name}");
+                return true;
+            }
+
+            void Glide(string name, double from, double to, Func<Point?> start, Func<Point?> end)
+            {
+                if (t < from || t > to + 0.05)
+                {
+                    return;
+                }
+
+                if (!glides.TryGetValue(name, out var path))
+                {
+                    if (end() is not { } target)
+                    {
+                        return;
+                    }
+
+                    path = (start() ?? target, target);
+                    glides[name] = path;
+                }
+
+                var x = Ease((t - from) / (to - from));
+                cursor = path.From + ((path.To - path.From) * x);
+            }
+        };
+
+        Graphics.DemoCapture.Log("áreas: aberto");
         timer.Start();
 
         static double Ease(double x) => (1 - Math.Cos(Math.PI * Math.Clamp(x, 0, 1))) / 2;

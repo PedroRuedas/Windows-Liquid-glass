@@ -122,6 +122,9 @@ administrador para instalar.
   face "+", ela ganha uma área nova). Para chegar a uma área de trás, segure a janela perto da borda
   esquerda ou direita da tela, ou gire com a roda do mouse ou as setas; Esc ou soltar fora do cubo
   devolve a janela. Janelas fixadas em todas as áreas não se arrastam.
+- **Fechar uma área de trabalho:** o "×" de vidro no canto da face da frente, a tecla Delete ou o
+  clique do meio numa face. As janelas dela vão para a área vizinha, como na Visão de Tarefas; a
+  última área não fecha.
 - **Trocar de área de trabalho:** Ctrl+Win+← e → giram o cubo até a área vizinha, recuando um pouco
   no meio do giro, sem precisar abrir a visão geral.
 - Minimizar é a "lâmpada mágica": a janela escorre em funil para dentro do ícone dela na dock (e se
@@ -166,6 +169,7 @@ Todas as mudanças aparecem na dock na hora:
 | Cubo | arrastar, setas, roda do mouse | gira o cubo |
 | Cubo | clique numa face ou Enter | entra na área (na face "+", cria uma) |
 | Cubo | arrastar uma janela até outra face | move a janela para aquela área |
+| Cubo | "×" da face, Delete ou clique do meio | fecha a área (as janelas vão para a vizinha) |
 | Cubo | Esc | fecha o cubo (ou devolve a janela arrastada) |
 
 ## Instalação

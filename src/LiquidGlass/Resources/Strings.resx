@@ -195,6 +195,9 @@
   <data name="CubeDesktop" xml:space="preserve">
     <value>Área de trabalho {0}</value>
   </data>
+  <data name="CubeCloseDesktop" xml:space="preserve">
+    <value>Fechar a área de trabalho (as janelas vão para a vizinha) · Delete</value>
+  </data>
   <data name="StartSearchPlaceholder" xml:space="preserve">
     <value>Pesquisar aplicativos, configurações e documentos</value>
   </data>
