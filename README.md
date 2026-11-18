@@ -96,7 +96,8 @@ administrador para instalar.
 - Botão Iniciar e Lixeira.
 - **Apps em segundo plano:** um botão abre um painel com os ícones da bandeja do sistema. Clique
   esquerdo e direito são repassados ao app, como na bandeja do Windows.
-- Janelas maximizadas param antes da dock, e a dock some em jogos e vídeos em tela cheia.
+- Com a reserva de espaço ligada, janelas maximizadas param antes da dock. Em tela cheia, jogos e
+  vídeos ocultam a dock apenas no monitor que ocupam.
 - Opção de ocultar a dock automaticamente.
 - Funciona com a dock embaixo, à esquerda ou à direita da tela.
 - **Rede:** ícone de Wi-Fi com a força do sinal e o nome da rede (ou de rede cabeada); o clique

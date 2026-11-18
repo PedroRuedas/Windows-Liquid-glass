@@ -77,7 +77,8 @@ live customization window. Free, open source, and no administrator rights needed
   Windows Start menu in the settings.
 - **Background apps:** a button opens a panel with the system tray icons; left and right clicks
   are forwarded to the app, as in the Windows tray.
-- Maximized windows stop at the dock, and the dock hides during fullscreen games and videos.
+- With space reservation enabled, maximized windows stop at the dock. Fullscreen games and videos
+  hide the dock only on the monitor they occupy.
 - Optional auto-hide; the dock can sit at the bottom, left or right of the screen.
 - **Network** and **battery** indicators (battery only on devices that have one).
 
