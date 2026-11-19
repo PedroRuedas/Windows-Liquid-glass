@@ -90,10 +90,39 @@ internal sealed class AppBarManager : IDisposable
         _ => Shell32.AbeBottom,
     };
 
-    private static bool IsDesktopInForeground()
+    public void RefreshFullScreen()
+    {
+        var isFullScreen = IsForegroundFullScreen();
+        FullScreenChanged?.Invoke(this, isFullScreen);
+    }
+
+    private bool IsForegroundFullScreen()
     {
         var foreground = User32.GetForegroundWindow();
-        return foreground == 0 || DesktopClasses.Contains(User32.GetWindowClassName(foreground));
+        if (foreground == 0 || User32.IsZoomed(foreground)
+            || DesktopClasses.Contains(User32.GetWindowClassName(foreground)))
+        {
+            return false;
+        }
+
+        var monitor = _monitor().Monitor;
+        var bounds = Dwmapi.GetVisibleBounds(foreground);
+        if (bounds.HasValue)
+        {
+            return MatchesMonitor(bounds.Value, monitor);
+        }
+
+        return User32.GetWindowRect(foreground, out var fallback) && MatchesMonitor(fallback, monitor);
+    }
+
+    internal static bool MatchesMonitor(User32.Rect window, User32.Rect monitor)
+    {
+        const int Tolerance = 1;
+        return monitor.Width > 0 && monitor.Height > 0
+            && Math.Abs(window.Left - monitor.Left) <= Tolerance
+            && Math.Abs(window.Top - monitor.Top) <= Tolerance
+            && Math.Abs(window.Right - monitor.Right) <= Tolerance
+            && Math.Abs(window.Bottom - monitor.Bottom) <= Tolerance;
     }
 
     private nint WndProc(nint hwnd, int message, nint wParam, nint lParam, ref bool handled)
@@ -109,9 +138,17 @@ internal sealed class AppBarManager : IDisposable
                 PositionChanged?.Invoke(this, EventArgs.Empty);
                 break;
             case Shell32.AbnFullScreenApp:
-                // A área de trabalho às vezes é anunciada como "tela cheia"; ignoramos esse caso.
-                var isFullScreen = lParam != 0 && !IsDesktopInForeground();
-                FullScreenChanged?.Invoke(this, isFullScreen);
+                // lParam 0 avisa que a tela cheia acabou. Com lParam diferente de 0 o aviso também
+                // chega para janelas maximizadas, então conferimos a janela em primeiro plano.
+                if (lParam == 0)
+                {
+                    FullScreenChanged?.Invoke(this, false);
+                }
+                else
+                {
+                    RefreshFullScreen();
+                }
+
                 break;
         }
 

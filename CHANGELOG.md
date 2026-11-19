@@ -7,6 +7,10 @@ e o SHA-256 de cada um, estão nas [releases](https://github.com/PedroRuedas/Win
 
 ## [Não lançado]
 
+### Corrigido
+- A dock continua disponível com janelas maximizadas quando a reserva de espaço está desligada e
+  se oculta apenas no monitor do aplicativo em tela cheia.
+
 ## [0.13.0] - 2026-11-11
 
 ### Adicionado

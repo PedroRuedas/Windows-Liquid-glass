@@ -224,6 +224,10 @@ internal static class User32
     public static extern bool IsIconic(nint hwnd);
 
     [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsZoomed(nint hwnd);
+
+    [DllImport("user32.dll")]
     public static extern nint GetWindow(nint hwnd, uint command);
 
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
