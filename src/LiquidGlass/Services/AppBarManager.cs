@@ -138,8 +138,17 @@ internal sealed class AppBarManager : IDisposable
                 PositionChanged?.Invoke(this, EventArgs.Empty);
                 break;
             case Shell32.AbnFullScreenApp:
-                // O aviso também pode chegar para janelas maximizadas.
-                RefreshFullScreen();
+                // lParam 0 avisa que a tela cheia acabou. Com lParam diferente de 0 o aviso também
+                // chega para janelas maximizadas, então conferimos a janela em primeiro plano.
+                if (lParam == 0)
+                {
+                    FullScreenChanged?.Invoke(this, false);
+                }
+                else
+                {
+                    RefreshFullScreen();
+                }
+
                 break;
         }
 
